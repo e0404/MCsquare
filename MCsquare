@@ -1,0 +1,18 @@
+#!/bin/bash
+
+This_Dir="`dirname \"$0\"`"
+
+export MCsquare_Materials_Dir=$This_Dir/Materials
+
+if [ "$(uname)" == "Darwin" ]; then 
+	export DYLD_LIBRARY_PATH=$This_Dir/lib_mac:$DYLD_LIBRARY_PATH
+	if sysctl -a | grep --quiet AVX
+  		then $This_Dir/MCsquare_mac
+  		else $This_Dir/MCsquare_mac_NoArch
+	fi
+else
+	if cat /proc/cpuinfo | grep --quiet avx
+  		then $This_Dir/MCsquare_linux
+  		else $This_Dir/MCsquare_linux_NoArch
+	fi
+fi

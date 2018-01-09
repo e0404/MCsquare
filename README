@@ -1,0 +1,15 @@
+On Linux:
+
+Compile MCsquare with the command: make
+(this should generate the executable MCsquare_linux)
+
+Configure the simulation in config.txt
+Then, run MCsquare with the launcher: ./MCsquare
+
+
+On Windows:
+
+Compile MCsquare using Makefile.mak
+
+Configure the simulation in config.txt
+Then, run MCsquare with the launcher: MCsquare.bat
