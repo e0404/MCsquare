@@ -318,12 +318,12 @@ void Sample_particle (Hadron_buffer *hadron, VAR_DATA CT_Length[3], machine_para
 
 
     if(mac->Beam_Model == UPenn){
-
-	int EnergyID = floor(ControlPoint->Energy / Machine_Param_BIN) - floor(mac->Nominal_Energies[0] / Machine_Param_BIN);
+	
+	int EnergyID =  Sequential_Search(ControlPoint->Energy, mac->Nominal_Energies, mac->Number_Energies);
 	if(EnergyID < 0) EnergyID = 0;
 	if(EnergyID > (mac->Number_Energies - 2)) EnergyID = mac->Number_Energies - 2;
 	VAR_COMPUTE Energy1 = mac->Nominal_Energies[EnergyID];
-	VAR_COMPUTE Energy2 = Energy1 + Machine_Param_BIN;
+	VAR_COMPUTE Energy2 = mac->Nominal_Energies[EnergyID+1];
 
 	E = Linear_Interpolation(ControlPoint->Energy, Energy1, Energy2, mac->Mean_Energies[EnergyID], mac->Mean_Energies[EnergyID+1]);
 	VAR_COMPUTE sE = Linear_Interpolation(ControlPoint->Energy, Energy1, Energy2, mac->Energy_Spread[EnergyID], mac->Energy_Spread[EnergyID+1]);
