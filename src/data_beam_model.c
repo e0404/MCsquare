@@ -28,6 +28,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
     fgets(tmp,256,machine);
     fclose(machine);
 
+    mac->RS_defined = 0;
     mac->RS_Type = none;
     mac->RS_Density = 0.0;
     mac->RS_Material = 17;
@@ -97,10 +98,21 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	mac->mDistanceSMYToIsocenter = atof(read_token);
     }
     else if(strcmp(read, "Range Shifter parameters\n") == 0){
+
+	if(mac->RS_defined == 1){
+		printf("\n Error: only one range shifter should be defined in \"%s\"\n\n", machine_name);
+		return 1;
+	}
+	mac->RS_defined = 1;
+
 	while(1){
 	  fgets(read,500,file);
 	  read_token = strtok(read, "= \t#\r\n");
 	  if(read_token == NULL) break;
+	  else if(strcmp(read_token, "RS_ID") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token != NULL) strcpy(mac->RS_ID, read_token); 
+	  }
 	  else if(strcmp(read_token, "RS_type") == 0){
 	    read_token = strtok(NULL, "= \t#\r\n");
 	    if(strcmp(read_token, "none") == 0) mac->RS_Type = none;
@@ -110,6 +122,30 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 		printf("\n Error: \"%s\" is not a valid value for RS_type in \"%s\"\n\n", read_token, machine_name);
 		return 1;
 	    }
+	  }
+	  else if(strcmp(read_token, "RS_material") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token == NULL || !isUnsignedInt(read_token)){
+		printf("\n Error: \"%s\" is not a valid value for RS_material in \"%s\"\n\n", read_token, machine_name);
+		return 1;
+	    }
+	    mac->RS_Material = atoi(read_token);
+	  }
+	  else if(strcmp(read_token, "RS_density") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token == NULL || !isUnsignedFloat(read_token)){
+		printf("\n Error: \"%s\" is not a valid value for RS_density in \"%s\"\n\n", read_token, machine_name);
+		return 1;
+	    }
+	    mac->RS_Density = atof(read_token);
+	  }
+	  else if(strcmp(read_token, "RS_WET") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token == NULL || !isUnsignedFloat(read_token)){
+		printf("\n Error: \"%s\" is not a valid value for RS_WET in \"%s\"\n\n", read_token, machine_name);
+		return 1;
+	    }
+	    mac->RS_WET = atof(read_token);
 	  }
 /*
 	  else if(strcmp(read_token, "RS_position") == 0){
@@ -129,22 +165,6 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	    mac->RS_Thickness = atof(read_token);
 	  }
 */
-	  else if(strcmp(read_token, "RS_material") == 0){
-	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(read_token == NULL || !isUnsignedInt(read_token)){
-		printf("\n Error: \"%s\" is not a valid value for RS_material in \"%s\"\n\n", read_token, machine_name);
-		return 1;
-	    }
-	    mac->RS_Material = atoi(read_token);
-	  }
-	  else if(strcmp(read_token, "RS_density") == 0){
-	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(read_token == NULL || !isUnsignedFloat(read_token)){
-		printf("\n Error: \"%s\" is not a valid value for RS_density in \"%s\"\n\n", read_token, machine_name);
-		return 1;
-	    }
-	    mac->RS_Density = atof(read_token);
-	  }
 	  else break;
 	}
     }

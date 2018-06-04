@@ -102,11 +102,14 @@ struct machine_parameters
     double mDistanceSMYToIsocenter;
 
     // Range shifter parameters
+    int RS_defined;
+    char RS_ID[100];
     enum RangeShifter_type RS_Type;
 //    double RS_Position;
 //    double RS_Thickness;
     double RS_Density;
     int RS_Material;
+    double RS_WET;
 
     // Loic Grevillot beam model
     int mEnergy_order;

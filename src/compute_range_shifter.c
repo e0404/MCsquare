@@ -78,8 +78,9 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
 	if(plan->fields[i].ControlPoints[j].RS_setting == OUT) AlwaysIN = 0;
       }
       printf("\nRange shifter initialized for beam %d:\n", i);
-      if(plan->fields[i].RS_Type == binary) printf("\ttype=binary\n");
-      else if(plan->fields[i].RS_Type == analog) printf("\ttype=analog\n");
+      printf("\tRange shifter ID: %s\n", machine->RS_ID);
+      if(plan->fields[i].RS_Type == binary) printf("\ttype: binary\n");
+      else if(plan->fields[i].RS_Type == analog) printf("\ttype: analog\n");
       printf("\tMaterial: %s (ID %d)\n", material[machine->RS_Material].Name, machine->RS_Material);
       printf("\tDensity: %.2lf g/cm3\n", machine->RS_Density);
       if(AlwaysIN == 1) printf("\tEnabled for all layers\n");
