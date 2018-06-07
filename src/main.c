@@ -148,7 +148,7 @@ int main(int argc, char *argv[]){
 //  display_machine_parameters(&machine);
 
   // Import PBS plan
-  plan_parameters *plan = read_plan_parameters(config.BDL_plan, &config);
+  plan_parameters *plan = read_plan_parameters(config.BDL_plan, &config, &machine);
   if(plan == NULL){
     if(config.Simu_4D_Mode == 0) Free_CT_DATA(ct);
     else{
