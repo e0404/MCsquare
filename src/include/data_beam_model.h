@@ -164,7 +164,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac);
 int read_UPenn_BDL(char* machine_name, machine_parameters *mac);
 int read_Grevillot_BDL(char* machine_name, machine_parameters *mac);
 void display_machine_parameters(machine_parameters *machine);
-plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config);
+plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, machine_parameters *machine);
 void display_plan_parameters(plan_parameters *plan);
 void Free_Plan_Parameters(plan_parameters *plan);
 void Free_Machine_Parameters(machine_parameters *mac);
