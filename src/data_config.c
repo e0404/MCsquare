@@ -22,7 +22,7 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_uint_Config_element("_Internal_Num_Config_Tags", &config_dictionary[0], &config->Num_Config_Tags, 1, Num_Config_Tags, 0, UINT_MAX);
   Add_uint_Config_element("Num_Threads", &config_dictionary[1], &config->Num_Threads, 1, 0, 0, UINT_MAX);
   Add_ulong_Config_element("Num_Primaries", &config_dictionary[2], &config->Num_Primaries, 1, 10000000, 1, ULONG_MAX);
-  Add_string_Config_element("CT_File", &config_dictionary[3], config->CT_File, 1, "CT.ct", 1, 200);
+  Add_string_Config_element("CT_File", &config_dictionary[3], config->CT_File, 1, "CT.mhd", 1, 200);
   Add_ureal_Config_element("E_Cut_Pro", &config_dictionary[4], &config->Ecut_Pro, 1, 0.5, 0.001, 200);
   Add_ureal_Config_element("D_Max", &config_dictionary[5], &config->D_Max, 1, 0.2, 0.001, 100);
   Add_ureal_Config_element("Epsilon_Max", &config_dictionary[6], &config->Epsilon_Max, 1, 0.25, 0.001, 1.0);
