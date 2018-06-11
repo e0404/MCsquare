@@ -18,7 +18,6 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "File_process.h"
 
 #define poly_size 10
-#define Machine_Param_BIN 5.0
 
 typedef struct spot_parameters spot_parameters;
 struct spot_parameters

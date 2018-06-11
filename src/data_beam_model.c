@@ -928,10 +928,12 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
 			  plan->fields[l].ControlPoints[j].spots[k].Spot_Weight = atof(read_token);
         // if beam is UPenn, Proton_Per_MU must be interpolated from beam model parameters
         if(machine->Beam_Model == UPenn){
-          EnergyID = floor(plan->fields[l].ControlPoints[j].Energy / Machine_Param_BIN) - floor(machine->Nominal_Energies[0] / Machine_Param_BIN);
-          Energy1 = machine->Nominal_Energies[EnergyID];
-          Energy2 = Energy1 + Machine_Param_BIN;
-          plan->fields[l].ControlPoints[j].spots[k].Spot_Weight = Linear_Interpolation(plan->fields[l].ControlPoints[j].Energy, Energy1, Energy2, machine->Proton_Per_MU[EnergyID], machine->Proton_Per_MU[EnergyID+1]);
+	  EnergyID =  Sequential_Search(plan->fields[l].ControlPoints[j].Energy, machine->Nominal_Energies, machine->Number_Energies);
+	  if(EnergyID < 0) EnergyID = 0;
+	  if(EnergyID > (machine->Number_Energies - 2)) EnergyID = machine->Number_Energies - 2;
+	  Energy1 = machine->Nominal_Energies[EnergyID];
+	  Energy2 = machine->Nominal_Energies[EnergyID+1];
+          plan->fields[l].ControlPoints[j].spots[k].Spot_Weight *= Linear_Interpolation(plan->fields[l].ControlPoints[j].Energy, Energy1, Energy2, machine->Proton_Per_MU[EnergyID], machine->Proton_Per_MU[EnergyID+1]);
           }
         else{
           plan->fields[l].ControlPoints[j].spots[k].Spot_Weight = ConvertMuToProtons(plan->fields[l].ControlPoints[j].spots[k].Spot_Weight,
