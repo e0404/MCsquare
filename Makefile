@@ -20,13 +20,21 @@ else
   LIB_PATH =
 endif
 
+BUILD_TIME := $(shell date)
+GIT_TAG := $(shell git describe --abbrev=0 --tags)
+GIT_BRANCH := $(shell git branch | grep \* | cut -d ' ' -f2-)
+GIT_COMMIT := $(shell git rev-parse HEAD)
+GIT_COMMIT_TIME := $(shell git show -s --format=%ci)
+GIT_DESCR := $(shell git describe --dirty --always --tags)
+FULL_VERSION = -DVERSION="\"Build date: $(BUILD_TIME)\nVersion: $(GIT_TAG)\nGit branch: $(GIT_BRANCH)\nCommit: $(GIT_COMMIT)\nCommit time: $(GIT_COMMIT_TIME)\nGit description: $(GIT_DESCR)\""
+
 default : MCsquare_linux MCsquare_linux_NoArch
 
 MCsquare_linux : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -static -m64 -march=corei7-avx -o MCsquare_linux
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -march=corei7-avx -o MCsquare_linux
 
 MCsquare_linux_NoArch : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -static -m64 -o MCsquare_linux_NoArch
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -o MCsquare_linux_NoArch
 
 MCsquare_linux_RC :	$(SRC)
 	make MCsquare_linux
