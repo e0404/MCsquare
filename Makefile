@@ -28,13 +28,26 @@ GIT_COMMIT_TIME := $(shell git show -s --format=%ci)
 GIT_DESCR := $(shell git describe --dirty --always --tags)
 FULL_VERSION = -DVERSION="\"Build date: $(BUILD_TIME)\nVersion: $(GIT_TAG)\nGit branch: $(GIT_BRANCH)\nCommit: $(GIT_COMMIT)\nCommit time: $(GIT_COMMIT_TIME)\nGit description: $(GIT_DESCR)\""
 
-default : MCsquare_linux MCsquare_linux_NoArch
+default : MCsquare_linux
+
+all : MCsquare_linux MCsquare_linux_sse4 MCsquare_linux_avx MCsquare_linux_avx2 MCsquare_linux_avx512
 
 MCsquare_linux : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -march=corei7-avx -o MCsquare_linux
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -o MCsquare_linux 
 
-MCsquare_linux_NoArch : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -o MCsquare_linux_NoArch
+MCsquare_linux_sse4 : $(SRC)
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -xcorei7 -o MCsquare_linux_sse4
+
+MCsquare_linux_avx : $(SRC)
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -xcorei7-avx -o MCsquare_linux_avx
+
+MCsquare_linux_avx2 : $(SRC)
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -xcore-avx2 -o MCsquare_linux_avx2
+
+MCsquare_linux_avx512 : $(SRC)
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -xcore-avx512 -o MCsquare_linux_avx512
+
+
 
 MCsquare_linux_RC :	$(SRC)
 	make MCsquare_linux
