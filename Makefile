@@ -76,14 +76,11 @@ lines:
 	make clean
 	find src -type f -exec cat {} + | wc -l
 
-shared : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -m64 -march=corei7-avx -o shared
-
 debug : $(SRC)
-	$(CC) $(SRC) $(LIB) $(LIB_PATH) -static -g -debug inline-debug-info -o debug
+	$(CC) $(SRC) $(LIB) $(LIB_PATH) $(FULL_VERSION) -static -g -debug inline-debug-info -o debug
 
 profile : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -p -g -o profile
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -p -g -o profile
 
 MC2_gcc : $(SRC)
 	gcc $(SRC) -fcilkplus -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lmkl_vml_def -lm $(OPTIONS) $(LIB_PATH) -m64 -march=corei7-avx -o MC2_gcc
@@ -94,22 +91,19 @@ debug_gcc : $(SRC)
 
 
 debug_fp : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -static -fp-trap-all=common -traceback -g -o debug_fp
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -fp-trap-all=common -traceback -g -o debug_fp
 
 mic : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) -static -o mic
-
-mic_shared : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) -static -o mic_shared
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) $(FULL_VERSION) -static -o mic
 
 report : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -static -m64 -march=corei7-avx -vec-report=3 -O3 -o report
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -m64 -march=corei7-avx -vec-report=3 -O3 -o report
 
 mic_report : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) -static -vec-report=3 -o mic_report
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) $(FULL_VERSION) -static -vec-report=3 -o mic_report
 
 novec : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) -static -no-vec -o novec
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(MIC_ENABLED) $(LIB_PATH) $(FULL_VERSION) -static -no-vec -o novec
 
 novec_cpu : $(SRC)
-	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) -static -no-vec -o novec_cpu
+	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -static -no-vec -o novec_cpu
