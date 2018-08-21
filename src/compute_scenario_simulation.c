@@ -260,7 +260,7 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
 	    else if(config->Current_scenario_type == Uncertainty)
 	      printf("\nRobustness simulation (scenario %d/%d - Beamlet %d/%d) ", config->Current_scenario, config->TotalNumScenarios, current_spot, config->TotalNbrSpots);
 	    else
-	      printf("\nBeamlet %d / %d", current_spot, config->TotalNbrSpots);
+	      printf("\nBeamlet %d / %d \n", current_spot, config->TotalNbrSpots);
 
 	    sprintf(config->output_4D_suffix, "");
 	    Run_simulation(config, material, ct, Beamlet, machine, Fields);
@@ -268,11 +268,11 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
 	  else{ 	// 4D mode
 	    for(a=0; a <config->Num_4DCT_phases; a++){
 	      if(config->Current_scenario_type == Nominal)
-	        printf("\nRobustness simulation (Nominal - Beamlet %d/%d - phase %d/%d) ", current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
+	        printf("\nRobustness simulation (Nominal - Beamlet %d/%d - phase %d/%d) \n", current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
 	      else if(config->Current_scenario_type == Uncertainty)
-	        printf("\nRobustness simulation (scenario %d/%d - Beamlet %d/%d - phase %d/%d) ", config->Current_scenario, config->TotalNumScenarios, current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
+	        printf("\nRobustness simulation (scenario %d/%d - Beamlet %d/%d - phase %d/%d) \n", config->Current_scenario, config->TotalNumScenarios, current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
 	      else
-	        printf("\nBeamlet %d / %d  (phase %d)", current_spot, config->TotalNbrSpots, a+1);
+	        printf("\nBeamlet %d / %d  (phase %d) \n", current_spot, config->TotalNbrSpots, a+1);
 
 	      sprintf(config->output_4D_suffix, "_Phase%d", a+1);
 	      config->Current_4D_phase = a;

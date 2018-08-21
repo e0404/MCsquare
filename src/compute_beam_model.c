@@ -713,11 +713,16 @@ void Select_spot(plan_parameters *Plan, plan_parameters *Beamlet, int FieldID, i
   Beamlet->fields[0].IsocenterPositionY = Plan->fields[FieldID].IsocenterPositionY;
   Beamlet->fields[0].IsocenterPositionZ = Plan->fields[FieldID].IsocenterPositionZ;
   Beamlet->fields[0].ControlPoints_cumulative_PDF[0] = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
+  Beamlet->fields[0].RS_Type = Plan->fields[FieldID].RS_Type;
   Beamlet->fields[0].ControlPoints[0].ControlPointIndex = Plan->fields[FieldID].ControlPoints[ControlPointID].ControlPointIndex;
   Beamlet->fields[0].ControlPoints[0].SpotTunnedID = Plan->fields[FieldID].ControlPoints[ControlPointID].SpotTunnedID;
   Beamlet->fields[0].ControlPoints[0].CumulativeMetersetWeight = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
   Beamlet->fields[0].ControlPoints[0].Energy = Plan->fields[FieldID].ControlPoints[ControlPointID].Energy;
   Beamlet->fields[0].ControlPoints[0].Spots_cumulative_PDF[0] = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
+  Beamlet->fields[0].ControlPoints[0].RS_setting = Plan->fields[FieldID].ControlPoints[ControlPointID].RS_setting;
+  Beamlet->fields[0].ControlPoints[0].RS_IsocenterDist = Plan->fields[FieldID].ControlPoints[ControlPointID].RS_IsocenterDist;
+  Beamlet->fields[0].ControlPoints[0].RS_WET = Plan->fields[FieldID].ControlPoints[ControlPointID].RS_WET;
+  Beamlet->fields[0].ControlPoints[0].RS_Thickness = Plan->fields[FieldID].ControlPoints[ControlPointID].RS_Thickness;
   Beamlet->fields[0].ControlPoints[0].spots[0].Spot_X = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_X;
   Beamlet->fields[0].ControlPoints[0].spots[0].Spot_Y = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Y;
   Beamlet->fields[0].ControlPoints[0].spots[0].Spot_Weight = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
