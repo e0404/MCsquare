@@ -135,7 +135,7 @@ void Scenarios_selection_random(DATA_config *config, Materials *material, DATA_C
   config->Fraction_accumulation = 1;
   config->Num_Primaries = (unsigned long)config->Num_Primaries / plan->NumberOfFractions;
 
-  for(i=0; i<1000; i++){
+  for(i=0; i<config->TotalNumScenarios; i++){
 
     config->Current_scenario += 1;
 
@@ -255,6 +255,7 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
 	  sprintf(config->output_beamlet_suffix, "_Beamlet_%d_%d_%d", b, c, d);
 
 	  if(config->Simu_4D_Mode == 0){ 	// 3D mode
+	    config->Current_4D_phase = 0;
 	    if(config->Current_scenario_type == Nominal)
 	      printf("\nRobustness simulation (Nominal - Beamlet %d/%d) ", current_spot, config->TotalNbrSpots);
 	    else if(config->Current_scenario_type == Uncertainty)
@@ -306,6 +307,7 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
       }
 
       if(config->Simu_4D_Mode == 0){ 	// 3D mode
+	config->Current_4D_phase = 0;
         sprintf(config->output_4D_suffix, "");
         if(config->Current_scenario_type == Nominal) printf("\nRobustness simulation (Nominal)\n");
         else if(config->Current_scenario_type == Uncertainty) printf("\nRobustness simulation (scenario %d/%d - fraction %d/%d)\n", config->Current_scenario, config->TotalNumScenarios, config->Current_fraction, plan->NumberOfFractions);

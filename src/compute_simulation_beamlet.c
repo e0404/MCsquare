@@ -139,7 +139,7 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
       int export_results = 0;
       int ii;
 
-      if(config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) export_results = 1;
+      if((config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) && config->Fraction_accumulation == 0) export_results = 1;
       else{
 
         strcpy(config->output_4D_suffix, "");
@@ -147,10 +147,15 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
         if(config->Energy_ASCII_Output == 1 || config->Energy_MHD_Output == 1 || config->Energy_Sparse_Output == 1){
 
           if(a == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) energy_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
-	  deformed = Image_deformation(Tot_scoring.energy, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	  
-          for(ii=0; ii<ct->Nbr_voxels; ii++) energy_accumulation[ii] += deformed[ii] / config->Num_4DCT_phases;
-          free(deformed);
+
+          if(config->Simu_4D_Mode == 0){
+            for(ii=0; ii<ct->Nbr_voxels; ii++) energy_accumulation[ii] += Tot_scoring.energy[ii] / plan->NumberOfFractions;
+          }
+          else{
+            deformed = Image_deformation(Tot_scoring.energy, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
+            for(ii=0; ii<ct->Nbr_voxels; ii++) energy_accumulation[ii] += deformed[ii] / (config->Num_4DCT_phases*plan->NumberOfFractions);
+            free(deformed);
+          }
       
           if(a == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
 	    export_results = 1;
@@ -163,10 +168,15 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
         if(config->Compute_DVH == 1 || config->Dose_ASCII_Output == 1 || config->Dose_MHD_Output == 1 || config->Dose_Sparse_Output == 1){
 
           if(a == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) dose_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
-	  deformed = Image_deformation(Tot_scoring.dose, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	  
-          for(ii=0; ii<ct->Nbr_voxels; ii++) dose_accumulation[ii] += deformed[ii] / config->Num_4DCT_phases;
-          free(deformed);
+
+          if(config->Simu_4D_Mode == 0){
+            for(ii=0; ii<ct->Nbr_voxels; ii++) dose_accumulation[ii] += Tot_scoring.dose[ii] / plan->NumberOfFractions;
+          }
+          else{
+            deformed = Image_deformation(Tot_scoring.dose, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
+            for(ii=0; ii<ct->Nbr_voxels; ii++) dose_accumulation[ii] += deformed[ii] / (config->Num_4DCT_phases*plan->NumberOfFractions);
+            free(deformed);
+          }
       
           if(a == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
 	    export_results = 1;
@@ -182,10 +192,16 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
 	    PG_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
 	    PG_Spectrum_accumulation = (VAR_SCORING*)calloc(config->PG_Spectrum_NumBin, sizeof(VAR_SCORING));
           }
-	  deformed = Image_deformation(Tot_scoring.PG_particles, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	  
-          for(ii=0; ii<ct->Nbr_voxels; ii++) PG_accumulation[ii] += deformed[ii] / config->Num_4DCT_phases;
-          free(deformed);
+
+	  if(config->Simu_4D_Mode == 0){
+	    for(ii=0; ii<ct->Nbr_voxels; ii++) PG_accumulation[ii] += Tot_scoring.PG_particles[ii] / plan->NumberOfFractions;
+	  }
+	  else{
+	    deformed = Image_deformation(Tot_scoring.PG_particles, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
+	    for(ii=0; ii<ct->Nbr_voxels; ii++) PG_accumulation[ii] += deformed[ii] / (config->Num_4DCT_phases*plan->NumberOfFractions);
+	    free(deformed);
+	  }
+
           for(ii=0; ii<config->PG_Spectrum_NumBin; ii++) PG_Spectrum_accumulation[ii] += Tot_scoring.PG_spectrum[ii];
       
           if(a == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
@@ -201,10 +217,15 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
         if(config->Score_LET == 1){
 
           if(a == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) LET_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
-	  deformed = Image_deformation(Tot_scoring.LET, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
-          
-          for(ii=0; ii<ct->Nbr_voxels; ii++) LET_accumulation[ii] += deformed[ii] / config->Num_4DCT_phases;
-          free(deformed);
+
+          if(config->Simu_4D_Mode == 0){
+            for(ii=0; ii<ct->Nbr_voxels; ii++) LET_accumulation[ii] += Tot_scoring.LET[ii] / plan->NumberOfFractions;
+          }
+          else{
+            deformed = Image_deformation(Tot_scoring.LET, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[a], Fields->GridSize, Fields->Spacing, Fields->Origin);
+            for(ii=0; ii<ct->Nbr_voxels; ii++) LET_accumulation[ii] += deformed[ii] / (config->Num_4DCT_phases*plan->NumberOfFractions);
+            free(deformed);
+          }
       
           if(a == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
 	    export_results = 1;

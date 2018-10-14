@@ -124,7 +124,7 @@ int main(int argc, char *argv[]){
     //ct = Read_PENCT(config.CT_File);
     ct = Read_CT_MHD(&config);
     if(ct == NULL) return 1;
-    config.Num_4DCT_phases = 0;
+    config.Num_4DCT_phases = 1;
   }
 
   //Display_Density_conversion_data(ct);
