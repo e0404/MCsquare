@@ -15,7 +15,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 DATA_config_dictionary *Init_Config(DATA_config *config){
 
-  unsigned int Num_Config_Tags = 63;
+  unsigned int Num_Config_Tags = 64;
 
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
@@ -82,6 +82,7 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_ureal_Config_element("Systematic_Amplitude_Error", &config_dictionary[60], &config->Systematic_Amplitude_Error, 1, 5, 0.0, 200);
   Add_ureal_Config_element("Random_Amplitude_Error", &config_dictionary[61], &config->Random_Amplitude_Error, 1, 5, 0.0, 200);
   Add_bool_Config_element("Export_Beam_dose", &config_dictionary[62], &config->Export_Beam_dose, 1, 0);
+  Add_uint_Config_element("Num_Random_Scenarios", &config_dictionary[63], &config->Num_random_scenarios, 1, 100, 1, UINT_MAX);
 
 
   return config_dictionary;

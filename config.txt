@@ -9,7 +9,7 @@ Num_Threads 	0		# Number of parallel calculation threads. Default: 0 = max avail
 RNG_Seed	0		# Seed for the random number generator (deterministic result only with single thread). Default: 0 = seed based on the time
 Num_Primaries 	1e6		# Number of primary protons to simulate. Default: 1e7
 E_Cut_Pro	0.5		# Energy cut (in MeV) below which heavy charged particles are locally absorbed. Default: 0.5
-D_Max		0.2		# Maximum distance between two step (cm). Default: 0.2
+D_Max		0.2		# Maximum distance between two steps (cm). Default: 0.2
 Epsilon_Max	0.25		# Fractional energy loss (dE/T) per step. Default: 0.25
 Te_Min		0.05		# Threshold energy (MeV) for the production of secondary electrons (currently locally absorbed). Default: 0.05
 				# As a reference: 200 MeV protons can transfer a maximum energy of 0.5 MeV to δ-electrons which correspond to a range of 7 mm in lung tissues.
@@ -43,6 +43,7 @@ Breathing_period		7.0		# Period (in seconds) of the breathing motion. Default: 7
 Robustness_Mode			False 		# Enable/Disable the robustness verification mode. Default: False
 Scenario_selection		All		# Method for scenario selection: All (simulate all combinations), Random (randomly sample scenarios). Default: All
 Simulate_nominal_plan		True		# Simulate the nominal plan (without any systematic or random uncertainty). Default: True
+Num_Random_Scenarios		100		# Number of uncertainty scenarios to simulate in Random mode. Default: 100
 Systematic_Setup_Error		0.25 0.25 0.25	# Systematic error for the patient setup along the XYZ axes (cm). Default: 0.25 0.25 0.25
 Random_Setup_Error		0.1  0.1  0.1	# Standard deviation of the patient random setup error along the XYZ axes (cm). Default: 0.1 0.1 0.1
 Systematic_Range_Error		3.0		# Systematic error in percent of the proton range (%). Default: 3.0

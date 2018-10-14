@@ -265,6 +265,7 @@ struct DATA_config{
 	unsigned int Robustness_Mode;
 	int Scenario_selection;
 	unsigned int Simulate_nominal_plan;
+	unsigned int Num_random_scenarios;
 	VAR_DATA  Systematic_Setup_Error[3];
 	VAR_DATA  Random_Setup_Error[3];
 	VAR_DATA  Systematic_Range_Error;

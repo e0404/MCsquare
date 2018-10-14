@@ -129,7 +129,7 @@ void Scenarios_selection_random(DATA_config *config, Materials *material, DATA_C
   rand_uniform(RNDstream, v_rnd);				// on genere une première fois un set de nbr car les premiers semblent mal distribués
 
 
-  config->TotalNumScenarios = 1000;
+  config->TotalNumScenarios = config->Num_random_scenarios;
   config->Current_scenario = 0;
   config->Current_scenario_type = Uncertainty;
   config->Fraction_accumulation = 1;
