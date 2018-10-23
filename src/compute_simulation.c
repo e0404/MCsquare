@@ -16,172 +16,54 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields){
 
 
-  unsigned long Nbr_simulated_primaries = 0;
+  
   double time_init, time_MC, time_end;
-  char file_path[100];
-
   time_init = omp_get_wtime();
 
-  DATA_Scoring Tot_scoring = Init_Scoring(config, ct->Nbr_voxels, 1);
+  char file_path[100];
+  unsigned long Num_simulated_primaries = 0;
+  VAR_SCORING stat_uncertainty = 1.0;
+  int Num_batch = MIN_NUM_BATCH;
 
-  VAR_SCORING *ptr_energy_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_PG_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_PG_spectrum[config->Num_Threads];
-  VAR_SCORING *ptr_LET_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_LET_denominator[config->Num_Threads];
+  DATA_Scoring Batch_scoring, Tot_scoring;
+  Tot_scoring = Init_Scoring(config, ct->Nbr_voxels, 1);
 
-  // Parallelisation
-  #pragma omp parallel shared(config, material, ct, plan, machine, Fields, Nbr_simulated_primaries, time_MC, Tot_scoring, ptr_energy_scoring, ptr_PG_scoring, ptr_PG_spectrum, ptr_LET_scoring, ptr_LET_denominator)
-  {
-    int tid = omp_get_thread_num();
+  if(config->Compute_stat_uncertainty == 1 && (config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) && config->Fraction_accumulation == 0){
 
-    // Init RNG
-    VSLStreamStatePtr RNDstream;				// un stream de RNG par thread
-    ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// vecteur de nbr aleatoires
-    if(config->RNG_Seed == 0){
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+tid);	// initialisation du stream du RNG avec le seed (time+thread_id)
-    }
-    else{
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+tid);
-    }
-    rand_uniform(RNDstream, v_rnd);				// on genere une première fois un set de nbr car les premiers semblent mal distribués
+    int batch = 1;
+    while(batch<=Num_batch){
+      Batch_scoring = Init_Scoring(config, ct->Nbr_voxels, 1);
+      Num_simulated_primaries += Simulation_loop(config, material, ct, plan, machine, Fields, &Batch_scoring, (unsigned long)config->Num_Primaries/MIN_NUM_BATCH);
+      stat_uncertainty = Process_batch(&Tot_scoring, &Batch_scoring, ct, batch, config);
+      Free_Scoring(&Batch_scoring);
 
-    // Init scoring
-    DATA_Scoring scoring = Init_Scoring(config, ct->Nbr_voxels, 0);
+      if(config->Stat_uncertainty == 0.0){
+        if(batch < 5) printf(" %.1f %% \n", batch*(100.0/MIN_NUM_BATCH));
+        else printf(" %.1f %% (stat uncertainty: %.2f %%) \n", batch*(100.0/MIN_NUM_BATCH), stat_uncertainty*100);
+      }
+      else{
+        if(batch < 5) printf("batch %d completed \n", batch);
+        else printf("batch %d completed (stat uncertainty: %.2f %%) \n", batch, stat_uncertainty*100);
 
-
-    // Init particle stacks
-    Hadron hadron;
-    Init_particles(&hadron);
-    Hadron_buffer HadronToSimulate[100];
-    int Nbr_HadronToSimulate = 0;
-
-    // variables
-    int i, count, stop = 0;
-    float progress_binning = 10.0;
-    float progress_interval = progress_binning * config->Num_Primaries / 100;
-    float progress_next = progress_interval;
-
-
-    // Compute simulation
-    while(stop == 0){
-      for(i=0; i<VLENGTH; i++){
-	if(hadron.v_type[i] == Unknown){
-
-	  if(Nbr_HadronToSimulate > 0){
-	    Nbr_HadronToSimulate -= 1;
-	    Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
-	  }
-
-	  else if(Nbr_simulated_primaries < config->Num_Primaries){
-	    #pragma omp atomic
-	    Nbr_simulated_primaries += VLENGTH;
-
-	    //Generate_particle(&hadron, i, BeamPOSx, BeamPOSy, BeamPOSz, PEnergy*UMeV);
-	    Generate_PBS_particle(HadronToSimulate, &Nbr_HadronToSimulate, ct->Length, plan, machine, RNDstream, config, material);
-	    if(Nbr_HadronToSimulate > 0){
-	      Nbr_HadronToSimulate -= 1;
-	      Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
-	    }
-	  }
-
-	  else{
-	    count = __sec_reduce_add(hadron.v_type[vALL]);
-	    if(count == 0) stop = 1;
-	  }
-
-	  if(tid == 0){
-	    if(config->Robustness_Mode == 0 && config->Beamlet_Mode == 0 && Nbr_simulated_primaries > progress_next){
-	      printf(" %.1f %% \n", floor(Nbr_simulated_primaries/progress_interval)*progress_binning);
-	      fflush(stdout);
-	      progress_next += progress_interval;
-	    }
-	  }
-
-	}
+	if(batch == Num_batch && stat_uncertainty*100 > config->Stat_uncertainty)  Num_batch++;
       }
 
-      hadron_step(&hadron, &scoring, material, ct, HadronToSimulate, &Nbr_HadronToSimulate, RNDstream, config);
+      batch++;
     }
 
-    if(tid == 0 && config->Robustness_Mode == 0 && config->Beamlet_Mode == 0) printf(" 100.0 %% \n");
+  }
 
-    // Agreggate results
+  else{  // no uncertainty evaluation (1 batch)
 
-/*
-    #pragma omp critical
-    {
-      int l;
-      for(l=0; l<ct->Nbr_voxels; l++){
-        Tot_scoring.energy[l] += scoring.energy[l];
-        if(config->Score_PromptGammas == 1){
-          Tot_scoring.PG_particles[l] += scoring.PG_particles[l];
-	}
-      }
-      if(config->Score_PromptGammas == 1){
-        for(l=0; l<config->PG_Spectrum_NumBin; l++){
-          Tot_scoring.PG_spectrum[l] += scoring.PG_spectrum[l];
-        }
-      }
-    }
-*/
+    Num_simulated_primaries += Simulation_loop(config, material, ct, plan, machine, Fields, &Tot_scoring, (unsigned long)config->Num_Primaries);
 
-    ptr_energy_scoring[tid] = scoring.energy;
-    if(config->Score_PromptGammas == 1){
-      ptr_PG_scoring[tid] = scoring.PG_particles;
-      ptr_PG_spectrum[tid] = scoring.PG_spectrum;
-    }
-    if(config->Score_LET == 1){
-      ptr_LET_scoring[tid] = scoring.LET;
-      ptr_LET_denominator[tid] = scoring.LET_denominator;
-    }
+  }
 
-    int k,p;
+  PostProcess_Scoring(&Tot_scoring, ct, material, plan->normalization_factor, Num_simulated_primaries, config); // convert energy to dose per proton, etc...
+  
+  time_MC = omp_get_wtime();
 
-    #pragma omp barrier
-    time_MC = omp_get_wtime();
-
-    #pragma omp for
-    for(k=0; k<ct->Nbr_voxels; ++k){
-      for(p=0; p<config->Num_Threads; ++p){
-         Tot_scoring.energy[k] += ptr_energy_scoring[p][k]; 
-	 if(config->Score_PromptGammas == 1){
-           Tot_scoring.PG_particles[k] += ptr_PG_scoring[p][k];   
-	 }
-      }
-    }
-
-    if(config->Score_PromptGammas == 1){
-      #pragma omp for
-      for(k=0; k<config->PG_Spectrum_NumBin; ++k){
-        for(p=0; p<config->Num_Threads; ++p){
-          Tot_scoring.PG_spectrum[k] += ptr_PG_spectrum[p][k]; 
-        }
-      }
-    }
-
-    if(config->Score_LET == 1){
-      #pragma omp for
-      for(k=0; k<ct->Nbr_voxels; ++k){
-        for(p=0; p<config->Num_Threads; ++p){
-	 Tot_scoring.LET[k] += ptr_LET_scoring[p][k];
-	 Tot_scoring.LET_denominator[k] += ptr_LET_denominator[p][k];
-        }
-      }
-    }
-
-
-    // Delete dynamic variables
-    Free_Scoring(&scoring);
-
-  }  // fin Parallelisation
-
-
-  // Scoring post processing: (convert energy to dose per proton, etc...)
-  PostProcess_Scoring(&Tot_scoring, ct, material, plan->normalization_factor, Nbr_simulated_primaries, config);
-
-
-  // 4D Accumulation:
+  // Accumulation of multiple 4D phases and fractions (if required):
 
   int export_results = 0;
   static VAR_SCORING *energy_accumulation = NULL;
@@ -414,8 +296,8 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
   time_end = omp_get_wtime();
 
   if(config->Robustness_Mode == 0 && config->Beamlet_Mode == 0){
-    if(config->Particle_Generated_outside != 0) printf("\nNbr primaries simulated: %lu (%u generated outside the geometry) \n", Nbr_simulated_primaries, config->Particle_Generated_outside);
-    else printf("\nNbr primaries simulated: %lu \n", Nbr_simulated_primaries);
+    if(config->Particle_Generated_outside != 0) printf("\nNbr primaries simulated: %lu (%u generated outside the geometry) \n", Num_simulated_primaries, config->Particle_Generated_outside);
+    else printf("\nNbr primaries simulated: %lu \n", Num_simulated_primaries);
   }
 
   printf("MC computation time: %f s \n", (time_MC-time_init));
@@ -424,6 +306,178 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
   // Delete dynamic variables
   Free_Scoring(&Tot_scoring);
 
+}
 
+
+unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT *ct, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, DATA_Scoring *Tot_scoring, unsigned long Num_primaries){
+
+  unsigned long Num_simulated_primaries = 0;
+
+  VAR_SCORING *ptr_energy_scoring[config->Num_Threads];
+  VAR_SCORING *ptr_PG_scoring[config->Num_Threads];
+  VAR_SCORING *ptr_PG_spectrum[config->Num_Threads];
+  VAR_SCORING *ptr_LET_scoring[config->Num_Threads];
+  VAR_SCORING *ptr_LET_denominator[config->Num_Threads];
+
+  // Parallelisation
+  #pragma omp parallel shared(config, material, ct, plan, machine, Fields, Num_simulated_primaries, Tot_scoring, ptr_energy_scoring, ptr_PG_scoring, ptr_PG_spectrum, ptr_LET_scoring, ptr_LET_denominator)
+  {
+    int tid = omp_get_thread_num();
+
+    // Init RNG
+    VSLStreamStatePtr RNDstream;				// variable for the random number generator
+    ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// variable that contains random numbers
+    if(config->RNG_Seed == 0){
+      vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+tid*10000);	// initialize the RNG for each thread individually with a seed = time+thread_id*10000
+    }
+    else{
+      vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+tid*10000);
+    }
+    rand_uniform(RNDstream, v_rnd);				// the RNG is called here because random numbers seems not well distributed the first time.
+
+    // Init scoring
+    DATA_Scoring scoring = Init_Scoring(config, ct->Nbr_voxels, 0);
+
+
+    // Init particle stacks
+    Hadron hadron;
+    Init_particles(&hadron);
+    Hadron_buffer HadronToSimulate[100];
+    int Nbr_HadronToSimulate = 0;
+
+    // variables
+    int i, count, stop = 0;
+    float progress_binning = 10.0;
+    float progress_interval = progress_binning * Num_primaries / 100;
+    float progress_next = progress_interval;
+
+    int display_progress;
+    if(config->Compute_stat_uncertainty == 0 && (config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) && config->Robustness_Mode == 0 && config->Beamlet_Mode == 0) display_progress = 1;
+    else display_progress = 0;
+
+
+    // Compute simulation
+    while(stop == 0){
+      for(i=0; i<VLENGTH; i++){
+	if(hadron.v_type[i] == Unknown){
+
+	  if(Nbr_HadronToSimulate > 0){
+	    Nbr_HadronToSimulate -= 1;
+	    Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
+	  }
+
+	  else if(Num_simulated_primaries < Num_primaries){
+	    #pragma omp atomic
+	    Num_simulated_primaries += VLENGTH;
+
+	    //Generate_particle(&hadron, i, BeamPOSx, BeamPOSy, BeamPOSz, PEnergy*UMeV);
+	    Generate_PBS_particle(HadronToSimulate, &Nbr_HadronToSimulate, ct->Length, plan, machine, RNDstream, config, material);
+	    if(Nbr_HadronToSimulate > 0){
+	      Nbr_HadronToSimulate -= 1;
+	      Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
+	    }
+	  }
+
+	  else{
+	    count = __sec_reduce_add(hadron.v_type[vALL]);
+	    if(count == 0) stop = 1;
+	  }
+
+	  if(tid == 0 && display_progress == 1 && Num_simulated_primaries > progress_next){
+	    printf(" %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
+	    fflush(stdout);
+	    progress_next += progress_interval;
+	  }
+
+/*
+	  if(tid == 0){
+	    if(config->Robustness_Mode == 0 && config->Beamlet_Mode == 0 && Num_simulated_primaries > progress_next){
+	      printf(" %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
+	      fflush(stdout);
+	      progress_next += progress_interval;
+	    }
+	  }
+*/
+	}
+      }
+
+      hadron_step(&hadron, &scoring, material, ct, HadronToSimulate, &Nbr_HadronToSimulate, RNDstream, config);
+    }
+
+    if(tid == 0 && display_progress == 1) printf(" 100.0 %% \n");
+
+
+//    if(tid == 0 && config->Robustness_Mode == 0 && config->Beamlet_Mode == 0) printf(" 100.0 %% \n");
+
+    // Agreggate results
+
+/*
+    #pragma omp critical
+    {
+      int l;
+      for(l=0; l<ct->Nbr_voxels; l++){
+        Tot_scoring.energy[l] += scoring.energy[l];
+        if(config->Score_PromptGammas == 1){
+          Tot_scoring.PG_particles[l] += scoring.PG_particles[l];
+	}
+      }
+      if(config->Score_PromptGammas == 1){
+        for(l=0; l<config->PG_Spectrum_NumBin; l++){
+          Tot_scoring.PG_spectrum[l] += scoring.PG_spectrum[l];
+        }
+      }
+    }
+*/
+
+    ptr_energy_scoring[tid] = scoring.energy;
+    if(config->Score_PromptGammas == 1){
+      ptr_PG_scoring[tid] = scoring.PG_particles;
+      ptr_PG_spectrum[tid] = scoring.PG_spectrum;
+    }
+    if(config->Score_LET == 1){
+      ptr_LET_scoring[tid] = scoring.LET;
+      ptr_LET_denominator[tid] = scoring.LET_denominator;
+    }
+
+    int k,p;
+
+    #pragma omp barrier
+
+    #pragma omp for
+    for(k=0; k<ct->Nbr_voxels; ++k){
+      for(p=0; p<config->Num_Threads; ++p){
+         Tot_scoring->energy[k] += ptr_energy_scoring[p][k]; 
+	 if(config->Score_PromptGammas == 1){
+           Tot_scoring->PG_particles[k] += ptr_PG_scoring[p][k];   
+	 }
+      }
+    }
+
+    if(config->Score_PromptGammas == 1){
+      #pragma omp for
+      for(k=0; k<config->PG_Spectrum_NumBin; ++k){
+        for(p=0; p<config->Num_Threads; ++p){
+          Tot_scoring->PG_spectrum[k] += ptr_PG_spectrum[p][k]; 
+        }
+      }
+    }
+
+    if(config->Score_LET == 1){
+      #pragma omp for
+      for(k=0; k<ct->Nbr_voxels; ++k){
+        for(p=0; p<config->Num_Threads; ++p){
+	 Tot_scoring->LET[k] += ptr_LET_scoring[p][k];
+	 Tot_scoring->LET_denominator[k] += ptr_LET_denominator[p][k];
+        }
+      }
+    }
+
+
+    // Delete dynamic variables
+    Free_Scoring(&scoring);
+
+  }  // end of Parallelization
+
+  return Num_simulated_primaries;
 
 }

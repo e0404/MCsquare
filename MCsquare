@@ -11,13 +11,13 @@ if [ "$(uname)" == "Darwin" ]; then
   		else $This_Dir/MCsquare_mac_NoArch
 	fi
 else
-	if cat /proc/cpuinfo | grep --quiet avx512
+	if grep --quiet avx512 /proc/cpuinfo
   		then $This_Dir/MCsquare_linux_avx512
-	elif cat /proc/cpuinfo | grep --quiet avx2
+	elif grep --quiet avx2 /proc/cpuinfo
 		then $This_Dir/MCsquare_linux_avx2
-	elif cat /proc/cpuinfo | grep --quiet avx
+	elif grep --quiet avx /proc/cpuinfo
 		then $This_Dir/MCsquare_linux_avx
-	elif cat /proc/cpuinfo | grep --quiet sse4
+	elif grep --quiet sse4 /proc/cpuinfo
 		then $This_Dir/MCsquare_linux_sse4
   	else $This_Dir/MCsquare_linux
 	fi

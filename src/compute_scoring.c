@@ -15,10 +15,19 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 DATA_Scoring Init_Scoring(DATA_config *config, int Nbr_voxels, int init_dose){
 
   DATA_Scoring scoring;
+
+  scoring.Nbr_voxels = Nbr_voxels;
+
   scoring.energy = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
 
-  if(init_dose > 0) scoring.dose = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
-  else scoring.dose = NULL;
+  if(init_dose > 0){
+    scoring.dose = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
+    scoring.dose_squared = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
+  }
+  else{
+    scoring.dose = NULL;
+    scoring.dose_squared = NULL;
+  }
 
   if(config->Score_PromptGammas == 1){
     scoring.PG_particles = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
@@ -104,10 +113,61 @@ void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material
 }
 
 
+VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_CT *ct, int Num_batch, DATA_config *config){
+
+  double voxel_volume = ct->VoxelLength[0]*ct->VoxelLength[1]*ct->VoxelLength[2];
+  VAR_SCORING tmp, sigma=0, max_dose=0;
+  int count=0;
+
+  #pragma omp parallel for reduction(max: max_dose)
+  for(int j=0; j<ct->Nbr_voxels; j++){
+    batch->dose[j] = batch->energy[j] / (voxel_volume*ct->density[j]);
+    Tot_scoring->energy[j] += batch->energy[j];
+    Tot_scoring->dose[j] += batch->dose[j];
+    Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
+    if(ct->density[j] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
+  }
+
+  if(config->Score_LET == 1){
+    #pragma omp parallel for
+    for(int j=0; j<ct->Nbr_voxels; j++){
+      Tot_scoring->LET[j] += batch->LET[j];
+      Tot_scoring->LET_denominator[j] += batch->LET_denominator[j];
+    }
+  }
+
+  if(config->Score_PromptGammas == 1){
+    #pragma omp parallel for
+    for(int j=0; j<ct->Nbr_voxels; j++){
+      Tot_scoring->PG_particles[j] += batch->PG_particles[j];
+    }
+
+    #pragma omp parallel for
+    for(int j=0; j<config->PG_Spectrum_NumBin; j++) Tot_scoring->PG_spectrum[j] += batch->PG_spectrum[j];
+  }
+
+  count = 0;
+  for(int j=0; j<ct->Nbr_voxels; j++){
+    if(Tot_scoring->dose[j] > 0.5*max_dose){
+      //sigma += sqrt(Tot_scoring->dose_squared[j] - Tot_scoring->dose[j]*Tot_scoring->dose[j]/Num_batch) / (Tot_scoring->dose[j]/Num_batch);
+      sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
+      count++;
+    }
+  }
+
+  //printf("count = %d \n", count);
+
+  sigma = sigma / (count*Num_batch);
+
+  return sigma;
+}
+
+
 void Free_Scoring(DATA_Scoring *scoring){
 
   if(scoring->energy != NULL) free(scoring->energy);
   if(scoring->dose != NULL) free(scoring->dose);
+  if(scoring->dose_squared != NULL) free(scoring->dose_squared);
 
   if(scoring->PG_particles != NULL) free(scoring->PG_particles);
   if(scoring->PG_spectrum != NULL) free(scoring->PG_spectrum);

@@ -6,8 +6,8 @@
 
 ### Simulation parameters:
 Num_Threads 	0		# Number of parallel calculation threads. Default: 0 = max available threads
-RNG_Seed	0		# Seed for the random number generator (deterministic result only with single thread). Default: 0 = seed based on the time
-Num_Primaries 	1e6		# Number of primary protons to simulate. Default: 1e7
+RNG_Seed	0		# Seed for the random number generator (deterministic result only with single thread). Default: 0 = seed automaticly defined from run time
+Num_Primaries 	1e6		# Minimum number of primary protons to simulate. Default: 1e7
 E_Cut_Pro	0.5		# Energy cut (in MeV) below which heavy charged particles are locally absorbed. Default: 0.5
 D_Max		0.2		# Maximum distance between two steps (cm). Default: 0.2
 Epsilon_Max	0.25		# Fractional energy loss (dE/T) per step. Default: 0.25
@@ -95,4 +95,6 @@ Dose_to_Water_conversion	Disabled # Select the method employed to convert simula
 Dose_Segmentation			False	# Enable/Disable a segmentation of the dose map based on a density thresholding (remove dose artifacts in the air). Default: False
 Density_Threshold_for_Segmentation	0.01	# Density threshold employed for the segmentation (in g/cm3). Default: 0.01
 
+Compute_stat_uncertainty	True	# Enable/Disable the estimation of statistical uncertainty. Default: True
+Stat_uncertainty 		0.0	# Maximum statistical uncertainty (in percent). Default: 0.0 = no maximum uncertainty (number of proton = Num_Primaries)
 

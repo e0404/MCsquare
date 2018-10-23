@@ -153,10 +153,12 @@ typedef struct DATA_Scoring DATA_Scoring;
 struct DATA_Scoring{
 	VAR_SCORING *energy;
 	VAR_SCORING *dose;
+	VAR_SCORING *dose_squared;
 	VAR_SCORING *PG_particles;
 	VAR_SCORING *PG_spectrum;
 	VAR_SCORING *LET;
 	VAR_SCORING *LET_denominator;
+	int Nbr_voxels;
 };
 
 
@@ -305,6 +307,8 @@ struct DATA_config{
 	int DoseToWater;
 	unsigned int Dose_Segmentation;
 	VAR_DATA Segmentation_Density_Threshold;
+	unsigned int Compute_stat_uncertainty;
+	VAR_DATA Stat_uncertainty;
 
 	// Internal variables
 	unsigned int Particle_Generated_outside;

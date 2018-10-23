@@ -21,6 +21,7 @@ DATA_Scoring Init_Scoring(DATA_config *config, int Nbr_voxels, int init_dose);
 void Energy_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE SPR);
 void LET_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config);
 void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material, VAR_COMPUTE normalization, unsigned long Nbr_simulated_primaries, DATA_config *config);
+VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_CT *ct, int Num_batch, DATA_config *config);
 void Free_Scoring(DATA_Scoring *scoring);
 
 #endif

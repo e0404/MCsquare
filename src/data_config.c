@@ -15,7 +15,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 DATA_config_dictionary *Init_Config(DATA_config *config){
 
-  unsigned int Num_Config_Tags = 64;
+  unsigned int Num_Config_Tags = 66;
 
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
@@ -83,6 +83,8 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_ureal_Config_element("Random_Amplitude_Error", &config_dictionary[61], &config->Random_Amplitude_Error, 1, 5, 0.0, 200);
   Add_bool_Config_element("Export_Beam_dose", &config_dictionary[62], &config->Export_Beam_dose, 1, 0);
   Add_uint_Config_element("Num_Random_Scenarios", &config_dictionary[63], &config->Num_random_scenarios, 1, 100, 1, UINT_MAX);
+  Add_bool_Config_element("Compute_stat_uncertainty", &config_dictionary[64], &config->Compute_stat_uncertainty, 1, 1);
+  Add_ureal_Config_element("Stat_uncertainty", &config_dictionary[65], &config->Stat_uncertainty, 1, 0.0, 0.0, 100.0);
 
 
   return config_dictionary;
@@ -530,6 +532,9 @@ printf("Dose_to_Water_conversion = %d \n\n", config->DoseToWater);
 
 printf("Dose_Segmentation = %u \n", config->Dose_Segmentation);
 printf("Segmentation_Density_Threshold = %f \n\n", config->Segmentation_Density_Threshold);
+
+printf("Compute_stat_uncertainty = %u \n", config->Compute_stat_uncertainty);
+printf("Stat_uncertainty = %f \n", config->Stat_uncertainty);
 }
 
 
