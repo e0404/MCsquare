@@ -311,6 +311,9 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 
 unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT *ct, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, DATA_Scoring *Tot_scoring, unsigned long Num_primaries){
 
+  static int Num_call = 0;
+  Num_call++;
+
   unsigned long Num_simulated_primaries = 0;
 
   VAR_SCORING *ptr_energy_scoring[config->Num_Threads];
@@ -328,10 +331,10 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     VSLStreamStatePtr RNDstream;				// variable for the random number generator
     ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// variable that contains random numbers
     if(config->RNG_Seed == 0){
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+tid*10000);	// initialize the RNG for each thread individually with a seed = time+thread_id*10000
+      vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+tid*1e4+Num_call*1e5);	// initialize the RNG for each thread individually with a seed = time+thread_id*10000
     }
     else{
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+tid*10000);
+      vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+tid*1e4+Num_call*1e5);
     }
     rand_uniform(RNDstream, v_rnd);				// the RNG is called here because random numbers seems not well distributed the first time.
 
