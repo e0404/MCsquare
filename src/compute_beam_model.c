@@ -57,7 +57,7 @@ return weight*Gain;
 }
 
 
-void deviates (double U[2][2], double sigmas[2], double R[2], VSLStreamStatePtr RNG_Stream)
+void deviates (double U[2][2], double sigmas[2], double R[2], VAR_RND_SEED RNG_Stream)
 {
     // Returns vector of gaussian randoms based on sigmas, rotated by U,
     // with means of 0.
@@ -305,7 +305,7 @@ void rotateZ (double angle, double vector[3])
 }
 
 
-void Sample_particle (Hadron_buffer *hadron, VAR_DATA CT_Length[3], machine_parameters *mac, ControlPoint_parameters *ControlPoint, spot_parameters *spot, VSLStreamStatePtr RNG_Stream)
+void Sample_particle (Hadron_buffer *hadron, VAR_DATA CT_Length[3], machine_parameters *mac, ControlPoint_parameters *ControlPoint, spot_parameters *spot, VAR_RND_SEED RNG_Stream)
 {
    //here we need to sample particle parameters    
 
@@ -598,11 +598,15 @@ void Transport_to_RangeShifter(Hadron_buffer *hadron, ControlPoint_parameters **
 }
 
 
-void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_Length[3], plan_parameters *plan, machine_parameters *machine, VSLStreamStatePtr RNG_Stream, DATA_config *config, Materials *material){
+void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_Length[3], plan_parameters *plan, machine_parameters *machine, VAR_RND_SEED RNG_Stream, DATA_config *config, Materials *material){
 
   ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];
   rand_uniform(RNG_Stream, v_rnd);
-  v_rnd[vALL] = v_rnd[vALL] * plan->cumulative_weight;
+  
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_rnd[v] = v_rnd[v] * plan->cumulative_weight;
+  }
 
   ALIGNED_(64) int v_field_index[VLENGTH];
   ALIGNED_(64) int v_ControlPoint_index[VLENGTH];

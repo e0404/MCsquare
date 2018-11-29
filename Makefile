@@ -83,7 +83,7 @@ profile : $(SRC)
 	$(CC) $(SRC) $(LIB) $(OPTIONS) $(LIB_PATH) $(FULL_VERSION) -p -g -o profile
 
 MC2_gcc : $(SRC)
-	gcc $(SRC) -fcilkplus -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lmkl_vml_def -lm $(OPTIONS) $(LIB_PATH) -m64 -march=corei7-avx -o MC2_gcc
+	gcc $(SRC) -fopenmp -lm $(OPTIONS) $(LIB_PATH) -m64 -march=corei7-avx -o MC2_gcc
 
 debug_gcc : $(SRC)
 	gcc $(SRC) -fcilkplus -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lmkl_vml_def -lm $(OPTIONS) $(LIB_PATH) -g -ggdb -rdynamic -o debug_gcc

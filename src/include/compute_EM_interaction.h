@@ -31,12 +31,12 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 void Total_Stop_Pow(Hadron *hadron, Materials *material, int *v_material_label, VAR_COMPUTE *v_stop_pow);
 void Total_Hard_Cross_Section(Hadron *hadron, Materials *material, int *v_material_label, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, VAR_COMPUTE Te_min, VAR_COMPUTE *v_dE_max, DATA_config *config, VAR_COMPUTE *v_result);
-void get_interaction_type(Hadron *hadron, Materials *material, int *v_material_label, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, VAR_COMPUTE Te_min, VAR_COMPUTE *v_dE_max, VAR_COMPUTE *v_tot_section, VSLStreamStatePtr RNG_Stream, DATA_config *config, int *v_result);
+void get_interaction_type(Hadron *hadron, Materials *material, int *v_material_label, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, VAR_COMPUTE Te_min, VAR_COMPUTE *v_dE_max, VAR_COMPUTE *v_tot_section, VAR_RND_SEED RNG_Stream, DATA_config *config, int *v_result);
 void cross_section_ionization(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE Te_min, VAR_COMPUTE *v_result);
 void Compute_L(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Materials *material, VAR_COMPUTE Te_min, int *v_material_label, VAR_COMPUTE *v_result);
 void Compute_dE2(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Materials *material, VAR_COMPUTE Te_min, int *v_material_label, VAR_COMPUTE *v_s, VAR_COMPUTE *v_result);
 void Compute_Energy_straggling(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE Te_min, VAR_COMPUTE *v_s, VAR_COMPUTE *v_result);
 void Compute_MS_Fippel(Hadron *hadron, VAR_COMPUTE *v_s, VAR_COMPUTE *v_X0, VAR_COMPUTE *v_result);
-void Compute_Ionization_Energy(Hadron *hadron, VAR_COMPUTE Te_min, VSLStreamStatePtr RNG_Stream, VAR_COMPUTE *v_result);
+void Compute_Ionization_Energy(Hadron *hadron, VAR_COMPUTE Te_min, VAR_RND_SEED RNG_Stream, VAR_COMPUTE *v_result);
 
 #endif

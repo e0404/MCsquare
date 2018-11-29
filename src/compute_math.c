@@ -18,10 +18,21 @@ void vector_floor(VAR_COMPUTE *v_vec, VAR_COMPUTE *v_result){
   __assume_aligned(v_vec, 64);
   __assume_aligned(v_result, 64);
 
-  #if VAR_COMPUTE_PRECISION==1
-    vsFloor(VLENGTH, v_vec, v_result);
+  #if USE_MKL_LIB==1
+
+    #if VAR_COMPUTE_PRECISION==1
+      vsFloor(VLENGTH, v_vec, v_result);
+    #else
+      vdFloor(VLENGTH, v_vec, v_result);
+    #endif
+
   #else
-    vdFloor(VLENGTH, v_vec, v_result);
+
+    int i;
+    for(i=0; i<VLENGTH; i++){
+      v_result[i] = floor(v_vec[i]);
+    }
+
   #endif
 
   return;
@@ -45,13 +56,10 @@ void vec_sign(VAR_COMPUTE *v_vec, VAR_COMPUTE *v_sign){
   __assume_aligned(v_vec, 64);
   __assume_aligned(v_sign, 64);
 
-/*
-  if(v_vec[vALL] > 0) v_sign[vALL] = 1;
-  else if(v_vec[vALL] < 0) v_sign[vALL] = -1;
-  else v_sign[vALL] = 0;
-*/
-
-  v_sign[vALL] = (v_vec[vALL] > 0.0) - (v_vec[vALL] < 0.0);
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_sign[v] = (v_vec[v] > 0.0) - (v_vec[v] < 0.0);
+  }
 
   return;
 }
@@ -82,7 +90,10 @@ void vec_Linear_Interpolation(VAR_COMPUTE *v_x, VAR_COMPUTE *v_x1, VAR_COMPUTE *
   // Calcul de la pente p = (y2 - y1) / (x2 - x1)
   // Calcul de la valeur interpolée y = p*(x-x1) + y1
 
-  v_result[vALL] = ((v_y2[vALL] - v_y1[vALL]) / (v_x2[vALL] - v_x1[vALL]))*(v_x[vALL] - v_x1[vALL]) + v_y1[vALL];
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_result[v] = ((v_y2[v] - v_y1[v]) / (v_x2[v] - v_x1[v]))*(v_x[v] - v_x1[v]) + v_y1[v];
+  }
 
   return;
 }
@@ -220,7 +231,10 @@ inline void my_log(VAR_COMPUTE *v_data, VAR_COMPUTE *v_result){
   __assume_aligned(v_data, 64);
   __assume_aligned(v_result, 64);
 
-//  v_result[vALL] = log(v_data[vALL]);
+//  #pragma omp simd
+//  for(int v = 0; v<VLENGTH; v++){
+//    v_result[v] = log(v_data[v]);
+//  }
 
 //  vsLog10( VLENGTH, v_data, v_result );
 
@@ -229,19 +243,25 @@ inline void my_log(VAR_COMPUTE *v_data, VAR_COMPUTE *v_result){
 	ALIGNED_(64) uint32_t i[VLENGTH]; 
 	} vx;
 
-  vx.f[vALL] = (float)v_data[vALL];
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    vx.f[v] = (float)v_data[v];
+  }
 
   union { 
 	ALIGNED_(64) uint32_t i[VLENGTH]; 
 	ALIGNED_(64) float f[VLENGTH];
 	} mx;
 
-  mx.i[vALL] = (vx.i[vALL] & 0x007FFFFF) | 0x3f000000;
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    mx.i[v] = (vx.i[v] & 0x007FFFFF) | 0x3f000000;
 
-  v_result[vALL] = vx.i[vALL];
-  v_result[vALL] *= 1.1920928955078125e-7f;
-  v_result[vALL] = v_result[vALL] - 124.22551499f - 1.498030302f * mx.f[vALL] - 1.72587999f / (0.3520887068f + mx.f[vALL]);
-  v_result[vALL] *= 0.69314718f;
+    v_result[v] = vx.i[v];
+    v_result[v] *= 1.1920928955078125e-7f;
+    v_result[v] = v_result[v] - 124.22551499f - 1.498030302f * mx.f[v] - 1.72587999f / (0.3520887068f + mx.f[v]);
+    v_result[v] *= 0.69314718f;
+  }
 
   return;
 }

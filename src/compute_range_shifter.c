@@ -93,42 +93,45 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
 }
 
 
-void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters **layer_data, field_parameters **field_data, int *Nbr_hadrons, DATA_config *config, machine_parameters *machine, Materials *material, VSLStreamStatePtr RNG_Stream){
+void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters **layer_data, field_parameters **field_data, int *Nbr_hadrons, DATA_config *config, machine_parameters *machine, Materials *material, VAR_RND_SEED RNG_Stream){
 
   Hadron hadron;
   Init_particles(&hadron);
 
   int Nbr_HadronSimulated = 0;
-  int i, j, count;
+  int j, count;
 
   ALIGNED_(64) VAR_COMPUTE RS_exit_position[VLENGTH];
   ALIGNED_(64) int Hadron_ID[VLENGTH];
 
   while(1){
-    for(i=0; i<VLENGTH; i++){
-      if(hadron.v_type[i] != Unknown && hadron.v_z[i] <= RS_exit_position[i]){
-	Extract_particle(&hadron_list[Hadron_ID[i]], i, &hadron);
-	hadron.v_type[i] = Unknown;
+    count = 0;
+
+    #pragma omp simd reduction(+:count)
+    for(int v = 0; v<VLENGTH; v++){
+      if(hadron.v_type[v] != Unknown && hadron.v_z[v] <= RS_exit_position[v]){
+	Extract_particle(&hadron_list[Hadron_ID[v]], v, &hadron);
+	hadron.v_type[v] = Unknown;
       }
 
-      if(hadron.v_type[i] == Unknown){
+      if(hadron.v_type[v] == Unknown){
 	for(j=Nbr_HadronSimulated; j<*Nbr_hadrons; j++){
 	  if(layer_data[j]->RS_setting == OUT){
 	    Nbr_HadronSimulated += 1;
 	    continue;
 	  }
 	  else{
-	    Insert_particle(&hadron, i, &hadron_list[Nbr_HadronSimulated]);
-	    RS_exit_position[i] = layer_data[j]->RS_IsocenterDist;
-	    Hadron_ID[i] = j;
+	    Insert_particle(&hadron, v, &hadron_list[Nbr_HadronSimulated]);
+	    RS_exit_position[v] = layer_data[j]->RS_IsocenterDist;
+	    Hadron_ID[v] = j;
 	    Nbr_HadronSimulated += 1;
 	    break;
 	  }
 	} // for loop HadronSimulated
       } // if unknown
+      count += hadron.v_type[v];
     } // for loop VLENGTH
 
-    count = __sec_reduce_add(hadron.v_type[vALL]);
     if(count == 0){
       break;
     }

@@ -21,6 +21,6 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, Materials *material, DATA_config *config);
 void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, Materials *material);
-void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters **layer_data, field_parameters **field_data, int *Nbr_hadrons, DATA_config *config, machine_parameters *machine, Materials *material, VSLStreamStatePtr RNG_Stream);
+void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters **layer_data, field_parameters **field_data, int *Nbr_hadrons, DATA_config *config, machine_parameters *machine, Materials *material, VAR_RND_SEED RNG_Stream);
 
 #endif

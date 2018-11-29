@@ -12,7 +12,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/compute_treatment_uncertainties.h"
 
-void Translation_uncertainty(Hadron_buffer *hadron, DATA_config *config, VSLStreamStatePtr RNG_Stream){
+void Translation_uncertainty(Hadron_buffer *hadron, DATA_config *config, VAR_RND_SEED RNG_Stream){
 
   int i;
 

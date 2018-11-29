@@ -22,7 +22,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "compute_math.h"
 #include "data_ct.h"
 
-void Translation_uncertainty(Hadron_buffer *hadron, DATA_config *config, VSLStreamStatePtr RNG_Stream);
+void Translation_uncertainty(Hadron_buffer *hadron, DATA_config *config, VAR_RND_SEED RNG_Stream);
 void Density_scaling(VAR_DATA *Nominal_density, VAR_DATA *Scaled_density, int Num_voxels, VAR_DATA scaling_factor);
 void Breathing_amplitude_variation(DATA_config *config, DATA_CT *ct, DATA_CT **CT_phases, DATA_4D_Fields *Fields);
 plan_parameters* Spot_Sorting(DATA_config *config, int phase, plan_parameters *Plan);

@@ -13,14 +13,15 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #ifndef H_define
 #define H_define
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <float.h>
 #include <omp.h> 
-#include <mkl_vsl.h>
-#include <mkl.h>
+
+#define USE_MKL_LIB 0
 
 #define VAR_DATA_PRECISION 1	// 1 =  float, 2 = double
 #define VAR_SCORING_PRECISION 1	// 1 =  float, 2 = double
@@ -69,6 +70,15 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #define WATER_LABEL 17
 
+
+#if USE_MKL_LIB==1
+  #include <mkl_vsl.h>
+  #include <mkl.h>
+  #define VAR_RND_SEED VSLStreamStatePtr
+#else
+  #define VAR_RND_SEED unsigned int*
+#endif
+
 #if VAR_DATA_PRECISION==1
   #define VAR_DATA float
 #else
@@ -89,7 +99,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
   #define VLENGTH 8
 #endif
 
-#define vALL 0:VLENGTH
+//#define vALL 0:VLENGTH
 
 // Cross platform compatibility
 #if defined(_MSC_VER)
