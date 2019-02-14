@@ -106,7 +106,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   // Lose energy
   if(hadron->v_type[vALL] == Unknown) v_dE[vALL] = 0;
   hadron->v_T[vALL] = hadron->v_T[vALL] - v_dE[vALL];
-  if(hadron->v_T[vALL] <= (config->Ecut_Pro * UMeV)){
+  if(hadron->v_type[vALL] != Unknown && hadron->v_T[vALL] <= (config->Ecut_Pro * UMeV)){
     hadron->v_type[vALL] = Unknown;
     hadron_list[Hadron_ID[vALL]].type = Unknown;
   }
@@ -146,7 +146,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
     }
   }
 
-  if(hadron->v_T[vALL] <= (config->Ecut_Pro * UMeV)){
+  if(hadron->v_type[vALL] != Unknown && hadron->v_T[vALL] <= (config->Ecut_Pro * UMeV)){
     hadron->v_type[vALL] = Unknown;
     hadron_list[Hadron_ID[vALL]].type = Unknown;
   }

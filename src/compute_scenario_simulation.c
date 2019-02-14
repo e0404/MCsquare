@@ -97,7 +97,7 @@ void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *
 	    sprintf(config->output_robustness_suffix, "_Scenario_%d-%d", config->Current_scenario, config->TotalNumScenarios);
 	    
 	    file_hdl = fopen(file_path, "a");
-	    fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f cm) Random_Setup(%.3f %.3f %.3f cm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, config->Current_Systematic_setup[0], config->Current_Systematic_setup[1], config->Current_Systematic_setup[2], config->Current_Random_setup[0], config->Current_Random_setup[1], config->Current_Random_setup[2], config->Current_Range_error);
+	    fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f mm) Random_Setup(%.3f %.3f %.3f mm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, 10*config->Current_Systematic_setup[0], 10*config->Current_Systematic_setup[1], 10*config->Current_Systematic_setup[2], 10*config->Current_Random_setup[0], 10*config->Current_Random_setup[1], 10*config->Current_Random_setup[2], config->Current_Range_error);
 	    fclose(file_hdl);
 
 	    Scenario_simulation(config, material, ct, CT_phases, plan, machine, Fields);
