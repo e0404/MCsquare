@@ -14,34 +14,44 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, Materials *material, DATA_config *config){
 
-  int i, j, RS_beam_enabled = 0, RS_layer_enabled = 0;
-
+  int i, j, r, RS_beam_enabled = 0, RS_layer_enabled = 0;
   double SPR = 1.0;
-  if(machine->RS_Type != none) SPR = machine->RS_Density * material[machine->RS_Material].Stop_Pow[(int)floor(100/PSTAR_BIN)] / material[config->Water_Material_ID].Stop_Pow[(int)floor(100/PSTAR_BIN)];
 
   for(i=0; i<plan->NumberOfFields; i++){
     if(plan->fields[i].RS_Type != none){
+
+        r = plan->fields[i].RS_num;
+
 	// Check RS type
-	if(plan->fields[i].RS_Type != machine->RS_Type){
+	if(machine->RS_Type[r] == empty){
+      	  for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
+	    plan->fields[i].ControlPoints[j].RS_setting = OUT;
+          }
+	  continue;
+	}
+	else if(plan->fields[i].RS_Type != machine->RS_Type[r]){
 	  printf("\nERROR: The range shifter type for beam %d does not match the BDL description\n", i);
 	  return 1;
 	}
+
 	RS_beam_enabled = 1;
+	SPR = machine->RS_Density[r] * material[machine->RS_Material[r]].Stop_Pow[(int)floor(100/PSTAR_BIN)] / material[config->Water_Material_ID].Stop_Pow[(int)floor(100/PSTAR_BIN)];
+
 	for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
 	  if(plan->fields[i].ControlPoints[j].RS_setting == IN && plan->fields[i].ControlPoints[j].RS_WET > 0){
 	    RS_layer_enabled = 1;
 	    plan->fields[i].ControlPoints[j].RS_Thickness = plan->fields[i].ControlPoints[j].RS_WET / SPR;
 	  }
 	  else{
-	    plan->fields[i].ControlPoints[j].RS_setting == OUT;
-	    plan->fields[i].ControlPoints[j].RS_WET == 0.0;
-	    plan->fields[i].ControlPoints[j].RS_Thickness == 0.0;
+	    plan->fields[i].ControlPoints[j].RS_setting = OUT;
+	    plan->fields[i].ControlPoints[j].RS_WET = 0.0;
+	    plan->fields[i].ControlPoints[j].RS_Thickness = 0.0;
 	  }
 	}
     }
     else{
       for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	plan->fields[i].ControlPoints[j].RS_setting == OUT;
+	plan->fields[i].ControlPoints[j].RS_setting = OUT;
       }
     }
   }
@@ -54,11 +64,20 @@ int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, M
 
 void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, Materials *material){
 
-  int i, j, AlwaysIN, AlwaysOUT, FixedPosition, FixedWET;
+  int i, j, r, AlwaysIN, AlwaysOUT, FixedPosition, FixedWET;
   double FirstPosition, FirstWET, FirstThickness;
 
   for(i=0; i<plan->NumberOfFields; i++){
     if(plan->fields[i].RS_Type != none){
+
+      r = plan->fields[i].RS_num;
+
+      if(machine->RS_Type[r] == empty){
+	printf("\nEmpty range shifter set for beam %d:\n", i);
+	printf("\tRange shifter ID: %s\n", machine->RS_ID[r]);
+	continue;
+      }
+
       FixedPosition = 1;
       FixedWET = 1;
       AlwaysIN = 1;
@@ -78,11 +97,11 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
 	if(plan->fields[i].ControlPoints[j].RS_setting == OUT) AlwaysIN = 0;
       }
       printf("\nRange shifter initialized for beam %d:\n", i);
-      printf("\tRange shifter ID: %s\n", machine->RS_ID);
+      printf("\tRange shifter ID: %s\n", machine->RS_ID[r]);
       if(plan->fields[i].RS_Type == binary) printf("\ttype: binary\n");
       else if(plan->fields[i].RS_Type == analog) printf("\ttype: analog\n");
-      printf("\tMaterial: %s (ID %d)\n", material[machine->RS_Material].Name, machine->RS_Material);
-      printf("\tDensity: %.2lf g/cm3\n", machine->RS_Density);
+      printf("\tMaterial: %s (ID %d)\n", material[machine->RS_Material[r]].Name, machine->RS_Material[r]);
+      printf("\tDensity: %.2lf g/cm3\n", machine->RS_Density[r]);
       if(AlwaysIN == 1) printf("\tEnabled for all layers\n");
       if(AlwaysOUT == 1) printf("\tDisabled for all layers\n");
       if(FixedPosition == 1) printf("\tStatic position: %.2lf cm from isocenter\n", FirstPosition);
@@ -102,7 +121,7 @@ void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters *
   int i, j, count;
 
   ALIGNED_(64) VAR_COMPUTE RS_exit_position[VLENGTH];
-  ALIGNED_(64) int Hadron_ID[VLENGTH];
+  ALIGNED_(64) int Hadron_ID[VLENGTH] = 0;
 
   while(1){
     for(i=0; i<VLENGTH; i++){

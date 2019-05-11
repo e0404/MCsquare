@@ -28,10 +28,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
     fgets(tmp,256,machine);
     fclose(machine);
 
-    mac->RS_defined = 0;
-    mac->RS_Type = none;
-    mac->RS_Density = 0.0;
-    mac->RS_Material = 17;
+    mac->RS_number = 0;
 
     int error;
 
@@ -55,6 +52,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
 int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 
   char read[500], *read_token;
+  int i, current_RS = -1;
 
   FILE *file = fopen(machine_name,"r");
   if(file == NULL){
@@ -62,7 +60,21 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	return 1;
   }
 
-  int i;
+
+  // count number of range shifters defined in the BDL
+  while (fgets(read, 500, file) != NULL){
+    if(strcmp(read, "Range Shifter parameters\n") == 0) mac->RS_number += 1;
+  }
+  rewind(file); // Go back to the beginning of the file
+
+  // create range shifter variables
+  if(mac->RS_number > 0){
+    mac->RS_Density = (double*)malloc(mac->RS_number * sizeof(double));
+    mac->RS_WET = (double*)malloc(mac->RS_number * sizeof(double));
+    mac->RS_Material = (int*)malloc(mac->RS_number * sizeof(int));
+    mac->RS_Type = (enum RangeShifter_type*)malloc(mac->RS_number * sizeof(enum RangeShifter_type));
+    mac->RS_ID = (char**)malloc(mac->RS_number * sizeof(char*));
+  }
 
 
   while (fgets(read, 500, file) != NULL){
@@ -98,12 +110,7 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	mac->mDistanceSMYToIsocenter = atof(read_token);
     }
     else if(strcmp(read, "Range Shifter parameters\n") == 0){
-
-	if(mac->RS_defined == 1){
-		printf("\n Error: only one range shifter should be defined in \"%s\"\n\n", machine_name);
-		return 1;
-	}
-	mac->RS_defined = 1;
+	current_RS += 1;
 
 	while(1){
 	  fgets(read,500,file);
@@ -111,13 +118,17 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	  if(read_token == NULL) break;
 	  else if(strcmp(read_token, "RS_ID") == 0){
 	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(read_token != NULL) strcpy(mac->RS_ID, read_token); 
+	    if(read_token != NULL){
+		mac->RS_ID[current_RS] = (char*)malloc((strlen(read_token)+1) * sizeof(char));
+		strcpy(mac->RS_ID[current_RS], read_token); 
+	    }
 	  }
 	  else if(strcmp(read_token, "RS_type") == 0){
 	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(strcmp(read_token, "none") == 0) mac->RS_Type = none;
-	    else if(strcmp(read_token, "binary") == 0) mac->RS_Type = binary;
-	    else if(strcmp(read_token, "analog") == 0) mac->RS_Type = analog;
+	    if(strcmp(read_token, "none") == 0) mac->RS_Type[current_RS] = none;
+	    else if(strcmp(read_token, "binary") == 0) mac->RS_Type[current_RS] = binary;
+	    else if(strcmp(read_token, "analog") == 0) mac->RS_Type[current_RS] = analog;
+	    else if(strcmp(read_token, "empty") == 0) mac->RS_Type[current_RS] = empty;
 	    else{
 		printf("\n Error: \"%s\" is not a valid value for RS_type in \"%s\"\n\n", read_token, machine_name);
 		return 1;
@@ -129,7 +140,7 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 		printf("\n Error: \"%s\" is not a valid value for RS_material in \"%s\"\n\n", read_token, machine_name);
 		return 1;
 	    }
-	    mac->RS_Material = atoi(read_token);
+	    mac->RS_Material[current_RS] = atoi(read_token);
 	  }
 	  else if(strcmp(read_token, "RS_density") == 0){
 	    read_token = strtok(NULL, "= \t#\r\n");
@@ -137,7 +148,7 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 		printf("\n Error: \"%s\" is not a valid value for RS_density in \"%s\"\n\n", read_token, machine_name);
 		return 1;
 	    }
-	    mac->RS_Density = atof(read_token);
+	    mac->RS_Density[current_RS] = atof(read_token);
 	  }
 	  else if(strcmp(read_token, "RS_WET") == 0){
 	    read_token = strtok(NULL, "= \t#\r\n");
@@ -145,7 +156,7 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 		printf("\n Error: \"%s\" is not a valid value for RS_WET in \"%s\"\n\n", read_token, machine_name);
 		return 1;
 	    }
-	    mac->RS_WET = atof(read_token);
+	    mac->RS_WET[current_RS] = atof(read_token);
 	  }
 /*
 	  else if(strcmp(read_token, "RS_position") == 0){
@@ -628,7 +639,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
  {
 
     char read[500], *read_token;
-    int i, j, k, l;
+    int i, j, k, l, r;
     double cumulative_weight = 0;
 
     // variables for Proton_Per_MU interpolation
@@ -730,6 +741,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
 	plan->fields[l].IsocenterPositionZ = 0.0;
 	plan->fields[l].NumberOfControlPoints = 0;
 	plan->fields[l].RS_Type = none;
+	plan->fields[l].RS_num = -1;
 
 	while(fgets(read, 500, plan_file) != NULL){
 	  read_token = strtok(read, " \t\r\n");
@@ -747,6 +759,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
 	    plan->fields[l].IsocenterPositionZ = 0.0;
 	    plan->fields[l].NumberOfControlPoints = 0;
 	    plan->fields[l].RS_Type = none;
+	    plan->fields[l].RS_num = -1;
 	  }
 
 	  if(strcmp(read_token, "###FieldID") == 0){
@@ -798,6 +811,16 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
 	      printf("\n Error: \"%s\" is not a valid value for IsocenterPosition in \"%s\"\n\n", read_token, plan_name);
 	    }
 	    else plan->fields[l].IsocenterPositionZ = atof(read_token);
+	  }
+	  else if(strcmp(read_token, "###RangeShifterID") == 0){
+	    fgets(read, 500, plan_file);
+	    read_token = strtok(read, " \t\r\n");
+	    for(r=0; r<machine->RS_number; r++){
+	      if(strcmp(read_token, machine->RS_ID[r]) == 0){
+		plan->fields[l].RS_num = r;
+		break;
+	      }
+	    }
 	  }
 	  else if(strcmp(read_token, "###RangeShifterType") == 0){
 	    fgets(read, 500, plan_file);

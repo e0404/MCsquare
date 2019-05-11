@@ -52,7 +52,8 @@ struct ControlPoint_parameters
 enum RangeShifter_type{
 	none,
 	binary,
-	analog
+	analog,
+	empty
 } ;
 
 typedef struct field_parameters field_parameters;
@@ -69,6 +70,7 @@ struct field_parameters
     ControlPoint_parameters *ControlPoints;
     VAR_DATA *ControlPoints_cumulative_PDF;
     enum RangeShifter_type RS_Type;
+    int RS_num;
 };
 
 typedef struct plan_parameters plan_parameters;
@@ -101,14 +103,14 @@ struct machine_parameters
     double mDistanceSMYToIsocenter;
 
     // Range shifter parameters
-    int RS_defined;
-    char RS_ID[100];
-    enum RangeShifter_type RS_Type;
+    int RS_number;
+    char **RS_ID;
+    enum RangeShifter_type *RS_Type;
 //    double RS_Position;
 //    double RS_Thickness;
-    double RS_Density;
-    int RS_Material;
-    double RS_WET;
+    double *RS_Density;
+    int *RS_Material;
+    double *RS_WET;
 
     // Loic Grevillot beam model
     int mEnergy_order;
