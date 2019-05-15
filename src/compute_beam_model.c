@@ -533,7 +533,7 @@ void BEV_to_CT_frame(Hadron_buffer *hadron, machine_parameters *mac, field_param
 
 
 
-void Transport_to_CT(Hadron_buffer *hadron, VAR_DATA CT_Length[3]){
+void Transport_to_CT(Hadron_buffer *hadron, VAR_DATA CT_Length[3], DATA_config *config){
 
   if(hadron->x >= 0 && hadron->y >= 0 && hadron->z >= 0 && hadron->x <= CT_Length[0] && hadron->y <= CT_Length[1] && hadron->z <= CT_Length[2]) return;
 
@@ -572,7 +572,7 @@ void Transport_to_CT(Hadron_buffer *hadron, VAR_DATA CT_Length[3]){
   double dE = SP_air * Translation[i];
   
   hadron->T = hadron->T - dE;
-  if(hadron->T < 0) hadron->type = Unknown;
+  if(hadron->T < (config->Ecut_Pro * UMeV)) hadron->type = Unknown;
 
 }
 
@@ -650,7 +650,7 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
     Translation_uncertainty(&New_hadrons[i], config, RNG_Stream);
 //printf("\nAfterSim: translation uncertainty: [%.3f ; %.3f ; %.3f]", New_hadrons[i].x, New_hadrons[i].y, New_hadrons[i].z);
 
-    Transport_to_CT(&New_hadrons[i], CT_Length);
+    Transport_to_CT(&New_hadrons[i], CT_Length, config);
 //printf("\nAfterSim: transport CT: [%.3f ; %.3f ; %.3f]", New_hadrons[i].x, New_hadrons[i].y, New_hadrons[i].z);
 
     if(New_hadrons[i].x < 0 || New_hadrons[i].y < 0 || New_hadrons[i].z < 0 || New_hadrons[i].x > CT_Length[0] || New_hadrons[i].y > CT_Length[1] || New_hadrons[i].z > CT_Length[2] || isnan(New_hadrons[i].x) || isnan(New_hadrons[i].y) || isnan(New_hadrons[i].z)){
