@@ -6,20 +6,20 @@
 
 ### Simulation parameters:
 Num_Threads 	0		# Number of parallel calculation threads. Default: 0 = max available threads
-RNG_Seed	0		# Seed for the random number generator (deterministic result only with single thread). Default: 0 = seed based on the time
-Num_Primaries 	1e6		# Number of primary protons to simulate. Default: 1e7
+RNG_Seed	0		# Seed for the random number generator (deterministic result only with single thread). Default: 0 = seed automaticly defined from run time
+Num_Primaries 	1e6		# Minimum number of primary protons to simulate. Default: 1e7
 E_Cut_Pro	0.5		# Energy cut (in MeV) below which heavy charged particles are locally absorbed. Default: 0.5
-D_Max		0.2		# Maximum distance between two step (cm). Default: 0.2
+D_Max		0.2		# Maximum distance between two steps (cm). Default: 0.2
 Epsilon_Max	0.25		# Fractional energy loss (dE/T) per step. Default: 0.25
 Te_Min		0.05		# Threshold energy (MeV) for the production of secondary electrons (currently locally absorbed). Default: 0.05
 				# As a reference: 200 MeV protons can transfer a maximum energy of 0.5 MeV to δ-electrons which correspond to a range of 7 mm in lung tissues.
 
 ### Input files
-CT_File 			CT.mhd				# Name of the CT file. Default: CT.mhd
-HU_Density_Conversion_File	HU_Density_Conversion.txt	# Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
-HU_Material_Conversion_File	HU_Material_Conversion.txt	# Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
-BDL_Machine_Parameter_File 	IBA_Trento.txt			# Name of the machine parameter file for the beam data library. Default: BDL.txt
-BDL_Plan_File 			PlanPencil.txt			# Name of the plan file for the beam data library. Default: Plan.txt
+CT_File 			CT.mhd				# Path to the CT file. Default: CT.mhd
+HU_Density_Conversion_File	HU_Density_Conversion.txt	# Path to the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
+HU_Material_Conversion_File	HU_Material_Conversion.txt	# Path to the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
+BDL_Machine_Parameter_File 	IBA_Trento.txt			# Path to the machine parameter file for the beam data library. Default: BDL.txt
+BDL_Plan_File 			PlanPencil.txt			# Path to the treatment plan file. Default: Plan.txt
 
 
 ### Physical parameters
@@ -30,8 +30,8 @@ Simulate_Secondary_Alphas	True	# Enable/Disable the simulation of secondary alph
 
 
 ### 4D simulation 
-4D_Mode				False	# Enable/Disable the 4D simulation mode. Default: False
-4D_Dose_Accumulation		False		# Enable/Disable the dose accumulation for all 4D-CT phases. Default: False
+4D_Mode				False		# Enable/Disable the 4D simulation mode. Default: False
+4D_Dose_Accumulation		False		# Enable/Disable the accumulation of the 4D dose on the reference phase. Default: False
 Field_type			Velocity	# Field type: Displacement or Velocity. Default: Velocity
 Create_Ref_from_4DCT		False		# Create the reference phase image from 4D CT images (True), or import the reference image (False). Default: False
 Create_4DCT_from_Ref		False		# Create 4D CT images by deforming the reference phase image (True), or import 4D CT images (False). Default: False
@@ -40,9 +40,10 @@ Breathing_period		7.0		# Period (in seconds) of the breathing motion. Default: 7
 
 
 ### Robustness simulation
-Robustness_Mode			False 	# Enable/Disable the robustness verification mode. Default: False
+Robustness_Mode			False 		# Enable/Disable the robustness verification mode. Default: False
 Scenario_selection		All		# Method for scenario selection: All (simulate all combinations), Random (randomly sample scenarios). Default: All
 Simulate_nominal_plan		True		# Simulate the nominal plan (without any systematic or random uncertainty). Default: True
+Num_Random_Scenarios		100		# Number of uncertainty scenarios to simulate in Random mode. Default: 100
 Systematic_Setup_Error		0.25 0.25 0.25	# Systematic error for the patient setup along the XYZ axes (cm). Default: 0.25 0.25 0.25
 Random_Setup_Error		0.1  0.1  0.1	# Standard deviation of the patient random setup error along the XYZ axes (cm). Default: 0.1 0.1 0.1
 Systematic_Range_Error		3.0		# Systematic error in percent of the proton range (%). Default: 3.0
@@ -58,7 +59,7 @@ Beamlet_Parallelization		False	# Parallelization on beamlet level is sometimes f
 
 
 ### Output parameters
-Output_Directory		Outputs	# Name of the output directory. Default: Outputs
+Output_Directory		Outputs	# Path to the output directory. Default: Outputs
 
 Energy_ASCII_Output		False	# Enable/Disable the output of Energy in ASCII format. Default: False
 Energy_MHD_Output		False	# Enable/Disable the output of Energy in MHD format. Default: False
@@ -88,10 +89,12 @@ PG_Spectrum_Binning 		0.1	# Bin width (MeV) for the scoring of Prompt Gamma spec
 
 LET_Calculation_Method		StopPow # Select the method employed for the calculation of LET (DepositedEnergy, StopPow). Default: StopPow
 
-Export_Beam_dose		Disable # Export dose distribution for each beam (Enable) or entire plan (Disable). Default: Disable
+Export_Beam_dose		False	# Export dose distribution for each beam (True) or entire plan (False). Default: Disable
 Dose_to_Water_conversion	Disabled # Select the method employed to convert simulation results (dose to medium) to dose to water (Disabled, PostProcessing, OnlineSPR). Default: Disabled
 
 Dose_Segmentation			False	# Enable/Disable a segmentation of the dose map based on a density thresholding (remove dose artifacts in the air). Default: False
 Density_Threshold_for_Segmentation	0.01	# Density threshold employed for the segmentation (in g/cm3). Default: 0.01
 
+Compute_stat_uncertainty	True	# Enable/Disable the estimation of statistical uncertainty. Default: True
+Stat_uncertainty 		0.0	# Maximum statistical uncertainty (in percent). Default: 0.0 = no maximum uncertainty (number of proton = Num_Primaries)
 

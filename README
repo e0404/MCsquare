@@ -9,7 +9,8 @@ Then, run MCsquare with the launcher: ./MCsquare
 
 On Windows:
 
-Compile MCsquare using Makefile.mak
+Compile MCsquare by running Makefile.bat
+(You may need to adapt the path to librarary directories in Makefile.bat)
 
 Configure the simulation in config.txt
 Then, run MCsquare with the launcher: MCsquare.bat

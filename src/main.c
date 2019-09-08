@@ -43,6 +43,7 @@ int main(int argc, char *argv[]){
   DATA_config config;
   int error;
   if(argc < 2) error = Parse_Config(&config, "config.txt");
+  else if(strcmp(argv[1], "-v") == 0) printf("\n\nMCsquare\n%s\n\n", VERSION);
   else error = Parse_Config(&config, argv[1]);
 
   if(error != 0) return 1;
@@ -123,7 +124,7 @@ int main(int argc, char *argv[]){
     //ct = Read_PENCT(config.CT_File);
     ct = Read_CT_MHD(&config);
     if(ct == NULL) return 1;
-    config.Num_4DCT_phases = 0;
+    config.Num_4DCT_phases = 1;
   }
 
   //Display_Density_conversion_data(ct);
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]){
 //  display_machine_parameters(&machine);
 
   // Import PBS plan
-  plan_parameters *plan = read_plan_parameters(config.BDL_plan, &config);
+  plan_parameters *plan = read_plan_parameters(config.BDL_plan, &config, &machine);
   if(plan == NULL){
     if(config.Simu_4D_Mode == 0) Free_CT_DATA(ct);
     else{

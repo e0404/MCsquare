@@ -53,6 +53,8 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #define MC2_PRO 938.272046e6	// Energie de masse du proton en eV
 #define N_AVO 6.0221415e23 	// Nombre d'avogadro en 1/mol
 
+#define MIN_NUM_BATCH 10	// minimum nimber of batch to simulate
+
 // Définition des unités:
 #define Umm 0.1	// 1 mm = 0.1 cm
 #define Ucm 1	// 1 cm = 1 cm

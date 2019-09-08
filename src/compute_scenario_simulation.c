@@ -97,7 +97,7 @@ void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *
 	    sprintf(config->output_robustness_suffix, "_Scenario_%d-%d", config->Current_scenario, config->TotalNumScenarios);
 	    
 	    file_hdl = fopen(file_path, "a");
-	    fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f cm) Random_Setup(%.3f %.3f %.3f cm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, config->Current_Systematic_setup[0], config->Current_Systematic_setup[1], config->Current_Systematic_setup[2], config->Current_Random_setup[0], config->Current_Random_setup[1], config->Current_Random_setup[2], config->Current_Range_error);
+	    fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f mm) Random_Setup(%.3f %.3f %.3f mm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, 10*config->Current_Systematic_setup[0], 10*config->Current_Systematic_setup[1], 10*config->Current_Systematic_setup[2], 10*config->Current_Random_setup[0], 10*config->Current_Random_setup[1], 10*config->Current_Random_setup[2], config->Current_Range_error);
 	    fclose(file_hdl);
 
 	    Scenario_simulation(config, material, ct, CT_phases, plan, machine, Fields);
@@ -129,13 +129,13 @@ void Scenarios_selection_random(DATA_config *config, Materials *material, DATA_C
   rand_uniform(RNDstream, v_rnd);				// on genere une première fois un set de nbr car les premiers semblent mal distribués
 
 
-  config->TotalNumScenarios = 1000;
+  config->TotalNumScenarios = config->Num_random_scenarios;
   config->Current_scenario = 0;
   config->Current_scenario_type = Uncertainty;
   config->Fraction_accumulation = 1;
   config->Num_Primaries = (unsigned long)config->Num_Primaries / plan->NumberOfFractions;
 
-  for(i=0; i<1000; i++){
+  for(i=0; i<config->TotalNumScenarios; i++){
 
     config->Current_scenario += 1;
 
@@ -255,12 +255,13 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
 	  sprintf(config->output_beamlet_suffix, "_Beamlet_%d_%d_%d", b, c, d);
 
 	  if(config->Simu_4D_Mode == 0){ 	// 3D mode
+	    config->Current_4D_phase = 0;
 	    if(config->Current_scenario_type == Nominal)
 	      printf("\nRobustness simulation (Nominal - Beamlet %d/%d) ", current_spot, config->TotalNbrSpots);
 	    else if(config->Current_scenario_type == Uncertainty)
 	      printf("\nRobustness simulation (scenario %d/%d - Beamlet %d/%d) ", config->Current_scenario, config->TotalNumScenarios, current_spot, config->TotalNbrSpots);
 	    else
-	      printf("\nBeamlet %d / %d", current_spot, config->TotalNbrSpots);
+	      printf("\nBeamlet %d / %d \n", current_spot, config->TotalNbrSpots);
 
 	    sprintf(config->output_4D_suffix, "");
 	    Run_simulation(config, material, ct, Beamlet, machine, Fields);
@@ -268,11 +269,11 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
 	  else{ 	// 4D mode
 	    for(a=0; a <config->Num_4DCT_phases; a++){
 	      if(config->Current_scenario_type == Nominal)
-	        printf("\nRobustness simulation (Nominal - Beamlet %d/%d - phase %d/%d) ", current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
+	        printf("\nRobustness simulation (Nominal - Beamlet %d/%d - phase %d/%d) \n", current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
 	      else if(config->Current_scenario_type == Uncertainty)
-	        printf("\nRobustness simulation (scenario %d/%d - Beamlet %d/%d - phase %d/%d) ", config->Current_scenario, config->TotalNumScenarios, current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
+	        printf("\nRobustness simulation (scenario %d/%d - Beamlet %d/%d - phase %d/%d) \n", config->Current_scenario, config->TotalNumScenarios, current_spot, config->TotalNbrSpots, a+1, config->Num_4DCT_phases);
 	      else
-	        printf("\nBeamlet %d / %d  (phase %d)", current_spot, config->TotalNbrSpots, a+1);
+	        printf("\nBeamlet %d / %d  (phase %d) \n", current_spot, config->TotalNbrSpots, a+1);
 
 	      sprintf(config->output_4D_suffix, "_Phase%d", a+1);
 	      config->Current_4D_phase = a;
@@ -306,6 +307,7 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
       }
 
       if(config->Simu_4D_Mode == 0){ 	// 3D mode
+	config->Current_4D_phase = 0;
         sprintf(config->output_4D_suffix, "");
         if(config->Current_scenario_type == Nominal) printf("\nRobustness simulation (Nominal)\n");
         else if(config->Current_scenario_type == Uncertainty) printf("\nRobustness simulation (scenario %d/%d - fraction %d/%d)\n", config->Current_scenario, config->TotalNumScenarios, config->Current_fraction, plan->NumberOfFractions);
