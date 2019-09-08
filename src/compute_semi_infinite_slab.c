@@ -146,7 +146,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   for(i=0; i<VLENGTH; i++){
     if(hadron->v_type[i] != Unknown && v_interaction_type[i] == 2){
       previous_Nbr_hadrons = *Nbr_hadrons;
-      Compute_Nuclear_interaction(i, hadron, material, v_material_label[i], hadron_list, Nbr_hadrons, 0, &tmp, RNG_Stream, config);
+      Compute_Nuclear_interaction(i, hadron, material, v_material_label[i], hadron_list, Nbr_hadrons, &tmp, RNG_Stream, config);
       if(hadron->v_type[i] == Unknown) hadron_list[Hadron_ID[i]].type = Unknown;
       for(j=previous_Nbr_hadrons; j<*Nbr_hadrons; j++){
          layer_data[j] = layer_data[Hadron_ID[i]];

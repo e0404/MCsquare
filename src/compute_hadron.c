@@ -205,7 +205,12 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
   }
   hadron->v_T[vALL] = hadron->v_T[vALL] - v_dE[vALL];
 
-  for(i=0; i<VLENGTH; i++) Energy_Scoring(scoring, v_hinge_index[i], hadron->v_M[i], v_dE[i], v_SPR[i]);
+  ALIGNED_(64) VAR_COMPUTE scoring_x[VLENGTH], scoring_y[VLENGTH], scoring_z[VLENGTH];
+  scoring_x[vALL] = hadron->v_x[vALL] + v_tau[vALL] * hadron->v_u[vALL];
+  scoring_y[vALL] = hadron->v_y[vALL] + v_tau[vALL] * hadron->v_v[vALL];
+  scoring_z[vALL] = hadron->v_z[vALL] + v_tau[vALL] * hadron->v_w[vALL];
+
+  for(i=0; i<VLENGTH; i++) Energy_Scoring(scoring, scoring_x[i], scoring_y[i], scoring_z[i], hadron->v_M[i], v_dE[i], v_init_density[i], v_SPR[i], config);
 
 /*
   for(i=0; i<VLENGTH; i++){
@@ -224,7 +229,7 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
     else{
       hadron->v_T[i] = hadron->v_T[i] - v_dE[i];
     }
-    Energy_Scoring(scoring, v_hinge_index[i], hadron->v_M[i], v_dE[i], v_SPR[i]);
+    Energy_Scoring(scoring, v_hinge_index[i], hadron->v_M[i], v_dE[i], v_init_density[i], v_SPR[i], config);
   }
 */
 
@@ -278,14 +283,14 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
 
       // Nuclear interactions
       if(v_interaction_type[i] == 2){
-        v_dE_hard[i] = Compute_Nuclear_interaction(i, hadron, material, v_material_label[i], secondary_hadron, Nbr_secondaries, v_index[i], scoring, RNG_Stream, config);
+        v_dE_hard[i] = Compute_Nuclear_interaction(i, hadron, material, v_material_label[i], secondary_hadron, Nbr_secondaries, scoring, RNG_Stream, config);
 
         if(hadron->v_T[i] <= (config->Ecut_Pro * UMeV)){
 	  hadron->v_type[i] = Unknown;
 	  v_dE_hard[i] += hadron->v_T[i];
         }
 
-	Energy_Scoring(scoring, v_index[i], hadron->v_M[i], v_dE_hard[i], 1.0);
+	Energy_Scoring(scoring, hadron->v_x[i], hadron->v_y[i], hadron->v_z[i], hadron->v_M[i], v_dE_hard[i], ct->density[v_index[i]], 1.0, config);
       }
 
       // Scoring for EM interactions
@@ -295,9 +300,9 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
           hadron->v_type[i] = Unknown;
         }
 
-        if(config->Score_LET == 1) LET_Scoring(scoring, v_hinge_index[i], hadron->v_M[i], v_dE[i]+v_dE_hard[i], v_step[i], v_stop_pow[i], config);
+        if(config->Score_LET == 1) LET_Scoring(scoring, scoring_x[i], scoring_y[i], scoring_z[i], hadron->v_M[i], v_dE[i]+v_dE_hard[i], v_step[i], v_stop_pow[i], config);
 
-        Energy_Scoring(scoring, v_index[i], hadron->v_M[i], v_dE_hard[i], v_SPR[i]);
+        Energy_Scoring(scoring, hadron->v_x[i], hadron->v_y[i], hadron->v_z[i], hadron->v_M[i], v_dE_hard[i], ct->density[v_index[i]], v_SPR[i], config);
       }
 
     }

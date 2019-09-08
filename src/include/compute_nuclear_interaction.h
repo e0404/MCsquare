@@ -18,16 +18,17 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "compute_math.h"
 #include "compute_random.h"
 #include "compute_geometry.h"
+#include "compute_scoring.h"
 
 void proton_proton_cross_section(Hadron *hadron, VAR_COMPUTE *v_density, VAR_COMPUTE *v_result);
 void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_material_label, VAR_COMPUTE *v_density, VAR_COMPUTE *v_result);
-VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materials *material, int material_label, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, int scoring_index, DATA_Scoring *scoring, VSLStreamStatePtr RNG_Stream, DATA_config *config);
+VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materials *material, int material_label, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, DATA_Scoring *scoring, VSLStreamStatePtr RNG_Stream, DATA_config *config);
 VAR_COMPUTE Compute_Elastic_PP(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, VSLStreamStatePtr RNG_Stream, DATA_config *config);
 VAR_COMPUTE Compute_Elastic_ICRU(int hadron_index, Hadron *hadron, Materials *material, VSLStreamStatePtr RNG_Stream);
 VAR_COMPUTE Compute_Nuclear_Inelastic_recoils(VAR_COMPUTE Hadron_T, Materials *material, int index);
 VAR_COMPUTE Compute_Nuclear_Inelastic_proton(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VSLStreamStatePtr RNG_Stream, DATA_config *config);
 VAR_COMPUTE Compute_Nuclear_Inelastic_deuteron(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VSLStreamStatePtr RNG_Stream, DATA_config *config);
 VAR_COMPUTE Compute_Nuclear_Inelastic_alpha(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VSLStreamStatePtr RNG_Stream, DATA_config *config);
-void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, int scoring_index, DATA_Scoring *scoring, VSLStreamStatePtr RNG_Stream, DATA_config *config);
+void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, DATA_Scoring *scoring, VSLStreamStatePtr RNG_Stream, DATA_config *config);
 
 #endif

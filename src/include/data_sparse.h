@@ -32,7 +32,7 @@ struct DATA_Sparse_Header{
 };
 
 
-void export_Sparse_image(char *file_name, DATA_config *config, DATA_CT *ct, plan_parameters *plan, VAR_SCORING *data, VAR_SCORING threshold);
+void export_Sparse_image(char *file_name, DATA_config *config, DATA_Scoring *scoring, plan_parameters *plan, VAR_SCORING *data, VAR_SCORING threshold);
 VAR_DATA *import_Sparse_image(char *file_name, int *GridSize, VAR_DATA *VoxelLength, VAR_DATA *Origin);
 DATA_Sparse_Header Read_Sparse_Header(char *file_name);
 void Display_Sparse_Header(DATA_Sparse_Header *Header);

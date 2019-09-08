@@ -15,7 +15,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 DATA_config_dictionary *Init_Config(DATA_config *config){
 
-  unsigned int Num_Config_Tags = 66;
+  unsigned int Num_Config_Tags = 71;
 
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
@@ -85,6 +85,11 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_uint_Config_element("Num_Random_Scenarios", &config_dictionary[63], &config->Num_random_scenarios, 1, 100, 1, UINT_MAX);
   Add_bool_Config_element("Compute_stat_uncertainty", &config_dictionary[64], &config->Compute_stat_uncertainty, 1, 1);
   Add_ureal_Config_element("Stat_uncertainty", &config_dictionary[65], &config->Stat_uncertainty, 1, 0.0, 0.0, 100.0);
+  Add_bool_Config_element("Independent_scoring_grid", &config_dictionary[66], &config->Independent_scoring_grid, 1, 0);
+  Add_vec_real_Config_element("Scoring_origin", &config_dictionary[67], config->Scoring_origin, 1, 0.25, 0.25, 0.25, -99999.9, 99999.9);
+  Add_vec_uint_Config_element("Scoring_grid_size", &config_dictionary[68], config->Scoring_grid_size, 1, 100, 100, 100, 0, 99999);
+  Add_vec_ureal_Config_element("Scoring_voxel_spacing", &config_dictionary[69], config->Scoring_voxel_spacing, 1, 0.15, 0.15, 0.15, 0.000001, 1000.0);
+  Add_Enum_Config_element("Dose_weighting_algorithm", &config_dictionary[70], &config->Dose_weighting_algorithm, 1, 0, "Volume;Mass");
 
 
   return config_dictionary;
@@ -207,6 +212,50 @@ void Add_vec_ureal_Config_element(char *Tag, DATA_config_dictionary *config_dict
   config_dictionary->adress.real_adr = config;
   config_dictionary->min_value.real_value = min_value;
   config_dictionary->max_value.real_value = max_value;
+
+  return;
+}
+
+
+void Add_vec_real_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, VAR_DATA default_value_X, VAR_DATA default_value_Y, VAR_DATA default_value_Z, VAR_DATA min_value,  VAR_DATA max_value){
+
+  strcpy(config_dictionary->type, "Vreal");
+  config_dictionary->is_defined = 0;
+
+  if(use_default == 0) config_dictionary->is_default = 0;
+  else{
+    config_dictionary->is_default = 1;
+    config[0] = default_value_X;
+    config[1] = default_value_Y;
+    config[2] = default_value_Z;
+  }
+
+  strcpy(config_dictionary->Tag, Tag);
+  config_dictionary->adress.real_adr = config;
+  config_dictionary->min_value.real_value = min_value;
+  config_dictionary->max_value.real_value = max_value;
+
+  return;
+}
+
+
+void Add_vec_uint_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, unsigned int default_value_X, unsigned int default_value_Y, unsigned int default_value_Z, unsigned int min_value,  unsigned int max_value){
+
+  strcpy(config_dictionary->type, "Vuint");
+  config_dictionary->is_defined = 0;
+
+  if(use_default == 0) config_dictionary->is_default = 0;
+  else{
+    config_dictionary->is_default = 1;
+    config[0] = default_value_X;
+    config[1] = default_value_Y;
+    config[2] = default_value_Z;
+  }
+
+  strcpy(config_dictionary->Tag, Tag);
+  config_dictionary->adress.uint_adr = config;
+  config_dictionary->min_value.uint_value = min_value;
+  config_dictionary->max_value.uint_value = max_value;
 
   return;
 }
@@ -372,6 +421,52 @@ int Parse_Config(DATA_config *config, char *file_name){
 	  }
         }
 
+	///// Vector Real /////
+        else if(strcmp(config_dictionary[i].type, "Vreal") == 0){
+	  for(j=0; j<3; j++){
+	    if(!isFloat(read_token)){
+	      printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+	      fclose(file);
+  	      free(config_dictionary);
+	      return 1;
+	    }
+	    else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
+	      printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
+	      fclose(file);
+  	      free(config_dictionary);
+	      return 1;
+	    }
+	    else{
+	      config_dictionary[i].adress.real_adr[j] = (VAR_DATA)atof(read_token);
+	      if(j==2) config_dictionary[i].is_defined = 1;
+	    }
+	    read_token = strtok_r(NULL, " \t", &save_token);
+	  }
+        }
+
+	///// Vector UInt /////
+        else if(strcmp(config_dictionary[i].type, "Vuint") == 0){
+	  for(j=0; j<3; j++){
+	    if(!isUnsignedInt(read_token)){
+	      printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+	      fclose(file);
+  	      free(config_dictionary);
+	      return 1;
+	    }
+	    else if((VAR_DATA)atoi(read_token) < config_dictionary[i].min_value.uint_value || (VAR_DATA)atoi(read_token) > config_dictionary[i].max_value.uint_value){
+	      printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
+	      fclose(file);
+  	      free(config_dictionary);
+	      return 1;
+	    }
+	    else{
+	      config_dictionary[i].adress.uint_adr[j] = (VAR_DATA)atoi(read_token);
+	      if(j==2) config_dictionary[i].is_defined = 1;
+	    }
+	    read_token = strtok_r(NULL, " \t", &save_token);
+	  }
+        }
+
 	///// Enum /////
         else if(strcmp(config_dictionary[i].type, "enum") == 0){
 	  strcpy(list, config_dictionary[i].List);
@@ -445,6 +540,9 @@ int Parse_Config(DATA_config *config, char *file_name){
 
   if(config->LET_ASCII_Output == 1 || config->LET_MHD_Output == 1 || config->LET_Sparse_Output == 1) config->Score_LET = 1;
   else config->Score_LET = 0;
+
+  if(config->Energy_ASCII_Output == 1 || config->Energy_MHD_Output == 1 || config->Energy_Sparse_Output == 1) config->Score_Energy = 1;
+  else config->Score_Energy = 0;
 
   free(config_dictionary);
 
@@ -534,7 +632,13 @@ printf("Dose_Segmentation = %u \n", config->Dose_Segmentation);
 printf("Segmentation_Density_Threshold = %f \n\n", config->Segmentation_Density_Threshold);
 
 printf("Compute_stat_uncertainty = %u \n", config->Compute_stat_uncertainty);
-printf("Stat_uncertainty = %f \n", config->Stat_uncertainty);
+printf("Stat_uncertainty = %f \n\n", config->Stat_uncertainty);
+
+printf("Independent_scoring_grid = %u \n", config->Independent_scoring_grid);
+printf("Scoring_origin = %f %f %f \n", config->Scoring_origin[0], config->Scoring_origin[1], config->Scoring_origin[2]);
+printf("Scoring_grid_size = %u %u %u \n", config->Scoring_grid_size[0], config->Scoring_grid_size[1], config->Scoring_grid_size[2]);
+printf("Scoring_voxel_spacing = %f %f %f \n", config->Scoring_voxel_spacing[0], config->Scoring_voxel_spacing[1], config->Scoring_voxel_spacing[2]);
+printf("Dose_weighting_algorithm = %d \n\n", config->Dose_weighting_algorithm);
 }
 
 

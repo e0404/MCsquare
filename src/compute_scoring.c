@@ -12,25 +12,60 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/compute_scoring.h"
 
-DATA_Scoring Init_Scoring(DATA_config *config, int Nbr_voxels, int init_dose){
+DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_squared){
 
   DATA_Scoring scoring;
 
-  scoring.Nbr_voxels = Nbr_voxels;
-
-  scoring.energy = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
-
-  if(init_dose > 0){
-    scoring.dose = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
-    scoring.dose_squared = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
+  if(config->Independent_scoring_grid == 0){
+    scoring.Nbr_voxels = ct->Nbr_voxels;
+    scoring.Origin[0] = ct->Origin[0];
+    scoring.Origin[1] = ct->Origin[1];
+    scoring.Origin[2] = ct->Origin[2];
+    scoring.Offset[0] = 0.0;
+    scoring.Offset[1] = 0.0;
+    scoring.Offset[2] = 0.0;
+    scoring.Grid_end[0] = ct->Length[0];
+    scoring.Grid_end[1] = ct->Length[1];
+    scoring.Grid_end[2] = ct->Length[2];
+    scoring.GridSize[0] = ct->GridSize[0];
+    scoring.GridSize[1] = ct->GridSize[1];
+    scoring.GridSize[2] = ct->GridSize[2];
+    scoring.VoxelLength[0] = ct->VoxelLength[0];
+    scoring.VoxelLength[1] = ct->VoxelLength[1];
+    scoring.VoxelLength[2] = ct->VoxelLength[2];
   }
   else{
-    scoring.dose = NULL;
-    scoring.dose_squared = NULL;
+    scoring.Nbr_voxels = config->Scoring_grid_size[0] * config->Scoring_grid_size[1] * config->Scoring_grid_size[2];
+    scoring.Origin[0] = config->Scoring_origin[0];
+    scoring.Origin[1] = config->Scoring_origin[1];
+    scoring.Origin[2] = config->Scoring_origin[2];
+    scoring.Offset[0] = ct->Origin[0] - config->Scoring_origin[0];
+    scoring.Offset[1] = ct->Origin[1] - config->Scoring_origin[1];
+    scoring.Offset[2] = ct->Origin[2] - config->Scoring_origin[2];
+    scoring.Length[0] = config->Scoring_grid_size[0] * config->Scoring_voxel_spacing[0];
+    scoring.Length[1] = config->Scoring_grid_size[1] * config->Scoring_voxel_spacing[1];
+    scoring.Length[2] = config->Scoring_grid_size[2] * config->Scoring_voxel_spacing[2];
+    scoring.Grid_end[0] = scoring.Offset[0] + scoring.Length[0];
+    scoring.Grid_end[1] = scoring.Offset[1] + scoring.Length[1];
+    scoring.Grid_end[2] = scoring.Offset[2] + scoring.Length[2];
+    scoring.GridSize[0] = config->Scoring_grid_size[0];
+    scoring.GridSize[1] = config->Scoring_grid_size[1];
+    scoring.GridSize[2] = config->Scoring_grid_size[2];
+    scoring.VoxelLength[0] = config->Scoring_voxel_spacing[0];
+    scoring.VoxelLength[1] = config->Scoring_voxel_spacing[1];
+    scoring.VoxelLength[2] = config->Scoring_voxel_spacing[2];
   }
 
+  scoring.dose = (VAR_SCORING*)calloc(scoring.Nbr_voxels, sizeof(VAR_SCORING));
+
+  if(config->Score_Energy == 1) scoring.energy = (VAR_SCORING*)calloc(scoring.Nbr_voxels, sizeof(VAR_SCORING));
+  else scoring.energy = NULL;
+
+  if(init_dose_squared > 0) scoring.dose_squared = (VAR_SCORING*)calloc(scoring.Nbr_voxels, sizeof(VAR_SCORING));
+  else scoring.dose_squared = NULL;
+
   if(config->Score_PromptGammas == 1){
-    scoring.PG_particles = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
+    scoring.PG_particles = (VAR_SCORING*)calloc(scoring.Nbr_voxels, sizeof(VAR_SCORING));
     scoring.PG_spectrum = (VAR_SCORING*)calloc(config->PG_Spectrum_NumBin, sizeof(VAR_SCORING));
   }
   else{
@@ -39,8 +74,8 @@ DATA_Scoring Init_Scoring(DATA_config *config, int Nbr_voxels, int init_dose){
   }
 
   if(config->Score_LET == 1){
-    scoring.LET = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
-    scoring.LET_denominator = (VAR_SCORING*)calloc(Nbr_voxels, sizeof(VAR_SCORING));
+    scoring.LET = (VAR_SCORING*)calloc(scoring.Nbr_voxels, sizeof(VAR_SCORING));
+    scoring.LET_denominator = (VAR_SCORING*)calloc(scoring.Nbr_voxels, sizeof(VAR_SCORING));
   }
   else{
     scoring.LET = NULL;
@@ -53,14 +88,40 @@ DATA_Scoring Init_Scoring(DATA_config *config, int Nbr_voxels, int init_dose){
 }
 
 
-void Energy_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE SPR){
+int get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z){
+  
+  if(position_x < scoring->Offset[0] || position_y < scoring->Offset[1] || position_z < scoring->Offset[2] || position_x > scoring->Grid_end[0] || position_y > scoring->Grid_end[1] || position_z > scoring->Grid_end[2]) return -1;
 
-  scoring->energy[index] += multiplicity * dE / SPR;
+   int index = 	(int)floor( (-position_x + scoring->Length[0]) / scoring->VoxelLength[0] ) 
+			+ scoring->GridSize[0] * (int)floor( position_y / scoring->VoxelLength[1] ) 
+			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( position_z / scoring->VoxelLength[2] );
+
+  if(index > scoring->Nbr_voxels) return -1;
+
+  return index;
+  
+}
+
+
+void Energy_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE density, VAR_COMPUTE SPR, DATA_config *config){
+
+  int index = get_scoring_index(scoring, position_x, position_y, position_z);
+  if(index < 0) return;
+
+  
+  if(config->Dose_weighting_algorithm == 0) scoring->dose[index] += multiplicity * dE / (density * SPR); // Volume weighting
+  else scoring->dose[index] += multiplicity * dE / SPR;  // Mass weighting
+  // SPR is used when online dose to water conversion is enabled
+
+  if(config->Score_Energy == 1) scoring->energy[index] += multiplicity * dE;
 
 }
 
 
-void LET_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config){
+void LET_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config){
+
+  int index = get_scoring_index(scoring, position_x, position_y, position_z);
+  if(index < 0) return;
 
   if(config->LET_Calculation_Method == 0){			// 0 = DepositedEnergy
     scoring->LET[index] += multiplicity * dE * dE / step;
@@ -74,38 +135,59 @@ void LET_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR
 }
 
 
+void PG_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE PG_energy, DATA_config *config){
+
+  int index = get_scoring_index(scoring, position_x, position_y, position_z);
+  if(index < 0) return;
+
+  if(PG_energy >= config->PG_LowEnergyCut && PG_energy <= config->PG_HighEnergyCut){
+    scoring->PG_particles[index] += multiplicity;
+    if(PG_energy >= config->PG_Spectrum_Binning*config->PG_Spectrum_NumBin) scoring->PG_spectrum[config->PG_Spectrum_NumBin-1] += multiplicity;
+    else scoring->PG_spectrum[(int)floor(PG_energy / config->PG_Spectrum_Binning)] += multiplicity;
+  }
+
+}
+
+
 void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material, VAR_COMPUTE normalization, unsigned long Nbr_simulated_primaries, DATA_config *config){
 
-  double voxel_volume = ct->VoxelLength[0]*ct->VoxelLength[1]*ct->VoxelLength[2];
+  double voxel_volume = scoring->VoxelLength[0]*scoring->VoxelLength[1]*scoring->VoxelLength[2];
   int ii,j,k,index=0;
 
 
-  if(config->DoseToWater == 1){
-    for(ii=0; ii<ct->Nbr_voxels; ii++){
-      scoring->energy[ii] /= material[ct->material[ii]].SPR;
+  if(config->DoseToWater == 1){ // dose to water conversion by post-processing
+    for(ii=0; ii<scoring->Nbr_voxels; ii++){
+      scoring->dose[ii] /= material[ct->material[ii]].SPR;
     }
   }
 
-  for(ii=0; ii<ct->Nbr_voxels; ii++){
-    scoring->energy[ii] = scoring->energy[ii] * normalization / Nbr_simulated_primaries;
-    scoring->energy[ii] *= (scoring->energy[ii] > 0);
-    scoring->dose[ii] = scoring->energy[ii] / (voxel_volume*ct->density[ii]);
+  for(ii=0; ii<scoring->Nbr_voxels; ii++){
+    scoring->dose[ii] = scoring->dose[ii] * normalization / Nbr_simulated_primaries;
+    scoring->dose[ii] *= (scoring->dose[ii] > 0);
+    scoring->dose[ii] = scoring->dose[ii] / voxel_volume; // Volume weighting
   }
 
   if(config->Dose_Segmentation != 0){
-    for(ii=0; ii<ct->Nbr_voxels; ii++){
+    for(ii=0; ii<scoring->Nbr_voxels; ii++){
       scoring->dose[ii] *= (ct->density[ii] > config->Segmentation_Density_Threshold);
     }
   }
 
+  if(config->Score_Energy == 1){
+    for(ii=0; ii<scoring->Nbr_voxels; ii++){
+      scoring->energy[ii] = scoring->energy[ii] * normalization / Nbr_simulated_primaries;
+      scoring->energy[ii] *= (scoring->energy[ii] > 0);
+    }
+  }
+
   if(config->Score_PromptGammas == 1){
-    for(ii=0; ii<ct->Nbr_voxels; ii++){
+    for(ii=0; ii<scoring->Nbr_voxels; ii++){
       scoring->PG_particles[ii] = scoring->PG_particles[ii] * normalization / Nbr_simulated_primaries;
     }
   }
 
   if(config->Score_LET == 1){
-    for(ii=0; ii<ct->Nbr_voxels; ii++){
+    for(ii=0; ii<scoring->Nbr_voxels; ii++){
       scoring->LET[ii] = (scoring->LET[ii] > 0) * scoring->LET[ii] / ((scoring->LET_denominator[ii] * 1e7) + FLT_EPSILON);
     }
   }
@@ -115,22 +197,28 @@ void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material
 
 VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_CT *ct, int Num_batch, DATA_config *config){
 
-  double voxel_volume = ct->VoxelLength[0]*ct->VoxelLength[1]*ct->VoxelLength[2];
+  //double voxel_volume = Tot_scoring->VoxelLength[0]*Tot_scoring->VoxelLength[1]*Tot_scoring->VoxelLength[2];
   VAR_SCORING tmp, sigma=0, max_dose=0;
   int count=0;
 
   #pragma omp parallel for reduction(max: max_dose)
-  for(int j=0; j<ct->Nbr_voxels; j++){
-    batch->dose[j] = batch->energy[j] / (voxel_volume*ct->density[j]);
-    Tot_scoring->energy[j] += batch->energy[j];
+  for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
+    //batch->dose[j] = batch->dose[j] / voxel_volume; // Volume weighting
     Tot_scoring->dose[j] += batch->dose[j];
     Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
     if(ct->density[j] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
   }
 
+  if(config->Score_Energy == 1){
+    #pragma omp parallel for
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
+      Tot_scoring->energy[j] += batch->energy[j];
+    }
+  }
+
   if(config->Score_LET == 1){
     #pragma omp parallel for
-    for(int j=0; j<ct->Nbr_voxels; j++){
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
       Tot_scoring->LET[j] += batch->LET[j];
       Tot_scoring->LET_denominator[j] += batch->LET_denominator[j];
     }
@@ -138,7 +226,7 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_C
 
   if(config->Score_PromptGammas == 1){
     #pragma omp parallel for
-    for(int j=0; j<ct->Nbr_voxels; j++){
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
       Tot_scoring->PG_particles[j] += batch->PG_particles[j];
     }
 
@@ -147,7 +235,7 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_C
   }
 
   count = 0;
-  for(int j=0; j<ct->Nbr_voxels; j++){
+  for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
     if(Tot_scoring->dose[j] > 0.5*max_dose){
       //sigma += sqrt(Tot_scoring->dose_squared[j] - Tot_scoring->dose[j]*Tot_scoring->dose[j]/Num_batch) / (Tot_scoring->dose[j]/Num_batch);
       sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );

@@ -127,6 +127,38 @@ int main(int argc, char *argv[]){
     config.Num_4DCT_phases = 1;
   }
 
+  // check scoring grid
+  if(config.Independent_scoring_grid == 1){
+    VAR_COMPUTE Offset_x = config.Scoring_origin[0] - ct->Origin[0];
+    VAR_COMPUTE Offset_y = config.Scoring_origin[1] - ct->Origin[1];
+    VAR_COMPUTE Offset_z = config.Scoring_origin[2] - ct->Origin[2];
+    VAR_COMPUTE End_x = (config.Scoring_origin[0] + config.Scoring_grid_size[0] * config.Scoring_voxel_spacing[0]) - (ct->Origin[0] + ct->Length[0]);
+    VAR_COMPUTE End_y = (config.Scoring_origin[1] + config.Scoring_grid_size[1] * config.Scoring_voxel_spacing[1]) - (ct->Origin[1] + ct->Length[1]);
+    VAR_COMPUTE End_z = (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]) - (ct->Origin[2] + ct->Length[2]);
+
+    if(Offset_x < 0 || Offset_y < 0 || Offset_z < 0 || End_x > 1e-4 || End_y > 1e-4 || End_z > 1e-4){
+      printf("\nError: The scoring grid (defined in the configuration file) must be contained inside the CT image!\n");
+      if(Offset_x < 0) printf("In x direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[0], config.Scoring_origin[0]);
+      if(Offset_y < 0) printf("In y direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[1], config.Scoring_origin[1]);
+      if(Offset_z < 0) printf("In z direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[2], config.Scoring_origin[2]);
+      if(End_x > 1e-4) printf("In x direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[0] + ct->Length[0]), (config.Scoring_origin[0] + config.Scoring_grid_size[0] * config.Scoring_voxel_spacing[0]));
+      if(End_y > 1e-4) printf("In y direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[1] + ct->Length[1]), (config.Scoring_origin[1] + config.Scoring_grid_size[1] * config.Scoring_voxel_spacing[1]));
+      if(End_z > 1e-4) printf("In z direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[2] + ct->Length[2]), (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]));
+      return 1;
+    }
+
+    if(config.Compute_DVH == 1){
+      printf("\nError: The computation of DVH is not compatible yet with the use of independent scoring grid!\n");
+      return 1;
+    }
+    
+    if(config.Dose_weighting_algorithm == 1){
+      printf("\nError: The mass weighting algorithm is not implemented yet! Change to volume weighting.\n");
+      return 1;
+    }
+	
+  }
+
   //Display_Density_conversion_data(ct);
   //Display_Material_conversion_data(ct);
 
@@ -183,14 +215,14 @@ int main(int argc, char *argv[]){
   if(config.Densities_Output == 1){
     if(config.Simu_4D_Mode == 0){
       sprintf(file_path, "%sDensities.mhd", config.Output_Directory);
-      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->density);
+      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->Origin, ct->density);
     }
     else{
       sprintf(file_path, "%sDensities_ref.mhd", config.Output_Directory);
-      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->density);
+      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->Origin, ct->density);
       for(a=0; a <config.Num_4DCT_phases; a++){
         sprintf(file_path, "%sDensities_%d.mhd", config.Output_Directory,a);
-      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, CT_phases[a]->density);
+      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, ct->Origin, CT_phases[a]->density);
       }
     }
   }
@@ -202,13 +234,13 @@ int main(int argc, char *argv[]){
     if(config.Simu_4D_Mode == 0){
       for(o=0; o<ct->Nbr_voxels; o++){ mat[o] = (VAR_SCORING)ct->material[o]; }
       sprintf(file_path, "%sMaterials_out.mhd", config.Output_Directory);
-      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, mat);
+      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->Origin, mat);
     }
     else{
       for(a=0; a <config.Num_4DCT_phases; a++){
 	for(o=0; o<CT_phases[a]->Nbr_voxels; o++){ mat[o] = (VAR_SCORING)CT_phases[a]->material[o]; }
         sprintf(file_path, "%sMaterials_out_%d.mhd", config.Output_Directory,a);
-      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, mat);
+      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, CT_phases[a]->Origin, mat);
       }
     }
     free(mat);

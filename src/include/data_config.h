@@ -57,6 +57,8 @@ void Add_uint_Config_element(char *Tag, DATA_config_dictionary *config_dictionar
 void Add_ulong_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, unsigned long *config, int use_default, unsigned long default_value, unsigned long min_value,  unsigned long max_value);
 void Add_ureal_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, VAR_DATA default_value, VAR_DATA min_value,  VAR_DATA max_value);
 void Add_vec_ureal_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, VAR_DATA default_value_X, VAR_DATA default_value_Y, VAR_DATA default_value_Z, VAR_DATA min_value,  VAR_DATA max_value);
+void Add_vec_real_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, VAR_DATA default_value_X, VAR_DATA default_value_Y, VAR_DATA default_value_Z, VAR_DATA min_value,  VAR_DATA max_value);
+void Add_vec_uint_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, unsigned int default_value_X, unsigned int default_value_Y, unsigned int default_value_Z, unsigned int min_value,  unsigned int max_value);
 void Add_Enum_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, int *config, int use_default, int default_value, char *List);
 int Parse_Config(DATA_config *config, char *file_name);
 void display_config(DATA_config *config);

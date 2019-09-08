@@ -159,6 +159,12 @@ struct DATA_Scoring{
 	VAR_SCORING *LET;
 	VAR_SCORING *LET_denominator;
 	int Nbr_voxels;
+	int GridSize[3];
+	VAR_COMPUTE Origin[3];
+	VAR_COMPUTE Offset[3];
+	VAR_COMPUTE Length[3];
+	VAR_COMPUTE Grid_end[3];
+	VAR_COMPUTE VoxelLength[3];
 };
 
 
@@ -309,6 +315,11 @@ struct DATA_config{
 	VAR_DATA Segmentation_Density_Threshold;
 	unsigned int Compute_stat_uncertainty;
 	VAR_DATA Stat_uncertainty;
+	unsigned int Independent_scoring_grid;
+	VAR_DATA  Scoring_origin[3];
+	unsigned int Scoring_grid_size[3];
+	VAR_DATA  Scoring_voxel_spacing[3];
+	int Dose_weighting_algorithm;
 
 	// Internal variables
 	unsigned int Particle_Generated_outside;
@@ -344,6 +355,7 @@ struct DATA_config{
 	enum Scenario_type Current_scenario_type;
 	VAR_DATA MCS_const;
 	unsigned int Score_LET;
+	unsigned int Score_Energy;
 
 };
 

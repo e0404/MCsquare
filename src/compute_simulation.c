@@ -26,13 +26,13 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
   int Num_batch = MIN_NUM_BATCH;
 
   DATA_Scoring Batch_scoring, Tot_scoring;
-  Tot_scoring = Init_Scoring(config, ct->Nbr_voxels, 1);
+  Tot_scoring = Init_Scoring(config, ct, 1);
 
   if(config->Compute_stat_uncertainty == 1 && (config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) && config->Fraction_accumulation == 0){
 
     int batch = 1;
     while(batch<=Num_batch){
-      Batch_scoring = Init_Scoring(config, ct->Nbr_voxels, 1);
+      Batch_scoring = Init_Scoring(config, ct, 1);
       Num_simulated_primaries += Simulation_loop(config, material, ct, plan, machine, Fields, &Batch_scoring, (unsigned long)config->Num_Primaries/MIN_NUM_BATCH);
       stat_uncertainty = Process_batch(&Tot_scoring, &Batch_scoring, ct, batch, config);
       Free_Scoring(&Batch_scoring);
@@ -87,14 +87,14 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 
     if(config->Energy_ASCII_Output == 1 || config->Energy_MHD_Output == 1 || config->Energy_Sparse_Output == 1){
 
-      if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) energy_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
+      if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) energy_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<ct->Nbr_voxels; ii++) energy_accumulation[ii] += Tot_scoring.energy[ii] * norm_factor;
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) energy_accumulation[ii] += Tot_scoring.energy[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.energy, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	for(ii=0; ii<ct->Nbr_voxels; ii++) energy_accumulation[ii] += deformed[ii] * norm_factor;
+	deformed = Image_deformation(Tot_scoring.energy, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) energy_accumulation[ii] += deformed[ii] * norm_factor;
       	free(deformed);
       }
       
@@ -108,14 +108,14 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 
     if(config->Compute_DVH == 1 || config->Dose_ASCII_Output == 1 || config->Dose_MHD_Output == 1 || config->Dose_Sparse_Output == 1){
 
-      if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) dose_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
+      if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) dose_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<ct->Nbr_voxels; ii++) dose_accumulation[ii] += Tot_scoring.dose[ii] * norm_factor;
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) dose_accumulation[ii] += Tot_scoring.dose[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.dose, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	for(ii=0; ii<ct->Nbr_voxels; ii++) dose_accumulation[ii] += deformed[ii] * norm_factor;
+	deformed = Image_deformation(Tot_scoring.dose, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) dose_accumulation[ii] += deformed[ii] * norm_factor;
       	free(deformed);
       }
       
@@ -130,16 +130,16 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
     if(config->Score_PromptGammas == 1){
 
       if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)){
-	PG_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
+	PG_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 	PG_Spectrum_accumulation = (VAR_SCORING*)calloc(config->PG_Spectrum_NumBin, sizeof(VAR_SCORING));
       }
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<ct->Nbr_voxels; ii++) PG_accumulation[ii] += Tot_scoring.PG_particles[ii] * norm_factor;
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) PG_accumulation[ii] += Tot_scoring.PG_particles[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.PG_particles, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	for(ii=0; ii<ct->Nbr_voxels; ii++) PG_accumulation[ii] += deformed[ii] * norm_factor;
+	deformed = Image_deformation(Tot_scoring.PG_particles, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) PG_accumulation[ii] += deformed[ii] * norm_factor;
       	free(deformed);
       }
 
@@ -157,14 +157,14 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 
     if(config->Score_LET == 1){
 
-      if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) LET_accumulation = (VAR_SCORING*)calloc(ct->Nbr_voxels, sizeof(VAR_SCORING));
+      if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) LET_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<ct->Nbr_voxels; ii++) LET_accumulation[ii] += Tot_scoring.LET[ii] * norm_factor;
+	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) LET_accumulation[ii] += Tot_scoring.LET[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.LET, ct->GridSize, ct->VoxelLength, ct->Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-      	for(ii=0; ii<ct->Nbr_voxels; ii++) LET_accumulation[ii] += deformed[ii] * norm_factor;
+	deformed = Image_deformation(Tot_scoring.LET, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+      	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) LET_accumulation[ii] += deformed[ii] * norm_factor;
       	free(deformed);
       }
       
@@ -194,7 +194,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".dat");
-	export_dose_ascii(file_path, ct->GridSize, Tot_scoring.energy);
+	export_dose_ascii(file_path, Tot_scoring.GridSize, Tot_scoring.energy);
   }
   if(export_results == 1 && config->Energy_MHD_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -204,7 +204,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".mhd");
-	export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, Tot_scoring.energy);
+	export_MHD_image(file_path, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Tot_scoring.energy);
   }
   if(export_results == 1 && config->Energy_Sparse_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -213,7 +213,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".txt");
-	export_Sparse_image(file_path, config, ct, plan, Tot_scoring.energy, config->Energy_Sparse_Threshold);
+	export_Sparse_image(file_path, config, &Tot_scoring, plan, Tot_scoring.energy, config->Energy_Sparse_Threshold);
   }
   if(export_results == 1 && config->Dose_ASCII_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -223,7 +223,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".dat");
-	export_dose_ascii(file_path, ct->GridSize, Tot_scoring.dose);
+	export_dose_ascii(file_path, Tot_scoring.GridSize, Tot_scoring.dose);
   }
   if(export_results == 1 && config->Dose_MHD_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -233,7 +233,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".mhd");
-	export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, Tot_scoring.dose);
+	export_MHD_image(file_path, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Tot_scoring.dose);
   }
   if(export_results == 1 && config->Dose_Sparse_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -242,7 +242,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".txt");
-	export_Sparse_image(file_path, config, ct, plan, Tot_scoring.dose, config->Dose_Sparse_Threshold);
+	export_Sparse_image(file_path, config, &Tot_scoring, plan, Tot_scoring.dose, config->Dose_Sparse_Threshold);
   }
   if(export_results == 1 && config->LET_ASCII_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -252,7 +252,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".dat");
-	export_dose_ascii(file_path, ct->GridSize, Tot_scoring.LET);
+	export_dose_ascii(file_path, Tot_scoring.GridSize, Tot_scoring.LET);
   }
   if(export_results == 1 && config->LET_MHD_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -262,7 +262,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".mhd");
-	export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, Tot_scoring.LET);
+	export_MHD_image(file_path, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Tot_scoring.LET);
   }
   if(export_results == 1 && config->LET_Sparse_Output == 1){
 	strcpy(file_path, config->Output_Directory);
@@ -271,7 +271,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
 	strcat(file_path, ".txt");
-	export_Sparse_image(file_path, config, ct, plan, Tot_scoring.LET, config->LET_Sparse_Threshold);
+	export_Sparse_image(file_path, config, &Tot_scoring, plan, Tot_scoring.LET, config->LET_Sparse_Threshold);
   }
 
 
@@ -284,7 +284,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
     strcat(file_path, config->output_4D_suffix);
 	strcat(file_path, config->output_beams_suffix);
     strcat(file_path, ".dat");
-    export_PG_ascii(file_path, ct->GridSize, Tot_scoring.PG_particles);
+    export_PG_ascii(file_path, Tot_scoring.GridSize, Tot_scoring.PG_particles);
     
     strcpy(file_path, config->Output_Directory);
     strcat(file_path, "PromptGamma_spectrum");
@@ -320,6 +320,7 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
 
   unsigned long Num_simulated_primaries = 0;
 
+  VAR_SCORING *ptr_dose_scoring[config->Num_Threads];
   VAR_SCORING *ptr_energy_scoring[config->Num_Threads];
   VAR_SCORING *ptr_PG_scoring[config->Num_Threads];
   VAR_SCORING *ptr_PG_spectrum[config->Num_Threads];
@@ -343,7 +344,7 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     rand_uniform(RNDstream, v_rnd);				// the RNG is called here because random numbers seems not well distributed the first time.
 
     // Init scoring
-    DATA_Scoring scoring = Init_Scoring(config, ct->Nbr_voxels, 0);
+    DATA_Scoring scoring = Init_Scoring(config, ct, 0);
 
 
     // Init particle stacks
@@ -422,7 +423,7 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     #pragma omp critical
     {
       int l;
-      for(l=0; l<ct->Nbr_voxels; l++){
+      for(l=0; l<Tot_scoring.Nbr_voxels; l++){
         Tot_scoring.energy[l] += scoring.energy[l];
         if(config->Score_PromptGammas == 1){
           Tot_scoring.PG_particles[l] += scoring.PG_particles[l];
@@ -436,7 +437,8 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     }
 */
 
-    ptr_energy_scoring[tid] = scoring.energy;
+    ptr_dose_scoring[tid] = scoring.dose;
+    if(config->Score_Energy == 1) ptr_energy_scoring[tid] = scoring.energy;
     if(config->Score_PromptGammas == 1){
       ptr_PG_scoring[tid] = scoring.PG_particles;
       ptr_PG_spectrum[tid] = scoring.PG_spectrum;
@@ -451,27 +453,24 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     #pragma omp barrier
 
     #pragma omp for
-    for(k=0; k<ct->Nbr_voxels; ++k){
+    for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
       for(p=0; p<config->Num_Threads; ++p){
-         Tot_scoring->energy[k] += ptr_energy_scoring[p][k]; 
-	 if(config->Score_PromptGammas == 1){
-           Tot_scoring->PG_particles[k] += ptr_PG_scoring[p][k];   
-	 }
+         Tot_scoring->dose[k] += ptr_dose_scoring[p][k];  
       }
     }
 
-    if(config->Score_PromptGammas == 1){
+    if(config->Score_Energy == 1){
       #pragma omp for
-      for(k=0; k<config->PG_Spectrum_NumBin; ++k){
+      for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
         for(p=0; p<config->Num_Threads; ++p){
-          Tot_scoring->PG_spectrum[k] += ptr_PG_spectrum[p][k]; 
+	 Tot_scoring->energy[k] += ptr_energy_scoring[p][k]; 
         }
       }
     }
 
     if(config->Score_LET == 1){
       #pragma omp for
-      for(k=0; k<ct->Nbr_voxels; ++k){
+      for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
         for(p=0; p<config->Num_Threads; ++p){
 	 Tot_scoring->LET[k] += ptr_LET_scoring[p][k];
 	 Tot_scoring->LET_denominator[k] += ptr_LET_denominator[p][k];
@@ -479,6 +478,21 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
       }
     }
 
+    if(config->Score_PromptGammas == 1){
+      #pragma omp for
+      for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
+        for(p=0; p<config->Num_Threads; ++p){
+	 Tot_scoring->PG_particles[k] += ptr_PG_scoring[p][k];
+        }
+      }
+
+      #pragma omp for
+      for(k=0; k<config->PG_Spectrum_NumBin; ++k){
+        for(p=0; p<config->Num_Threads; ++p){
+          Tot_scoring->PG_spectrum[k] += ptr_PG_spectrum[p][k]; 
+        }
+      }
+    }
 
     // Delete dynamic variables
     Free_Scoring(&scoring);

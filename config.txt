@@ -98,3 +98,10 @@ Density_Threshold_for_Segmentation	0.01	# Density threshold employed for the seg
 Compute_stat_uncertainty	True	# Enable/Disable the estimation of statistical uncertainty. Default: True
 Stat_uncertainty 		0.0	# Maximum statistical uncertainty (in percent). Default: 0.0 = no maximum uncertainty (number of proton = Num_Primaries)
 
+Independent_scoring_grid	False		# Enable/Disable the independent scoring grid with respect to the CT image grid. Default: False = dose grid with same resolution as input CT image
+Scoring_origin			0.0 0.0 0.0	# Origin of the scoring grid (in cm) defined in the same reference frame as the CT image. Default: 0.0 0.0 0.0
+Scoring_grid_size		100 100 100	# Define the number of voxels for each dimension of the scoring grid. Default: 100 100 100
+Scoring_voxel_spacing		0.15 0.15 0.15	# Define the voxel spacing (in cm) for each dimension of the scoring grid. Default: 0.15 0.15 0.15
+Dose_weighting_algorithm	Volume		# Define the dose weighting algorithm (Volume weighting, or Mass weighting) used when the dose voxels contain multiple CT voxels. Default: Volume
+
+

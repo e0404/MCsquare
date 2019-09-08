@@ -12,7 +12,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/data_mhd.h"
 
-void export_MHD_image(char *file_name, int GridSize[3], VAR_DATA VoxelLength[3], VAR_SCORING *data){
+void export_MHD_image(char *file_name, int GridSize[3], VAR_DATA VoxelLength[3], VAR_DATA Offset[3], VAR_SCORING *data){
 
   char file_path[100];
   char file_mhd_name[100];
@@ -58,8 +58,10 @@ void export_MHD_image(char *file_name, int GridSize[3], VAR_DATA VoxelLength[3],
   fprintf(file_mhd, "DimSize = %d %d %d\n", GridSize[0], GridSize[1], GridSize[2]);
   #if VAR_DATA_PRECISION==1
     fprintf(file_mhd, "ElementSpacing = %f %f %f\n", 10*VoxelLength[0], 10*VoxelLength[1], 10*VoxelLength[2]);
+    fprintf(file_mhd, "Offset = %f %f %f\n", 10*Offset[0], 10*Offset[1], 10*Offset[2]);
   #else
     fprintf(file_mhd, "ElementSpacing = %lf %lf %lf\n", 10*VoxelLength[0], 10*VoxelLength[1], 10*VoxelLength[2]);
+    fprintf(file_mhd, "Offset = %lf %lf %lf\n", 10*Offset[0], 10*Offset[1], 10*Offset[2]);
   #endif
   #if VAR_SCORING_PRECISION==1
     fprintf(file_mhd, "ElementType = MET_FLOAT\n");
