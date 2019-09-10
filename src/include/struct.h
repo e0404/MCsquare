@@ -137,6 +137,24 @@ struct DATA_CT{
 };
 
 
+typedef struct DATA_Struct DATA_Struct;
+struct DATA_Struct{
+	char Name[50];
+	int GridSize[3];
+	VAR_DATA VoxelLength[3];
+	VAR_DATA Origin[3];
+	int *Mask;
+	int N_Index;
+	int *IndexList;
+};
+
+typedef struct DATA_StructList DATA_StructList;
+struct DATA_StructList{
+	int Nbr_Structs;
+	DATA_Struct *Structs;
+};
+
+
 typedef struct DATA_4D_Fields DATA_4D_Fields;
 struct DATA_4D_Fields{
 	int Nbr_Fields;
@@ -356,6 +374,7 @@ struct DATA_config{
 	VAR_DATA MCS_const;
 	unsigned int Score_LET;
 	unsigned int Score_Energy;
+	DATA_StructList *StructList;
 
 };
 

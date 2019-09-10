@@ -20,12 +20,13 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "include/data_ct_penelope.h"
 #include "include/data_mhd.h"
 #include "include/data_ct_mhd.h"
+#include "include/data_contours.h"
+#include "include/data_beam_model.h"
 #include "include/compute_4D.h"
 #include "include/compute_simulation.h"
 #include "include/compute_simulation_beamlet.h"
 #include "include/compute_treatment_uncertainties.h"
 #include "include/compute_random.h"
-#include "include/data_beam_model.h"
 #include "include/compute_beam_model.h"
 #include "include/compute_math.h"
 #include "include/compute_range_shifter.h"
@@ -246,6 +247,7 @@ int main(int argc, char *argv[]){
     free(mat);
   }
 
+
   //////////////////////
   // Start computation
   //////////////////////
@@ -397,6 +399,7 @@ int main(int argc, char *argv[]){
   Free_Materials_DATA(material, config.Num_Materials);
   Free_Plan_Parameters(plan);
   Free_Machine_Parameters(&machine);
+  Free_all_structs(&config.StructList);
 
   return 0;
 }

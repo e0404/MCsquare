@@ -544,6 +544,8 @@ int Parse_Config(DATA_config *config, char *file_name){
   if(config->Energy_ASCII_Output == 1 || config->Energy_MHD_Output == 1 || config->Energy_Sparse_Output == 1) config->Score_Energy = 1;
   else config->Score_Energy = 0;
 
+  config->StructList = NULL;
+
   free(config_dictionary);
 
   return 0;
