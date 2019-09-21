@@ -32,7 +32,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
 
     int error;
 
-    if(strcmp(tmp, "--UPenn beam model (double gaussian)--\n") == 0){
+    if(strcmp(tmp, "--UPenn beam model (double gaussian)--\n") == 0 || strcmp(tmp, "--Lookup table BDL format--\n") == 0){
 	//printf("\n Upenn beam model\n");
 	mac->Beam_Model = UPenn;
 	error = read_UPenn_BDL(machine_name, mac);
