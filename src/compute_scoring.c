@@ -24,6 +24,9 @@ DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_square
     scoring.Offset[0] = 0.0;
     scoring.Offset[1] = 0.0;
     scoring.Offset[2] = 0.0;
+    scoring.Length[0] = ct->Length[0];
+    scoring.Length[1] = ct->Length[1];
+    scoring.Length[2] = ct->Length[2];
     scoring.Grid_end[0] = ct->Length[0];
     scoring.Grid_end[1] = ct->Length[1];
     scoring.Grid_end[2] = ct->Length[2];

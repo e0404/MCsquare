@@ -137,11 +137,11 @@ int main(int argc, char *argv[]){
     VAR_COMPUTE End_y = (config.Scoring_origin[1] + config.Scoring_grid_size[1] * config.Scoring_voxel_spacing[1]) - (ct->Origin[1] + ct->Length[1]);
     VAR_COMPUTE End_z = (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]) - (ct->Origin[2] + ct->Length[2]);
 
-    if(Offset_x < 0 || Offset_y < 0 || Offset_z < 0 || End_x > 1e-4 || End_y > 1e-4 || End_z > 1e-4){
+    if(Offset_x < -1e-4 || Offset_y < -1e-4 || Offset_z < -1e-4 || End_x > 1e-4 || End_y > 1e-4 || End_z > 1e-4){
       printf("\nError: The scoring grid (defined in the configuration file) must be contained inside the CT image!\n");
-      if(Offset_x < 0) printf("In x direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[0], config.Scoring_origin[0]);
-      if(Offset_y < 0) printf("In y direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[1], config.Scoring_origin[1]);
-      if(Offset_z < 0) printf("In z direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[2], config.Scoring_origin[2]);
+      if(Offset_x < -1e-4) printf("In x direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[0], config.Scoring_origin[0]);
+      if(Offset_y < -1e-4) printf("In y direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[1], config.Scoring_origin[1]);
+      if(Offset_z < -1e-4) printf("In z direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[2], config.Scoring_origin[2]);
       if(End_x > 1e-4) printf("In x direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[0] + ct->Length[0]), (config.Scoring_origin[0] + config.Scoring_grid_size[0] * config.Scoring_voxel_spacing[0]));
       if(End_y > 1e-4) printf("In y direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[1] + ct->Length[1]), (config.Scoring_origin[1] + config.Scoring_grid_size[1] * config.Scoring_voxel_spacing[1]));
       if(End_z > 1e-4) printf("In z direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[2] + ct->Length[2]), (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]));

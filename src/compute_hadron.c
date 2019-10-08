@@ -171,6 +171,11 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
   ALIGNED_(64) VAR_COMPUTE v_tau[VLENGTH];
   v_tau[vALL] = v_rnd[vALL] * v_step[vALL];
 
+  ALIGNED_(64) VAR_COMPUTE scoring_x[VLENGTH], scoring_y[VLENGTH], scoring_z[VLENGTH];
+  scoring_x[vALL] = hadron->v_x[vALL] + v_tau[vALL] * hadron->v_u[vALL];
+  scoring_y[vALL] = hadron->v_y[vALL] + v_tau[vALL] * hadron->v_v[vALL];
+  scoring_z[vALL] = hadron->v_z[vALL] + v_tau[vALL] * hadron->v_w[vALL];
+
   ALIGNED_(64) int v_hinge_index[VLENGTH];
 
   #if InterfaceCrossing==RandomHinge
@@ -205,10 +210,6 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
   }
   hadron->v_T[vALL] = hadron->v_T[vALL] - v_dE[vALL];
 
-  ALIGNED_(64) VAR_COMPUTE scoring_x[VLENGTH], scoring_y[VLENGTH], scoring_z[VLENGTH];
-  scoring_x[vALL] = hadron->v_x[vALL] + v_tau[vALL] * hadron->v_u[vALL];
-  scoring_y[vALL] = hadron->v_y[vALL] + v_tau[vALL] * hadron->v_v[vALL];
-  scoring_z[vALL] = hadron->v_z[vALL] + v_tau[vALL] * hadron->v_w[vALL];
 
   for(i=0; i<VLENGTH; i++) Energy_Scoring(scoring, scoring_x[i], scoring_y[i], scoring_z[i], hadron->v_M[i], v_dE[i], v_init_density[i], v_SPR[i], config);
 
