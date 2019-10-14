@@ -714,6 +714,7 @@ void Select_spot(plan_parameters *Plan, plan_parameters *Beamlet, int FieldID, i
   Beamlet->fields[0].IsocenterPositionZ = Plan->fields[FieldID].IsocenterPositionZ;
   Beamlet->fields[0].ControlPoints_cumulative_PDF[0] = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
   Beamlet->fields[0].RS_Type = Plan->fields[FieldID].RS_Type;
+  Beamlet->fields[0].RS_num = Plan->fields[FieldID].RS_num;
   Beamlet->fields[0].ControlPoints[0].ControlPointIndex = Plan->fields[FieldID].ControlPoints[ControlPointID].ControlPointIndex;
   Beamlet->fields[0].ControlPoints[0].SpotTunnedID = Plan->fields[FieldID].ControlPoints[ControlPointID].SpotTunnedID;
   Beamlet->fields[0].ControlPoints[0].CumulativeMetersetWeight = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
@@ -757,6 +758,7 @@ plan_parameters* Select_beam(plan_parameters *Plan, int Beam){
   beam_plan->fields[0].IsocenterPositionZ = Plan->fields[Beam].IsocenterPositionZ;
   beam_plan->fields[0].NumberOfControlPoints = Plan->fields[Beam].NumberOfControlPoints;
   beam_plan->fields[0].RS_Type = Plan->fields[Beam].RS_Type;
+  beam_plan->fields[0].RS_num = Plan->fields[Beam].RS_num;
   beam_plan->fields[0].ControlPoints = (ControlPoint_parameters*)malloc(Plan->fields[Beam].NumberOfControlPoints * sizeof(ControlPoint_parameters));
   beam_plan->fields[0].ControlPoints_cumulative_PDF = (VAR_DATA*)malloc(Plan->fields[Beam].NumberOfControlPoints * sizeof(VAR_DATA));
 
