@@ -15,7 +15,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 DATA_config_dictionary *Init_Config(DATA_config *config){
 
-  unsigned int Num_Config_Tags = 71;
+  unsigned int Num_Config_Tags = 72;
 
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
@@ -90,6 +90,7 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_vec_uint_Config_element("Scoring_grid_size", &config_dictionary[68], config->Scoring_grid_size, 1, 100, 100, 100, 0, 99999);
   Add_vec_ureal_Config_element("Scoring_voxel_spacing", &config_dictionary[69], config->Scoring_voxel_spacing, 1, 0.15, 0.15, 0.15, 0.000001, 1000.0);
   Add_Enum_Config_element("Dose_weighting_algorithm", &config_dictionary[70], &config->Dose_weighting_algorithm, 1, 0, "Volume;Mass");
+  Add_bool_Config_element("Ignore_low_density_voxels", &config_dictionary[71], &config->Ignore_low_density_voxels, 1, 1);
 
 
   return config_dictionary;
@@ -634,7 +635,8 @@ printf("Dose_Segmentation = %u \n", config->Dose_Segmentation);
 printf("Segmentation_Density_Threshold = %f \n\n", config->Segmentation_Density_Threshold);
 
 printf("Compute_stat_uncertainty = %u \n", config->Compute_stat_uncertainty);
-printf("Stat_uncertainty = %f \n\n", config->Stat_uncertainty);
+printf("Stat_uncertainty = %f \n", config->Stat_uncertainty);
+printf("Compute_stat_uncertainty = %u \n\n", config->Ignore_low_density_voxels);
 
 printf("Independent_scoring_grid = %u \n", config->Independent_scoring_grid);
 printf("Scoring_origin = %f %f %f \n", config->Scoring_origin[0], config->Scoring_origin[1], config->Scoring_origin[2]);

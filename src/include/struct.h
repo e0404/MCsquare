@@ -143,7 +143,7 @@ struct DATA_Struct{
 	int GridSize[3];
 	VAR_DATA VoxelLength[3];
 	VAR_DATA Origin[3];
-	int *Mask;
+	VAR_DATA *Mask;
 	int N_Index;
 	int *IndexList;
 };
@@ -333,6 +333,7 @@ struct DATA_config{
 	VAR_DATA Segmentation_Density_Threshold;
 	unsigned int Compute_stat_uncertainty;
 	VAR_DATA Stat_uncertainty;
+	unsigned int Ignore_low_density_voxels;
 	unsigned int Independent_scoring_grid;
 	VAR_DATA  Scoring_origin[3];
 	unsigned int Scoring_grid_size[3];

@@ -241,8 +241,10 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_C
   for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
     if(Tot_scoring->dose[j] > 0.5*max_dose){
       //sigma += sqrt(Tot_scoring->dose_squared[j] - Tot_scoring->dose[j]*Tot_scoring->dose[j]/Num_batch) / (Tot_scoring->dose[j]/Num_batch);
-      sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
-      count++;
+      if(config->Ignore_low_density_voxels == 0 || ct->density[j] > 0.1){
+        sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
+        count++;
+      }
     }
   }
 
