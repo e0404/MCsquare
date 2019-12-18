@@ -334,6 +334,7 @@ struct DATA_config{
 	unsigned int Compute_stat_uncertainty;
 	VAR_DATA Stat_uncertainty;
 	unsigned int Ignore_low_density_voxels;
+	unsigned int Export_batch_dose;
 	unsigned int Independent_scoring_grid;
 	VAR_DATA  Scoring_origin[3];
 	unsigned int Scoring_grid_size[3];

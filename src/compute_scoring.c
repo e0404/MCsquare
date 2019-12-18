@@ -198,7 +198,7 @@ void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material
 }
 
 
-VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_CT *ct, int Num_batch, DATA_config *config){
+VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materials *material, DATA_CT *ct, int Num_batch, DATA_config *config){
 
   //double voxel_volume = Tot_scoring->VoxelLength[0]*Tot_scoring->VoxelLength[1]*Tot_scoring->VoxelLength[2];
   VAR_SCORING tmp, sigma=0, max_dose=0;
@@ -251,6 +251,45 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_C
   //printf("count = %d \n", count);
 
   sigma = sigma / (count*Num_batch);
+
+
+  VAR_SCORING *batch_dose = NULL;
+
+  if(config->Export_batch_dose == 1){
+    batch_dose = (VAR_SCORING*)calloc(Tot_scoring->Nbr_voxels, sizeof(VAR_SCORING));
+
+    double voxel_volume = Tot_scoring->VoxelLength[0]*Tot_scoring->VoxelLength[1]*Tot_scoring->VoxelLength[2];
+
+    int ii;
+    for(ii=0; ii<Tot_scoring->Nbr_voxels; ii++){
+      batch_dose[ii] = Tot_scoring->dose[ii] / (Num_batch*config->Num_Primaries/MIN_NUM_BATCH);
+      if(config->DoseToWater == 1) batch_dose[ii] /= material[ct->material[ii]].SPR; // dose to water conversion by post-processing
+      batch_dose[ii] *= (batch_dose[ii] > 0);
+      batch_dose[ii] = batch_dose[ii] / voxel_volume; // Volume weighting
+      if(config->Dose_Segmentation != 0) batch_dose[ii] *= (ct->density[ii] > config->Segmentation_Density_Threshold);
+    }
+
+    char file_path[100];
+    strcpy(file_path, config->Output_Directory);
+    strcat(file_path, "Batch_Dose");
+    strcat(file_path, config->output_robustness_suffix);
+    strcat(file_path, config->output_beamlet_suffix);
+    strcat(file_path, config->output_4D_suffix);
+    strcat(file_path, config->output_beams_suffix);
+    strcat(file_path, ".mhd");
+    export_MHD_image(file_path, Tot_scoring->GridSize, Tot_scoring->VoxelLength, Tot_scoring->Origin, batch_dose);
+
+    if(batch_dose != NULL) free(batch_dose);
+
+    file_path[strlen(file_path)-4] = '\0';
+    strcat(file_path, "_stat.txt");
+    FILE *file = NULL;
+    file = fopen(file_path, "w");
+    fprintf(file, "Num_simulated_batches = %d\n", Num_batch);
+    fprintf(file, "Num_simulated_primaries = %ld\n", (Num_batch*config->Num_Primaries/MIN_NUM_BATCH));
+    fprintf(file, "Estimated_mean_uncertainty = %.3f %%\n", 100*sigma);
+    fclose(file);
+  }
 
   return sigma;
 }

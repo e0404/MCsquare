@@ -34,7 +34,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
     while(batch<=Num_batch){
       Batch_scoring = Init_Scoring(config, ct, 1);
       Num_simulated_primaries += Simulation_loop(config, material, ct, plan, machine, Fields, &Batch_scoring, (unsigned long)config->Num_Primaries/MIN_NUM_BATCH);
-      stat_uncertainty = Process_batch(&Tot_scoring, &Batch_scoring, ct, batch, config);
+      stat_uncertainty = Process_batch(&Tot_scoring, &Batch_scoring, material, ct, batch, config);
       Free_Scoring(&Batch_scoring);
 
       if(config->Stat_uncertainty == 0.0){
