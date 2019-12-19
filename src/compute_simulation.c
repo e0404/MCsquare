@@ -20,10 +20,17 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
   double time_init, time_MC, time_end;
   time_init = omp_get_wtime();
 
-  char file_path[100];
+  char file_path[100], progress_message[50];
+
   unsigned long Num_simulated_primaries = 0;
   VAR_SCORING stat_uncertainty = 1.0;
   int Num_batch = MIN_NUM_BATCH;
+
+  time_t time_count;
+  time(&time_count);
+  struct tm *start_time = localtime(&time_count);
+  strftime(progress_message,50,"\nSimulation started (%F %T) \n", start_time);
+  Display_simulation_progression(config, progress_message);
 
   DATA_Scoring Batch_scoring, Tot_scoring;
   Tot_scoring = Init_Scoring(config, ct, 1);
@@ -38,12 +45,16 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
       Free_Scoring(&Batch_scoring);
 
       if(config->Stat_uncertainty == 0.0){
-        if(batch < 5) printf(" %.1f %% \n", batch*(100.0/MIN_NUM_BATCH));
-        else printf(" %.1f %% (stat uncertainty: %.2f %%) \n", batch*(100.0/MIN_NUM_BATCH), stat_uncertainty*100);
+        if(batch < 5) sprintf(progress_message, " %.1f %% \n", batch*(100.0/MIN_NUM_BATCH));
+        else sprintf(progress_message, " %.1f %% (stat uncertainty: %.2f %%) \n", batch*(100.0/MIN_NUM_BATCH), stat_uncertainty*100);  
+	    
+	Display_simulation_progression(config, progress_message);
       }
       else{
-        if(batch < 5) printf("batch %d completed \n", batch);
-        else printf("batch %d completed (stat uncertainty: %.2f %%) \n", batch, stat_uncertainty*100);
+        if(batch < 5) sprintf(progress_message, "batch %d completed \n", batch);
+        else sprintf(progress_message, "batch %d completed (stat uncertainty: %.2f %%) \n", batch, stat_uncertainty*100);
+
+	Display_simulation_progression(config, progress_message);
 
 	if(batch == Num_batch && stat_uncertainty*100 > config->Stat_uncertainty)  Num_batch++;
       }
@@ -313,12 +324,34 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 }
 
 
+void Display_simulation_progression(DATA_config *config, char *progress_message){
+
+  FILE *progress_file = NULL;
+  char file_path[100];
+  strcpy(file_path, config->Output_Directory);
+  strcat(file_path, "Simulation_progress.txt");
+
+  // display progression on terminal
+  printf(progress_message);
+  fflush(stdout);
+
+  // write progression in file
+  progress_file = fopen(file_path, "a");
+  fprintf(progress_file, progress_message);
+  fclose(progress_file);
+
+  return;
+}
+
+
 unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT *ct, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, DATA_Scoring *Tot_scoring, unsigned long Num_primaries){
 
   static int Num_call = 0;
   Num_call++;
 
   unsigned long Num_simulated_primaries = 0;
+
+  char progress_message[50];
 
   VAR_SCORING *ptr_dose_scoring[config->Num_Threads];
   VAR_SCORING *ptr_energy_scoring[config->Num_Threads];
@@ -328,7 +361,7 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
   VAR_SCORING *ptr_LET_denominator[config->Num_Threads];
 
   // Parallelisation
-  #pragma omp parallel shared(config, material, ct, plan, machine, Fields, Num_simulated_primaries, Tot_scoring, ptr_energy_scoring, ptr_PG_scoring, ptr_PG_spectrum, ptr_LET_scoring, ptr_LET_denominator)
+  #pragma omp parallel shared(config, material, ct, plan, machine, Fields, Num_simulated_primaries, Tot_scoring, ptr_energy_scoring, ptr_PG_scoring, ptr_PG_spectrum, ptr_LET_scoring, ptr_LET_denominator, progress_message)
   {
     int tid = omp_get_thread_num();
 
@@ -392,30 +425,23 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
 	  }
 
 	  if(tid == 0 && display_progress == 1 && Num_simulated_primaries > progress_next){
-	    printf(" %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
-	    fflush(stdout);
+	    sprintf(progress_message, " %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
+	    Display_simulation_progression(config, progress_message);
+	    if((floor(Num_simulated_primaries/progress_interval)*progress_binning) == 100) display_progress = 0;
 	    progress_next += progress_interval;
 	  }
 
-/*
-	  if(tid == 0){
-	    if(config->Robustness_Mode == 0 && config->Beamlet_Mode == 0 && Num_simulated_primaries > progress_next){
-	      printf(" %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
-	      fflush(stdout);
-	      progress_next += progress_interval;
-	    }
-	  }
-*/
 	}
       }
 
       hadron_step(&hadron, &scoring, material, ct, HadronToSimulate, &Nbr_HadronToSimulate, RNDstream, config);
     }
 
-    if(tid == 0 && display_progress == 1) printf(" 100.0 %% \n");
+    if(tid == 0 && display_progress == 1){
+      Display_simulation_progression(config, " 100.0 %% \n");
+    }
 
 
-//    if(tid == 0 && config->Robustness_Mode == 0 && config->Beamlet_Mode == 0) printf(" 100.0 %% \n");
 
     // Agreggate results
 
