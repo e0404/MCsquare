@@ -56,7 +56,15 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 
 	Display_simulation_progression(config, progress_message);
 
-	if(batch == Num_batch && stat_uncertainty*100 > config->Stat_uncertainty)  Num_batch++;
+	if(batch == Num_batch && stat_uncertainty*100 > config->Stat_uncertainty){
+	  if(config->Max_Num_Primaries != 0 && config->Max_Num_Primaries < (batch*config->Num_Primaries/MIN_NUM_BATCH)){
+	    Display_simulation_progression(config, "The maximum number of simulated particles has been reached. The simulation is stopped.\n");
+	  }
+	  else if(config->Max_Simulation_time != 0 && (config->Max_Simulation_time*60) < (omp_get_wtime()-time_init)){
+	    Display_simulation_progression(config, "The maximum simulation time has been reached. The simulation is stopped.\n");
+	  }
+	  else Num_batch++;
+	}
       }
 
       batch++;

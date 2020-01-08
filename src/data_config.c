@@ -15,7 +15,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 DATA_config_dictionary *Init_Config(DATA_config *config){
 
-  unsigned int Num_Config_Tags = 73;
+  unsigned int Num_Config_Tags = 75;
 
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
@@ -92,6 +92,8 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_Enum_Config_element("Dose_weighting_algorithm", &config_dictionary[70], &config->Dose_weighting_algorithm, 1, 0, "Volume;Mass");
   Add_bool_Config_element("Ignore_low_density_voxels", &config_dictionary[71], &config->Ignore_low_density_voxels, 1, 1);
   Add_bool_Config_element("Export_batch_dose", &config_dictionary[72], &config->Export_batch_dose, 1, 0);
+  Add_ulong_Config_element("Max_Num_Primaries", &config_dictionary[73], &config->Max_Num_Primaries, 1, 0, 0, ULONG_MAX);
+  Add_uint_Config_element("Max_Simulation_time", &config_dictionary[74], &config->Max_Simulation_time, 1, 0, 0, UINT_MAX);
 
 
   return config_dictionary;
@@ -577,9 +579,6 @@ printf("Simulate_Secondary_Deuterons = %u \n", config->Simulate_Secondary_Deuter
 printf("Simulate_Secondary_Alphas = %u \n\n", config->Simulate_Secondary_Alphas);
 
 printf("4D_Mode = %u \n", config->Simu_4D_Mode);
-printf("Robustness_Mode = %u \n", config->Robustness_Mode);
-printf("Beamlet_Mode = %u \n\n", config->Beamlet_Mode);
-
 printf("4D_Dose_Accumulation = %u \n\n", config->Dose_4D_Accumulation);
 printf("Field_type = %d \n", config->Field_type);
 printf("Create_4DCT_from_Ref = %u \n", config->Create_4DCT_from_Ref);
@@ -587,6 +586,7 @@ printf("Create_Ref_from_4DCT = %u \n", config->Create_Ref_from_4DCT);
 printf("Dynamic_delivery = %u \n", config->Dynamic_delivery);
 printf("Breathing_period = %f \n\n", config->Breathing_period);
 
+printf("Robustness_Mode = %u \n", config->Robustness_Mode);
 printf("Simulate_nominal_plan = %u \n", config->Simulate_nominal_plan);
 printf("Scenario_selection = %d \n", config->Scenario_selection);
 printf("Systematic_Setup_Error = %f %f %f\n", config->Systematic_Setup_Error[0], config->Systematic_Setup_Error[1], config->Systematic_Setup_Error[2]);
@@ -597,10 +597,17 @@ printf("Random_Amplitude_Error = %f \n", config->Random_Amplitude_Error);
 printf("Systematic_Period_Error = %f \n", config->Systematic_Period_Error);
 printf("Random_Period_Error = %f \n\n", config->Random_Period_Error);
 
-printf("Beamlet_Parallelization = %u \n", config->Beamlet_Parallelization);
+printf("Beamlet_Mode = %u \n", config->Beamlet_Mode);
+printf("Beamlet_Parallelization = %u \n\n", config->Beamlet_Parallelization);
+
+printf("Compute_stat_uncertainty = %u \n", config->Compute_stat_uncertainty);
+printf("Stat_uncertainty = %f \n", config->Stat_uncertainty);
+printf("Ignore_low_density_voxels = %u \n\n", config->Ignore_low_density_voxels);
+printf("Export_batch_dose = %u \n", config->Export_batch_dose);
+printf("Max_Num_Primaries = %lu \n", config->Max_Num_Primaries);
+printf("Max_Simulation_time = %u \n\n", config->Max_Simulation_time);
 
 printf("Output_Directory = %s \n\n", config->Output_Directory);
-
 printf("Energy_ASCII_Output = %u \n", config->Energy_ASCII_Output);
 printf("Energy_MHD_Output = %u \n", config->Energy_MHD_Output);
 printf("Energy_Sparse_Output = %u \n", config->Energy_Sparse_Output);
@@ -634,11 +641,6 @@ printf("Dose_to_Water_conversion = %d \n\n", config->DoseToWater);
 
 printf("Dose_Segmentation = %u \n", config->Dose_Segmentation);
 printf("Segmentation_Density_Threshold = %f \n\n", config->Segmentation_Density_Threshold);
-
-printf("Compute_stat_uncertainty = %u \n", config->Compute_stat_uncertainty);
-printf("Stat_uncertainty = %f \n", config->Stat_uncertainty);
-printf("Ignore_low_density_voxels = %u \n\n", config->Ignore_low_density_voxels);
-printf("Export_batch_dose = %u \n\n", config->Export_batch_dose);
 
 printf("Independent_scoring_grid = %u \n", config->Independent_scoring_grid);
 printf("Scoring_origin = %f %f %f \n", config->Scoring_origin[0], config->Scoring_origin[1], config->Scoring_origin[2]);

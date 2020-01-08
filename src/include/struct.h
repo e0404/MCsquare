@@ -304,6 +304,14 @@ struct DATA_config{
 	unsigned int Beamlet_Mode;
 	unsigned int Beamlet_Parallelization;
 
+	// Statistical noise and stopping criteria
+	unsigned int Compute_stat_uncertainty;
+	VAR_DATA Stat_uncertainty;
+	unsigned int Ignore_low_density_voxels;
+	unsigned int Export_batch_dose;
+	unsigned long Max_Num_Primaries;
+	unsigned int Max_Simulation_time;
+
 	// Output parameters
 	char Output_Directory[200];
 	unsigned int Energy_ASCII_Output;
@@ -331,10 +339,6 @@ struct DATA_config{
 	int DoseToWater;
 	unsigned int Dose_Segmentation;
 	VAR_DATA Segmentation_Density_Threshold;
-	unsigned int Compute_stat_uncertainty;
-	VAR_DATA Stat_uncertainty;
-	unsigned int Ignore_low_density_voxels;
-	unsigned int Export_batch_dose;
 	unsigned int Independent_scoring_grid;
 	VAR_DATA  Scoring_origin[3];
 	unsigned int Scoring_grid_size[3];
