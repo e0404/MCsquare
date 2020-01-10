@@ -248,9 +248,8 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
     }
   }
 
-  //printf("count = %d \n", count);
+  sigma = sigma / ((long)count*(long)Num_batch);
 
-  sigma = sigma / (count*Num_batch);
 
 
   VAR_SCORING *batch_dose = NULL;
