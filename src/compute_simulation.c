@@ -36,11 +36,13 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
   Tot_scoring = Init_Scoring(config, ct, 1);
 
   if(config->Compute_stat_uncertainty == 1 && (config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) && config->Fraction_accumulation == 0){
+  
+    unsigned long Particles_per_batch = (unsigned long)config->Num_Primaries/MIN_NUM_BATCH;
 
     int batch = 1;
     while(batch<=Num_batch){
       Batch_scoring = Init_Scoring(config, ct, 1);
-      Num_simulated_primaries += Simulation_loop(config, material, ct, plan, machine, Fields, &Batch_scoring, (unsigned long)config->Num_Primaries/MIN_NUM_BATCH);
+      Num_simulated_primaries += Simulation_loop(config, material, ct, plan, machine, Fields, &Batch_scoring, Particles_per_batch);
       stat_uncertainty = Process_batch(&Tot_scoring, &Batch_scoring, material, ct, batch, config);
       Free_Scoring(&Batch_scoring);
 
@@ -55,9 +57,23 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
         else sprintf(progress_message, "batch %d completed (stat uncertainty: %.2f %%) \n", batch, stat_uncertainty*100);
 
 	Display_simulation_progression(config, progress_message);
-
+	
+	// increase number of particles per batch if progress too slow after 10 batches
+	if(batch == 10 && stat_uncertainty*100 > config->Stat_uncertainty*3.5){
+	  Particles_per_batch *= 10;
+	  batch = 1;
+	  Display_simulation_progression(config, "\nThe statistical uncertainty is still very high after 10 batches.\nSum previous batches and continue simulation with 10x more particles per batch.\nbatch 1 completed\n");
+	  
+	  #pragma omp parallel for
+	  for(int j=0; j<Tot_scoring.Nbr_voxels; j++){
+	    Tot_scoring.dose_squared[j] = Tot_scoring.dose[j] * Tot_scoring.dose[j];
+	  }
+	  
+	}
+	  
+        // check stopping criteria
 	if(batch == Num_batch && stat_uncertainty*100 > config->Stat_uncertainty){
-	  if(config->Max_Num_Primaries != 0 && config->Max_Num_Primaries < (batch*config->Num_Primaries/MIN_NUM_BATCH)){
+	  if(config->Max_Num_Primaries != 0 && config->Max_Num_Primaries < ((unsigned long)batch*Particles_per_batch)){
 	    Display_simulation_progression(config, "The maximum number of simulated particles has been reached. The simulation is stopped.\n");
 	  }
 	  else if(config->Max_Simulation_time != 0 && (config->Max_Simulation_time*60) < (omp_get_wtime()-time_init)){
