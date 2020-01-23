@@ -91,7 +91,25 @@ DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_square
 }
 
 
-int get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z){
+void get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, int *v_index){
+  
+  __assume_aligned(v_x, 64);
+  __assume_aligned(v_y, 64);
+  __assume_aligned(v_z, 64);
+  __assume_aligned(v_index, 64);
+
+  v_index[vALL] = 	(int)floor( (-v_x[vALL] + scoring->Length[0]) / scoring->VoxelLength[0] ) 
+			+ scoring->GridSize[0] * (int)floor( v_y[vALL] / scoring->VoxelLength[1] ) 
+			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( v_z[vALL] / scoring->VoxelLength[2] );
+
+  if(v_x[vALL] < scoring->Offset[0] || v_y[vALL] < scoring->Offset[1] || v_z[vALL] < scoring->Offset[2] || 
+	 v_x[vALL] > scoring->Grid_end[0] || v_y[vALL] > scoring->Grid_end[1] || v_z[vALL] > scoring->Grid_end[2] ||
+	 v_index[vALL] < 0 || v_index[vALL] > scoring->Nbr_voxels) v_index[vALL] = -1;
+  
+}
+
+
+int get_single_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z){
   
   if(position_x < scoring->Offset[0] || position_y < scoring->Offset[1] || position_z < scoring->Offset[2] || position_x > scoring->Grid_end[0] || position_y > scoring->Grid_end[1] || position_z > scoring->Grid_end[2]) return -1;
 
@@ -106,24 +124,56 @@ int get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE
 }
 
 
-void Energy_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE density, VAR_COMPUTE SPR, DATA_config *config){
+void Energy_Scoring_from_index(DATA_Scoring *scoring, int *v_index, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config){
 
-  int index = get_scoring_index(scoring, position_x, position_y, position_z);
-  if(index < 0) return;
-
+  __assume_aligned(v_index, 64);
+  __assume_aligned(v_multiplicity, 64);
+  __assume_aligned(v_dE, 64);
+  __assume_aligned(v_density, 64);
+  __assume_aligned(v_SPR, 64);
   
-  if(config->Dose_weighting_algorithm == 0) scoring->dose[index] += multiplicity * dE / (density * SPR); // Volume weighting
-  else scoring->dose[index] += multiplicity * dE / SPR;  // Mass weighting
-  // SPR is used when online dose to water conversion is enabled
+  ALIGNED_(64) VAR_COMPUTE v_scored_value[VLENGTH];
+ 
+  // SPR is used when online dose-to-water conversion is enabled
+  if(config->Dose_weighting_algorithm == 0) v_scored_value[vALL] = v_multiplicity[vALL] * v_dE[vALL] / (v_density[vALL] * v_SPR[vALL]); // Volume weighting
+  else v_scored_value[vALL] = v_multiplicity[vALL] * v_dE[vALL] / v_SPR[vALL];  // Mass weighting
+    
+  int i;
+  for(i=0; i<VLENGTH; i++){
+    if(v_scored_value[i] != 0.0 && v_index[i] >= 0) scoring->dose[v_index[i]] += v_scored_value[i];
+  }
 
-  if(config->Score_Energy == 1) scoring->energy[index] += multiplicity * dE;
+  if(config->Score_Energy == 1){
+    v_scored_value[vALL] = v_multiplicity[vALL] * v_dE[vALL];
+    
+    for(i=0; i<VLENGTH; i++){
+      if(v_scored_value[i] != 0.0 && v_index[i] >= 0) scoring->energy[v_index[i]] += v_scored_value[i];
+    }
+  }
+
+}
+
+void Energy_Scoring_from_coordinates(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config){
+
+  __assume_aligned(v_x, 64);
+  __assume_aligned(v_y, 64);
+  __assume_aligned(v_z, 64);
+  __assume_aligned(v_multiplicity, 64);
+  __assume_aligned(v_dE, 64);
+  __assume_aligned(v_density, 64);
+  __assume_aligned(v_SPR, 64);
+
+  ALIGNED_(64) int v_index[VLENGTH];
+
+  get_scoring_index(scoring, v_x, v_y, v_z, v_index);  
+  Energy_Scoring_from_index(scoring, v_index, v_multiplicity, v_dE, v_density, v_SPR, config);
 
 }
 
 
 void LET_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config){
 
-  int index = get_scoring_index(scoring, position_x, position_y, position_z);
+  int index = get_single_scoring_index(scoring, position_x, position_y, position_z);
   if(index < 0) return;
 
   if(config->LET_Calculation_Method == 0){			// 0 = DepositedEnergy
@@ -140,7 +190,7 @@ void LET_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE posi
 
 void PG_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE PG_energy, DATA_config *config){
 
-  int index = get_scoring_index(scoring, position_x, position_y, position_z);
+  int index = get_single_scoring_index(scoring, position_x, position_y, position_z);
   if(index < 0) return;
 
   if(PG_energy >= config->PG_LowEnergyCut && PG_energy <= config->PG_HighEnergyCut){
@@ -158,7 +208,7 @@ void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material
   int ii,j,k,index=0;
 
 
-  if(config->DoseToWater == 1){ // dose to water conversion by post-processing
+  if(config->DoseToWater == 1){ // dose-to-water conversion by post-processing
     for(ii=0; ii<scoring->Nbr_voxels; ii++){
       scoring->dose[ii] /= material[ct->material[ii]].SPR;
     }

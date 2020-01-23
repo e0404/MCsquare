@@ -34,10 +34,10 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   __assume_aligned(&hadron->v_gamma, 64);
   __assume_aligned(&hadron->v_beta2, 64);
   __assume_aligned(&hadron->v_Te_max, 64);
+  
 
 
   Update_Hadron(hadron);
-
   // Init variables
   int i;
 
@@ -50,9 +50,9 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
   ALIGNED_(64) VAR_COMPUTE v_init_density[VLENGTH];
   v_init_density[vALL] = ct->density[v_index[vALL]];
-
+  
   ALIGNED_(64) VAR_COMPUTE v_N_el[VLENGTH];
-//v_N_el[vALL] = material[v_material_label[vALL]].N_el * v_init_density[vALL];
+  //v_N_el[vALL] = material[v_material_label[vALL]].N_el * v_init_density[vALL];
   for(i=0; i<VLENGTH; i++){
     v_N_el[i] = material[v_material_label[i]].N_el * v_init_density[i];
   }
@@ -147,14 +147,14 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   rand_normal(RNG_Stream, v_dE, v_mean_dE, v_straggling);					// energie perdue
 
   ALIGNED_(64) VAR_COMPUTE v_X0[VLENGTH];
-//v_X0[vALL] = material[v_material_label[vALL]].X0 / v_init_density[vALL];			// longueur de radiation
-for(i=0; i<VLENGTH; i++){
-v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
-}
+  //v_X0[vALL] = material[v_material_label[vALL]].X0 / v_init_density[vALL];			// longueur de radiation
+  for(i=0; i<VLENGTH; i++){
+    v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
+  }
 
   ALIGNED_(64) VAR_COMPUTE v_MS[VLENGTH];
   Compute_MS_Fippel(hadron, v_step, v_X0, v_MS);						// MS
-//v_MS[vALL] = (config->MCS_const*UMeV * hadron->v_charge[vALL] / (hadron->v_beta2[vALL]*hadron->v_gamma[vALL]*MC2_PRO)) * sqrt(v_step[vALL]/v_X0[vALL]);
+  //v_MS[vALL] = (config->MCS_const*UMeV * hadron->v_charge[vALL] / (hadron->v_beta2[vALL]*hadron->v_gamma[vALL]*MC2_PRO)) * sqrt(v_step[vALL]/v_X0[vALL]);
 
   ALIGNED_(64) VAR_COMPUTE v_theta[VLENGTH];
   rand_normal_zero(RNG_Stream, v_theta, v_MS);							// deviation angle (theta)
@@ -210,8 +210,8 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
   }
   hadron->v_T[vALL] = hadron->v_T[vALL] - v_dE[vALL];
 
-
-  for(i=0; i<VLENGTH; i++) Energy_Scoring(scoring, scoring_x[i], scoring_y[i], scoring_z[i], hadron->v_M[i], v_dE[i], v_init_density[i], v_SPR[i], config);
+  if(config->Independent_scoring_grid == 0) Energy_Scoring_from_index(scoring, v_hinge_index, hadron->v_M, v_dE, v_init_density, v_SPR, config);
+  else Energy_Scoring_from_coordinates(scoring, scoring_x, scoring_y, scoring_z, hadron->v_M, v_dE, v_init_density, v_SPR, config);
 
 /*
   for(i=0; i<VLENGTH; i++){
@@ -230,12 +230,11 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
     else{
       hadron->v_T[i] = hadron->v_T[i] - v_dE[i];
     }
-    Energy_Scoring(scoring, v_hinge_index[i], hadron->v_M[i], v_dE[i], v_init_density[i], v_SPR[i], config);
+    Energy_Scoring_from_index(scoring, v_hinge_index[i], hadron->v_M[i], v_dE[i], v_init_density[i], v_SPR[i], config);
   }
 */
 
   Update_Hadron(hadron);
-
 
   // Compute CT index and remove particles out of geometry
   get_CT_Offset(hadron, ct, v_index);
@@ -287,11 +286,11 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
         v_dE_hard[i] = Compute_Nuclear_interaction(i, hadron, material, v_material_label[i], secondary_hadron, Nbr_secondaries, scoring, RNG_Stream, config);
 
         if(hadron->v_T[i] <= (config->Ecut_Pro * UMeV)){
-	  hadron->v_type[i] = Unknown;
-	  v_dE_hard[i] += hadron->v_T[i];
+	      hadron->v_type[i] = Unknown;
+	      v_dE_hard[i] += hadron->v_T[i];
         }
-
-	Energy_Scoring(scoring, hadron->v_x[i], hadron->v_y[i], hadron->v_z[i], hadron->v_M[i], v_dE_hard[i], ct->density[v_index[i]], 1.0, config);
+        
+        v_SPR[i] = 1.0; //SPR not use for dose-to-water conversion of nuclear interaction
       }
 
       // Scoring for EM interactions
@@ -302,16 +301,17 @@ v_X0[i] = material[v_material_label[i]].X0 / v_init_density[i];
         }
 
         if(config->Score_LET == 1) LET_Scoring(scoring, scoring_x[i], scoring_y[i], scoring_z[i], hadron->v_M[i], v_dE[i]+v_dE_hard[i], v_step[i], v_stop_pow[i], config);
-
-        Energy_Scoring(scoring, hadron->v_x[i], hadron->v_y[i], hadron->v_z[i], hadron->v_M[i], v_dE_hard[i], ct->density[v_index[i]], v_SPR[i], config);
       }
 
     }
 
   }
-
-//  Update_Hadron(hadron);
-
+    
+  ALIGNED_(64) VAR_COMPUTE v_density[VLENGTH];
+  v_density[vALL] = ct->density[v_index[vALL]];
+  
+  if(config->Independent_scoring_grid == 0) Energy_Scoring_from_index(scoring, v_index, hadron->v_M, v_dE_hard, v_density, v_SPR, config);
+  else Energy_Scoring_from_coordinates(scoring, hadron->v_x, hadron->v_y, hadron->v_z, hadron->v_M, v_dE_hard, v_density, v_SPR, config);
 
   return;
 }
