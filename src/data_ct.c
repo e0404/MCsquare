@@ -117,7 +117,7 @@ VAR_DATA HU_to_Density_convertion(VAR_DATA HU, DATA_CT *ct){
 
   int index = Binary_Search(HU, ct->Conversion_HU_Density, ct->Num_Density_Data);
   if(index < 0) index = 0;
-  else if(index > ct->Num_Density_Data - 1) index = ct->Num_Density_Data - 1;
+  else if(index > ct->Num_Density_Data - 2) index = ct->Num_Density_Data - 2;
 
   VAR_DATA density = (VAR_DATA)Linear_Interpolation(HU, ct->Conversion_HU_Density[index], ct->Conversion_HU_Density[index+1], ct->Conversion_Densities[index], ct->Conversion_Densities[index+1]);
 
