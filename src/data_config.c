@@ -15,14 +15,14 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 DATA_config_dictionary *Init_Config(DATA_config *config){
 
-  unsigned int Num_Config_Tags = 63;
+  unsigned int Num_Config_Tags = 66;
 
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
   Add_uint_Config_element("_Internal_Num_Config_Tags", &config_dictionary[0], &config->Num_Config_Tags, 1, Num_Config_Tags, 0, UINT_MAX);
   Add_uint_Config_element("Num_Threads", &config_dictionary[1], &config->Num_Threads, 1, 0, 0, UINT_MAX);
   Add_ulong_Config_element("Num_Primaries", &config_dictionary[2], &config->Num_Primaries, 1, 10000000, 1, ULONG_MAX);
-  Add_string_Config_element("CT_File", &config_dictionary[3], config->CT_File, 1, "CT.ct", 1, 200);
+  Add_string_Config_element("CT_File", &config_dictionary[3], config->CT_File, 1, "CT.mhd", 1, 200);
   Add_ureal_Config_element("E_Cut_Pro", &config_dictionary[4], &config->Ecut_Pro, 1, 0.5, 0.001, 200);
   Add_ureal_Config_element("D_Max", &config_dictionary[5], &config->D_Max, 1, 0.2, 0.001, 100);
   Add_ureal_Config_element("Epsilon_Max", &config_dictionary[6], &config->Epsilon_Max, 1, 0.25, 0.001, 1.0);
@@ -82,6 +82,9 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_ureal_Config_element("Systematic_Amplitude_Error", &config_dictionary[60], &config->Systematic_Amplitude_Error, 1, 5, 0.0, 200);
   Add_ureal_Config_element("Random_Amplitude_Error", &config_dictionary[61], &config->Random_Amplitude_Error, 1, 5, 0.0, 200);
   Add_bool_Config_element("Export_Beam_dose", &config_dictionary[62], &config->Export_Beam_dose, 1, 0);
+  Add_uint_Config_element("Num_Random_Scenarios", &config_dictionary[63], &config->Num_random_scenarios, 1, 100, 1, UINT_MAX);
+  Add_bool_Config_element("Compute_stat_uncertainty", &config_dictionary[64], &config->Compute_stat_uncertainty, 1, 1);
+  Add_ureal_Config_element("Stat_uncertainty", &config_dictionary[65], &config->Stat_uncertainty, 1, 0.0, 0.0, 100.0);
 
 
   return config_dictionary;
@@ -529,6 +532,9 @@ printf("Dose_to_Water_conversion = %d \n\n", config->DoseToWater);
 
 printf("Dose_Segmentation = %u \n", config->Dose_Segmentation);
 printf("Segmentation_Density_Threshold = %f \n\n", config->Segmentation_Density_Threshold);
+
+printf("Compute_stat_uncertainty = %u \n", config->Compute_stat_uncertainty);
+printf("Stat_uncertainty = %f \n", config->Stat_uncertainty);
 }
 
 

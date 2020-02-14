@@ -18,7 +18,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
     char tmp [256];
     FILE *machine;
     machine=fopen(machine_name,"r");
-        
+
     if (machine==NULL)
     {
 	printf("unable to open machine parameters\n");
@@ -28,9 +28,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
     fgets(tmp,256,machine);
     fclose(machine);
 
-    mac->RS_Type = none;
-    mac->RS_Density = 0.0;
-    mac->RS_Material = 17;
+    mac->RS_number = 0;
 
     int error;
 
@@ -54,6 +52,7 @@ int read_machine_parameters(char* machine_name, machine_parameters *mac){
 int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 
   char read[500], *read_token;
+  int i, current_RS = -1;
 
   FILE *file = fopen(machine_name,"r");
   if(file == NULL){
@@ -61,8 +60,22 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	return 1;
   }
 
-  int i;
-  
+
+  // count number of range shifters defined in the BDL
+  while (fgets(read, 500, file) != NULL){
+    if(strcmp(read, "Range Shifter parameters\n") == 0) mac->RS_number += 1;
+  }
+  rewind(file); // Go back to the beginning of the file
+
+  // create range shifter variables
+  if(mac->RS_number > 0){
+    mac->RS_Density = (double*)malloc(mac->RS_number * sizeof(double));
+    mac->RS_WET = (double*)malloc(mac->RS_number * sizeof(double));
+    mac->RS_Material = (int*)malloc(mac->RS_number * sizeof(int));
+    mac->RS_Type = (enum RangeShifter_type*)malloc(mac->RS_number * sizeof(enum RangeShifter_type));
+    mac->RS_ID = (char**)malloc(mac->RS_number * sizeof(char*));
+  }
+
 
   while (fgets(read, 500, file) != NULL){
 
@@ -97,19 +110,53 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	mac->mDistanceSMYToIsocenter = atof(read_token);
     }
     else if(strcmp(read, "Range Shifter parameters\n") == 0){
+	current_RS += 1;
+
 	while(1){
 	  fgets(read,500,file);
 	  read_token = strtok(read, "= \t#\r\n");
 	  if(read_token == NULL) break;
+	  else if(strcmp(read_token, "RS_ID") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token != NULL){
+		mac->RS_ID[current_RS] = (char*)malloc((strlen(read_token)+1) * sizeof(char));
+		strcpy(mac->RS_ID[current_RS], read_token); 
+	    }
+	  }
 	  else if(strcmp(read_token, "RS_type") == 0){
 	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(strcmp(read_token, "none") == 0) mac->RS_Type = none;
-	    else if(strcmp(read_token, "binary") == 0) mac->RS_Type = binary;
-	    else if(strcmp(read_token, "analog") == 0) mac->RS_Type = analog;
+	    if(strcmp(read_token, "none") == 0) mac->RS_Type[current_RS] = none;
+	    else if(strcmp(read_token, "binary") == 0) mac->RS_Type[current_RS] = binary;
+	    else if(strcmp(read_token, "analog") == 0) mac->RS_Type[current_RS] = analog;
+	    else if(strcmp(read_token, "empty") == 0) mac->RS_Type[current_RS] = empty;
 	    else{
 		printf("\n Error: \"%s\" is not a valid value for RS_type in \"%s\"\n\n", read_token, machine_name);
 		return 1;
 	    }
+	  }
+	  else if(strcmp(read_token, "RS_material") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token == NULL || !isUnsignedInt(read_token)){
+		printf("\n Error: \"%s\" is not a valid value for RS_material in \"%s\"\n\n", read_token, machine_name);
+		return 1;
+	    }
+	    mac->RS_Material[current_RS] = atoi(read_token);
+	  }
+	  else if(strcmp(read_token, "RS_density") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token == NULL || !isUnsignedFloat(read_token)){
+		printf("\n Error: \"%s\" is not a valid value for RS_density in \"%s\"\n\n", read_token, machine_name);
+		return 1;
+	    }
+	    mac->RS_Density[current_RS] = atof(read_token);
+	  }
+	  else if(strcmp(read_token, "RS_WET") == 0){
+	    read_token = strtok(NULL, "= \t#\r\n");
+	    if(read_token == NULL || !isUnsignedFloat(read_token)){
+		printf("\n Error: \"%s\" is not a valid value for RS_WET in \"%s\"\n\n", read_token, machine_name);
+		return 1;
+	    }
+	    mac->RS_WET[current_RS] = atof(read_token);
 	  }
 /*
 	  else if(strcmp(read_token, "RS_position") == 0){
@@ -129,22 +176,6 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 	    mac->RS_Thickness = atof(read_token);
 	  }
 */
-	  else if(strcmp(read_token, "RS_material") == 0){
-	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(read_token == NULL || !isUnsignedInt(read_token)){
-		printf("\n Error: \"%s\" is not a valid value for RS_material in \"%s\"\n\n", read_token, machine_name);
-		return 1;
-	    }
-	    mac->RS_Material = atoi(read_token);
-	  }
-	  else if(strcmp(read_token, "RS_density") == 0){
-	    read_token = strtok(NULL, "= \t#\r\n");
-	    if(read_token == NULL || !isUnsignedFloat(read_token)){
-		printf("\n Error: \"%s\" is not a valid value for RS_density in \"%s\"\n\n", read_token, machine_name);
-		return 1;
-	    }
-	    mac->RS_Density = atof(read_token);
-	  }
 	  else break;
 	}
     }
@@ -331,104 +362,104 @@ int read_UPenn_BDL(char* machine_name, machine_parameters *mac){
 
 int read_Grevillot_BDL(char* machine_name, machine_parameters *mac)
 {
-    
-    
+
+
     char dummy [256];
     FILE *machine;
     machine=fopen(machine_name,"r");
-    int i=0;  
-        
+    int i=0;
+
     if (machine==NULL)
     {
 		printf("unable to open machine parameters\n");
 		return 1;
     }
-        
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
-    fscanf(machine,"%lf",&mac->mDistanceSourcePatient);    
-    
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
+    fscanf(machine,"%lf",&mac->mDistanceSourcePatient);
+
+    fgets(dummy,256,machine);
+    fgets(dummy,256,machine);
     fscanf(machine,"%lf",&mac->mDistanceSMXToIsocenter);
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
+    fgets(dummy,256,machine);
     fscanf(machine,"%lf",&mac->mDistanceSMYToIsocenter);
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
+    fgets(dummy,256,machine);
     fscanf(machine,"%d",&mac->mEnergy_order);
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
+    fgets(dummy,256,machine);
     for (i=0;i<=mac->mEnergy_order;i++)
     {
         fscanf(machine,"%lf",&mac->mEnergy_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fscanf(machine,"%d",&mac->sEnergy_order);
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);  
+    fgets(dummy,256,machine);
     for (i=0;i<=mac->sEnergy_order;i++)
     {
         fscanf(machine,"%lf",&mac->sEnergy_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
+    fgets(dummy,256,machine);
     fscanf(machine,"%d",&mac->mX_order);
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
+    fgets(dummy,256,machine);
     for (i=0;i<=mac->mX_order;i++)
     {
         fscanf(machine,"%lf",&mac->mX_poly[i]);
     //    printf("%lf\n",mac->mX_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);  
-    fscanf(machine,"%d",&mac->mTheta_order);    
-    
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);   
+    fscanf(machine,"%d",&mac->mTheta_order);
+
+    fgets(dummy,256,machine);
+    fgets(dummy,256,machine);
     for (i=0;i<=mac->mTheta_order;i++)
     {
         fscanf(machine,"%lf",&mac->mTheta_poly[i]);
-        
+
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);    
-    fscanf(machine,"%d",&mac->mY_order);    
-    
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);   
+    fscanf(machine,"%d",&mac->mY_order);
+
+    fgets(dummy,256,machine);
+    fgets(dummy,256,machine);
     for (i=0;i<=mac->mY_order;i++)
     {
         fscanf(machine,"%lf",&mac->mY_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
-    fgets(dummy,256,machine);   
+    fgets(dummy,256,machine);
     fscanf(machine,"%d",&mac->mPhi_order);
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     for (i=0;i<=mac->mPhi_order;i++)
@@ -436,13 +467,13 @@ int read_Grevillot_BDL(char* machine_name, machine_parameters *mac)
         fscanf(machine,"%lf",&mac->mPhi_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fscanf(machine,"%d",&mac->eXTheta_order);
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     for (i=0;i<=mac->eXTheta_order;i++)
@@ -450,12 +481,12 @@ int read_Grevillot_BDL(char* machine_name, machine_parameters *mac)
         fscanf(machine,"%lf",&mac->eXTheta_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
     fscanf(machine,"%d",&mac->eYPhi_order);
 //    printf("%d\n",mac->eYPhi_order);
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
 //    printf("%s",dummy);
@@ -465,10 +496,10 @@ int read_Grevillot_BDL(char* machine_name, machine_parameters *mac)
 //        printf("%lf\n",mac->eYPhi_poly[i]);
         fgets(dummy,256,machine);
     }
-    
+
     fgets(dummy,256,machine);
     fgets(dummy,256,machine);
-    
+
     fclose(machine);
 
     return 0;
@@ -496,60 +527,60 @@ void display_machine_parameters (machine_parameters *machine){
 
     printf("Nominal Energies\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Nominal_Energies[i]);
-    
+
     printf("\n\nMean Energies\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Mean_Energies[i]);
-    
+
     printf("\n\nEnergy Spread\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Energy_Spread[i]);
-    
+
     printf("\n\nProtons per MU\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %e ", machine->Proton_Per_MU[i]);
-    
+
     printf("\n\nWeight 1\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Weight1[i]);
-    
+
 
     printf("\n\nSpotSize 1 X\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->SpotSize1x[i]);
-    
+
     printf("\n\nDivergence 1 X\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Divergence1x[i]);
-    
+
     printf("\n\nCorrelation 1 X\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Correlation1x[i]);
-    
+
 
     printf("\n\nSpotSize 1 Y\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->SpotSize1y[i]);
-    
+
     printf("\n\nDivergence 1 Y\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Divergence1y[i]);
-    
+
     printf("\n\nCorrelation 1 Y\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Correlation1y[i]);
-    
+
 
     printf("\n\nWeight 2\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Weight2[i]);
-    
+
 
     printf("\n\nSpotSize 2 X\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->SpotSize2x[i]);
-    
+
     printf("\n\nDivergence 2 X\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Divergence2x[i]);
-    
+
     printf("\n\nCorrelation 2 X\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Correlation2x[i]);
-    
+
 
     printf("\n\nSpotSize 2 Y\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->SpotSize2y[i]);
-    
+
     printf("\n\nDivergence 2 Y\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Divergence2y[i]);
-    
+
     printf("\n\nCorrelation 2 Y\n");
     for(i=0; i<machine->Number_Energies; i++) printf(" %f ", machine->Correlation2y[i]);
   }
@@ -604,13 +635,16 @@ void display_machine_parameters (machine_parameters *machine){
 }
 
 
-
-plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
-{
+plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, machine_parameters *machine)
+ {
 
     char read[500], *read_token;
-    int i, j, k, l;
+    int i, j, k, l, r;
     double cumulative_weight = 0;
+
+    // variables for Proton_Per_MU interpolation
+    int EnergyID;
+    VAR_COMPUTE Energy1, Energy2;
 
     FILE *plan_file;
     plan_file=fopen(plan_name,"r");
@@ -620,7 +654,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
 		printf("unable to open plan parameters\n");
 		return NULL;
     }
-    
+
     config->TotalNbrSpots = 0;
 
     plan_parameters *plan = (plan_parameters*)malloc(sizeof(plan_parameters));
@@ -629,7 +663,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
     plan->FieldsID = NULL;
 
     // init plan
-    strcpy(plan->PlanName, ""); 
+    strcpy(plan->PlanName, "");
     plan->NumberOfFractions = 0;
     plan->FractionID = 0;
     plan->NumberOfFields = 0;
@@ -642,7 +676,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
       if(strcmp(read_token, "#PlanName") == 0){
 	fgets(read, 500, plan_file);
 	read_token = strtok(read, "\t\r\n");
-	if(read_token != NULL) strcpy(plan->PlanName, read_token); 
+	if(read_token != NULL) strcpy(plan->PlanName, read_token);
       }
       else if(strcmp(read_token, "#NumberOfFractions") == 0){
 	fgets(read, 500, plan_file);
@@ -707,6 +741,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
 	plan->fields[l].IsocenterPositionZ = 0.0;
 	plan->fields[l].NumberOfControlPoints = 0;
 	plan->fields[l].RS_Type = none;
+	plan->fields[l].RS_num = -1;
 
 	while(fgets(read, 500, plan_file) != NULL){
 	  read_token = strtok(read, " \t\r\n");
@@ -724,6 +759,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
 	    plan->fields[l].IsocenterPositionZ = 0.0;
 	    plan->fields[l].NumberOfControlPoints = 0;
 	    plan->fields[l].RS_Type = none;
+	    plan->fields[l].RS_num = -1;
 	  }
 
 	  if(strcmp(read_token, "###FieldID") == 0){
@@ -775,6 +811,16 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
 	      printf("\n Error: \"%s\" is not a valid value for IsocenterPosition in \"%s\"\n\n", read_token, plan_name);
 	    }
 	    else plan->fields[l].IsocenterPositionZ = atof(read_token);
+	  }
+	  else if(strcmp(read_token, "###RangeShifterID") == 0){
+	    fgets(read, 500, plan_file);
+	    read_token = strtok(read, " \t\r\n");
+	    for(r=0; r<machine->RS_number; r++){
+	      if(strcmp(read_token, machine->RS_ID[r]) == 0){
+		plan->fields[l].RS_num = r;
+		break;
+	      }
+	    }
 	  }
 	  else if(strcmp(read_token, "###RangeShifterType") == 0){
 	    fgets(read, 500, plan_file);
@@ -903,7 +949,19 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config)
 	    	  	}
 			else{
 			  plan->fields[l].ControlPoints[j].spots[k].Spot_Weight = atof(read_token);
-			  plan->fields[l].ControlPoints[j].spots[k].Spot_Weight = ConvertMuToProtons(plan->fields[l].ControlPoints[j].spots[k].Spot_Weight, plan->fields[l].ControlPoints[j].Energy);
+        // if beam is UPenn, Proton_Per_MU must be interpolated from beam model parameters
+        if(machine->Beam_Model == UPenn){
+	  EnergyID =  Sequential_Search(plan->fields[l].ControlPoints[j].Energy, machine->Nominal_Energies, machine->Number_Energies);
+	  if(EnergyID < 0) EnergyID = 0;
+	  if(EnergyID > (machine->Number_Energies - 2)) EnergyID = machine->Number_Energies - 2;
+	  Energy1 = machine->Nominal_Energies[EnergyID];
+	  Energy2 = machine->Nominal_Energies[EnergyID+1];
+          plan->fields[l].ControlPoints[j].spots[k].Spot_Weight *= Linear_Interpolation(plan->fields[l].ControlPoints[j].Energy, Energy1, Energy2, machine->Proton_Per_MU[EnergyID], machine->Proton_Per_MU[EnergyID+1]);
+          }
+        else{
+          plan->fields[l].ControlPoints[j].spots[k].Spot_Weight = ConvertMuToProtons(plan->fields[l].ControlPoints[j].spots[k].Spot_Weight,
+          plan->fields[l].ControlPoints[j].Energy);
+        }
 			  cumulative_weight += plan->fields[l].ControlPoints[j].spots[k].Spot_Weight;
 			  plan->fields[l].ControlPoints[j].Spots_cumulative_PDF[k] = cumulative_weight;
 			  config->TotalNbrSpots++;
@@ -1047,5 +1105,3 @@ void Free_Machine_Parameters(machine_parameters *mac){
   }
 
 }
-
-

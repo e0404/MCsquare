@@ -10,6 +10,13 @@ SMX to Isocenter distance
 SMY to Isocenter distance
 1859.1
 
+Range Shifter parameters
+RS_ID = RS_Block	# ID of the range shifter as defined in the plan
+RS_type = binary	# analog = variable thickness (sliding wedges, or water column); binary = different thickness materials that can be moved in or out
+RS_material = 64	# MCsquare material ID
+RS_density = 1.19	# physical density (in g/cm3)
+RS_WET = 73.1		# water equivalent thickness (in mm)
+
 Beam parameters
 26 energies
 
