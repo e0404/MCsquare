@@ -1,0 +1,14 @@
+Name 			Tough_water
+Molecular_Weight 	0.0 		 # N.C.
+Density 		1.01800000 	 # in g/cm3 
+Electron_Density 	3.343e+23 	 # in cm-3 
+Radiation_Length 	40.350311 	 # in g/cm2 
+
+Nuclear_Data 		Mixture 5 	# mixture with 5 components
+
+		# 	Label 	Name 		fraction by mass (in %)
+Mixture_Component	1 	hydrogen	8.642964 
+Mixture_Component	2 	carbon		68.993490 
+Mixture_Component	3 	nitrogen	2.183275 
+Mixture_Component	4 	oxygen		17.906860 
+Mixture_Component	8 	calcium		2.273410 
