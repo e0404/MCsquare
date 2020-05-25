@@ -608,9 +608,9 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
   ALIGNED_(64) int v_ControlPoint_index[VLENGTH];
   ALIGNED_(64) int v_spot_index[VLENGTH];
 
-  Hadron_buffer New_hadrons[50];
-  field_parameters *New_hadrons_field[50];
-  ControlPoint_parameters *New_hadrons_layer[50];
+  Hadron_buffer New_hadrons[100];
+  field_parameters *New_hadrons_field[100];
+  ControlPoint_parameters *New_hadrons_layer[100];
   int Nbr_New_hadrons = VLENGTH;
 
   int use_RS = 0;

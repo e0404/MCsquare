@@ -90,7 +90,7 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
       // Init particle stacks
       Hadron hadron;
       Init_particles(&hadron);
-      Hadron_buffer HadronToSimulate[100];
+      Hadron_buffer HadronToSimulate[150];
       int Nbr_HadronToSimulate = 0;
 
       // variables

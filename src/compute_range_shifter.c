@@ -126,24 +126,24 @@ void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters *
   while(1){
     for(i=0; i<VLENGTH; i++){
       if(hadron.v_type[i] != Unknown && hadron.v_z[i] <= RS_exit_position[i]){
-	Extract_particle(&hadron_list[Hadron_ID[i]], i, &hadron);
-	hadron.v_type[i] = Unknown;
+        Extract_particle(&hadron_list[Hadron_ID[i]], i, &hadron);
+        hadron.v_type[i] = Unknown;
       }
 
       if(hadron.v_type[i] == Unknown){
-	for(j=Nbr_HadronSimulated; j<*Nbr_hadrons; j++){
-	  if(layer_data[j]->RS_setting == OUT){
-	    Nbr_HadronSimulated += 1;
-	    continue;
-	  }
-	  else{
-	    Insert_particle(&hadron, i, &hadron_list[Nbr_HadronSimulated]);
-	    RS_exit_position[i] = layer_data[j]->RS_IsocenterDist;
-	    Hadron_ID[i] = j;
-	    Nbr_HadronSimulated += 1;
-	    break;
-	  }
-	} // for loop HadronSimulated
+        for(j=Nbr_HadronSimulated; j<*Nbr_hadrons; j++){
+          if(layer_data[j]->RS_setting == OUT){
+            Nbr_HadronSimulated += 1;
+            continue;
+          }
+          else{
+            Insert_particle(&hadron, i, &hadron_list[Nbr_HadronSimulated]);
+            RS_exit_position[i] = layer_data[j]->RS_IsocenterDist;
+            Hadron_ID[i] = j;
+            Nbr_HadronSimulated += 1;
+            break;
+          }
+	    } // for loop HadronSimulated
       } // if unknown
     } // for loop VLENGTH
 
