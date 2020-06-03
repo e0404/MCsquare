@@ -125,17 +125,17 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
       if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) energy_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) energy_accumulation[ii] += Tot_scoring.energy[ii] * norm_factor;
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) energy_accumulation[ii] += Tot_scoring.energy[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.energy, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) energy_accumulation[ii] += deformed[ii] * norm_factor;
-      	free(deformed);
+        deformed = Image_deformation(Tot_scoring.energy, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) energy_accumulation[ii] += deformed[ii] * norm_factor;
+        free(deformed);
       }
       
       if(config->Current_4D_phase == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
-	export_results = 1;
-	if(Tot_scoring.energy != NULL) free(Tot_scoring.energy);
+        export_results = 1;
+        if(Tot_scoring.energy != NULL) free(Tot_scoring.energy);
         Tot_scoring.energy = energy_accumulation;
       }
     }
@@ -146,17 +146,17 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
       if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) dose_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) dose_accumulation[ii] += Tot_scoring.dose[ii] * norm_factor;
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) dose_accumulation[ii] += Tot_scoring.dose[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.dose, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) dose_accumulation[ii] += deformed[ii] * norm_factor;
-      	free(deformed);
+        deformed = Image_deformation(Tot_scoring.dose, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) dose_accumulation[ii] += deformed[ii] * norm_factor;
+        free(deformed);
       }
       
       if(config->Current_4D_phase == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
-	export_results = 1;
-	if(Tot_scoring.dose != NULL) free(Tot_scoring.dose);
+        export_results = 1;
+        if(Tot_scoring.dose != NULL) free(Tot_scoring.dose);
         Tot_scoring.dose = dose_accumulation;
       }
     }
@@ -165,27 +165,27 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
     if(config->Score_PromptGammas == 1){
 
       if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)){
-	PG_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
-	PG_Spectrum_accumulation = (VAR_SCORING*)calloc(config->PG_Spectrum_NumBin, sizeof(VAR_SCORING));
+        PG_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
+        PG_Spectrum_accumulation = (VAR_SCORING*)calloc(config->PG_Spectrum_NumBin, sizeof(VAR_SCORING));
       }
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) PG_accumulation[ii] += Tot_scoring.PG_particles[ii] * norm_factor;
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) PG_accumulation[ii] += Tot_scoring.PG_particles[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.PG_particles, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) PG_accumulation[ii] += deformed[ii] * norm_factor;
-      	free(deformed);
+        deformed = Image_deformation(Tot_scoring.PG_particles, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) PG_accumulation[ii] += deformed[ii] * norm_factor;
+        free(deformed);
       }
 
       for(ii=0; ii<config->PG_Spectrum_NumBin; ii++) PG_Spectrum_accumulation[ii] += Tot_scoring.PG_spectrum[ii];
       
       if(config->Current_4D_phase == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
-	export_results = 1;
-	if(Tot_scoring.PG_particles != NULL) free(Tot_scoring.PG_particles);
-	if(Tot_scoring.PG_spectrum != NULL) free(Tot_scoring.PG_spectrum);
+        export_results = 1;
+        if(Tot_scoring.PG_particles != NULL) free(Tot_scoring.PG_particles);
+        if(Tot_scoring.PG_spectrum != NULL) free(Tot_scoring.PG_spectrum);
         Tot_scoring.PG_particles = PG_accumulation;
-	Tot_scoring.PG_spectrum = PG_Spectrum_accumulation;
+        Tot_scoring.PG_spectrum = PG_Spectrum_accumulation;
       }
     }
 
@@ -195,17 +195,17 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
       if(config->Current_4D_phase == 0 && (config->Current_fraction == 1 || config->Fraction_accumulation == 0)) LET_accumulation = (VAR_SCORING*)calloc(Tot_scoring.Nbr_voxels, sizeof(VAR_SCORING));
 
       if(config->Simu_4D_Mode == 0){
-	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) LET_accumulation[ii] += Tot_scoring.LET[ii] * norm_factor;
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) LET_accumulation[ii] += Tot_scoring.LET[ii] * norm_factor;
       }
       else{
-	deformed = Image_deformation(Tot_scoring.LET, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
-      	for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) LET_accumulation[ii] += deformed[ii] * norm_factor;
-      	free(deformed);
+        deformed = Image_deformation(Tot_scoring.LET, Tot_scoring.GridSize, Tot_scoring.VoxelLength, Tot_scoring.Origin, Fields->Phase2Ref[config->Current_4D_phase], Fields->GridSize, Fields->Spacing, Fields->Origin);
+        for(ii=0; ii<Tot_scoring.Nbr_voxels; ii++) LET_accumulation[ii] += deformed[ii] * norm_factor;
+        free(deformed);
       }
       
       if(config->Current_4D_phase == (config->Num_4DCT_phases-1) && config->Current_fraction == plan->NumberOfFractions){
-	export_results = 1;
-	if(Tot_scoring.LET != NULL) free(Tot_scoring.LET);
+        export_results = 1;
+        if(Tot_scoring.LET != NULL) free(Tot_scoring.LET);
         Tot_scoring.LET = LET_accumulation;
       }
     }

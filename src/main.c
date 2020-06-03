@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
 
   // Import deformation fields
   DATA_4D_Fields *Fields = NULL;
-  if(config.Simu_4D_Mode == 1 && (config.Dose_4D_Accumulation == 1 || config.Create_Ref_from_4DCT == 1 || config.Create_4DCT_from_Ref == 1)){
+  if(config.Simu_4D_Mode == 1 && (config.Dose_4D_Accumulation == 1 || config.Create_Ref_from_4DCT == 1 || config.Create_4DCT_from_Ref == 1 || config.Robustness_Mode == 1)){
     Fields = Import_4D_Fields(&config);
     if(Fields == NULL) return 1;
   }
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
       }
     }
 
-    config.Num_Primaries = (unsigned long)config.Num_Primaries / config.Num_4DCT_phases;
+    if(config.Dose_4D_Accumulation == 1) config.Num_Primaries = (unsigned long)config.Num_Primaries / config.Num_4DCT_phases;
   }
 
   else{						// 3D mode
@@ -358,8 +358,16 @@ int main(int argc, char *argv[]){
 	fprintf(file_hdl, "\n");
 
 	fclose(file_hdl);
-
-	Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
+	
+	if(config.Simu_4D_Mode == 1 && config.Dose_4D_Accumulation == 0){
+	  config.Simu_4D_Mode = 0;
+      Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
+	  config.Simu_4D_Mode = 1;
+	}
+	else{
+	  Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
+	}
+	
     }
 
     // Robustness scenarios:
