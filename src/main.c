@@ -275,7 +275,7 @@ int main(int argc, char *argv[]){
     config.Current_Systematic_period = 0.0;
     config.Current_Random_period = 0.0;
     config.Current_Breathing_period = config.Breathing_period;
-    for(a=0;a<<plan->NumberOfFields;a++) config.Current_init_delivery_points[a] = 0.0;
+    for(a=0; a < plan->NumberOfFields; a++) config.Current_init_delivery_points[a] = 0.0;
 
     Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
 
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]){
     	config.Current_Systematic_period = 0.0;
     	config.Current_Random_period = 0.0;
         config.Current_Breathing_period = config.Breathing_period;
-        for(a=0;a<<plan->NumberOfFields;a++) config.Current_init_delivery_points[a] = 0.0;
+        for(a=0; a < plan->NumberOfFields; a++) config.Current_init_delivery_points[a] = 0.0;
 
     	strcpy(config.output_beamlet_suffix, "");
     	strcpy(config.output_robustness_suffix, "_Nominal");
