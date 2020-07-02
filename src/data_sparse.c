@@ -582,9 +582,12 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
 
     // Remove Bin and header files
     remove(from);
-    strcpy(from, file_header_path);
-    str_replace("{Num}" , ID , from);
+    sprintf(from, "%s%d/%s", InputPath, i+1, file_header_path);
     remove(from);
+    
+    // Remove folder
+    sprintf(from, "%s%d", InputPath, i+1);
+    rmdir(from);
 
   }
 
