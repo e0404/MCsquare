@@ -14,30 +14,22 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 void Translation_uncertainty(Hadron_buffer *hadron, DATA_config *config, VSLStreamStatePtr RNG_Stream){
 
-  int i;
+  if(config->Scenario_selection == 1){
+    hadron->x = hadron->x - config->Current_Systematic_setup[0] - config->Current_Random_setup[0];
+    hadron->y = hadron->y - config->Current_Systematic_setup[1] - config->Current_Random_setup[1];
+    hadron->z = hadron->z - config->Current_Systematic_setup[2] - config->Current_Random_setup[2];
+  }
+  
+  else{
+    if(config->Current_Random_setup[0] != 0.0) hadron->x = hadron->x - single_rand_normal(RNG_Stream, 0, config->Current_Random_setup[0]) - config->Current_Systematic_setup[0];
+    else hadron->x = hadron->x - config->Current_Systematic_setup[0];
 
-/*
-  if(config->Current_Random_setup[0] != 0.0) hadron->x = hadron->x - single_rand_normal(RNG_Stream, 0, config->Current_Random_setup[0]) - config->Current_Systematic_setup[0];
-  else hadron->x = hadron->x - config->Current_Systematic_setup[0];
+    if(config->Current_Random_setup[1] != 0.0) hadron->y = hadron->y - single_rand_normal(RNG_Stream, 0, config->Current_Random_setup[1]) - config->Current_Systematic_setup[1];
+    else hadron->y = hadron->y - config->Current_Systematic_setup[1];
 
-  if(config->Current_Random_setup[1] != 0.0) hadron->y = hadron->y - single_rand_normal(RNG_Stream, 0, config->Current_Random_setup[1]) - config->Current_Systematic_setup[1];
-  else hadron->y = hadron->y - config->Current_Systematic_setup[1];
-
-  if(config->Current_Random_setup[2] != 0.0) hadron->z = hadron->z - single_rand_normal(RNG_Stream, 0, config->Current_Random_setup[2]) - config->Current_Systematic_setup[2];
-  else hadron->z = hadron->z - config->Current_Systematic_setup[2];
-*/
-
-hadron->x = hadron->x - config->Current_Systematic_setup[0] - config->Current_Random_setup[0];
-hadron->y = hadron->y - config->Current_Systematic_setup[1] - config->Current_Random_setup[1];
-hadron->z = hadron->z - config->Current_Systematic_setup[2] - config->Current_Random_setup[2];
-
-	// Sampling of sigma before the Gaussian sampling (test for Ana)
-  	//VAR_COMPUTE rnd = single_rand_uniform(RNG_Stream);
-	//hadron->x = hadron->x - single_rand_normal(RNG_Stream, 0, config->Current_Random_error[0]*rnd) - config->Current_Systematic_error[0];
-	//hadron->y = hadron->y - single_rand_normal(RNG_Stream, 0, config->Current_Random_error[1]*rnd) - config->Current_Systematic_error[1];
-	//hadron->z = hadron->z - single_rand_normal(RNG_Stream, 0, config->Current_Random_error[2]*rnd) - config->Current_Systematic_error[2];
-
-
+    if(config->Current_Random_setup[2] != 0.0) hadron->z = hadron->z - single_rand_normal(RNG_Stream, 0, config->Current_Random_setup[2]) - config->Current_Systematic_setup[2];
+    else hadron->z = hadron->z - config->Current_Systematic_setup[2];
+  }
 }
 
 
