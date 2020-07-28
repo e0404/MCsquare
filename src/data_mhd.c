@@ -118,113 +118,118 @@ int Parse_MHD_header(char *file_name, MHD_header *header){
     if(read_token == NULL) continue;
 
     if(strcmp(read_token, "NDims") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(!isUnsignedInt(read_token)){
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(!isUnsignedInt(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for NDims in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->NDims = atoi(read_token);
+	  }
+	  header->NDims = atoi(read_token);
     }
 
     else if(strcmp(read_token, "ElementNumberOfChannels") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(!isUnsignedInt(read_token)){
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(!isUnsignedInt(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for ElementNumberOfChannels in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->ElementNumberOfChannels = atoi(read_token);
+	  }
+	  header->ElementNumberOfChannels = atoi(read_token);
     }
 
     else if(strcmp(read_token, "DimSize") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(!isUnsignedInt(read_token) || atoi(read_token) == 0){
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(!isUnsignedInt(read_token) || atoi(read_token) == 0){
 	    printf("\n Error: \"%s\" is not a valid value for DimSize in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->DimSize[0] = atoi(read_token);
-	read_token = strtok(NULL, " \t\r\n");
-	if(!isUnsignedInt(read_token) || atoi(read_token) == 0){
+	  }
+	  header->DimSize[0] = atoi(read_token);
+	  read_token = strtok(NULL, " \t\r\n");
+	  if(!isUnsignedInt(read_token) || atoi(read_token) == 0){
 	    printf("\n Error: \"%s\" is not a valid value for DimSize in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->DimSize[1] = atoi(read_token);
-	read_token = strtok(NULL, " \t\r\n");
-	if(!isUnsignedInt(read_token) || atoi(read_token) == 0){
+	  }
+	  header->DimSize[1] = atoi(read_token);
+	  read_token = strtok(NULL, " \t\r\n");
+	  if(!isUnsignedInt(read_token) || atoi(read_token) == 0){
 	    printf("\n Error: \"%s\" is not a valid value for DimSize in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->DimSize[2] = atoi(read_token);
+	  }
+	  header->DimSize[2] = atoi(read_token);
     }
 
     else if(strcmp(read_token, "ElementSpacing") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(!isUnsignedFloat(read_token)){
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(!isUnsignedFloat(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for ElementSpacing in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->ElementSpacing[0] = atof(read_token);
-	read_token = strtok(NULL, " \t\r\n");
-	if(!isUnsignedFloat(read_token)){
+	  }
+	  header->ElementSpacing[0] = atof(read_token);
+	  read_token = strtok(NULL, " \t\r\n");
+	  if(!isUnsignedFloat(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for ElementSpacing in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->ElementSpacing[1] = atof(read_token);
-	read_token = strtok(NULL, " \t\r\n");
-	if(!isUnsignedFloat(read_token)){
+	  }
+	  header->ElementSpacing[1] = atof(read_token);
+	  read_token = strtok(NULL, " \t\r\n");
+	  if(!isUnsignedFloat(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for ElementSpacing in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->ElementSpacing[2] = atof(read_token);
+	  }
+	  header->ElementSpacing[2] = atof(read_token);
     }
 
     else if(strcmp(read_token, "Offset") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(!isFloat(read_token)){
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(!isFloat(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for Offset in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->Offset[0] = atof(read_token);
-	read_token = strtok(NULL, " \t\r\n");
-	if(!isFloat(read_token)){
+	  }
+	  header->Offset[0] = atof(read_token);
+	  read_token = strtok(NULL, " \t\r\n");
+	  if(!isFloat(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for Offset in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->Offset[1] = atof(read_token);
-	read_token = strtok(NULL, " \t\r\n");
-	if(!isFloat(read_token)){
+	  }
+	  header->Offset[1] = atof(read_token);
+	  read_token = strtok(NULL, " \t\r\n");
+	  if(!isFloat(read_token)){
 	    printf("\n Error: \"%s\" is not a valid value for Offset in \"%s\"\n\n", read_token, file_name);
 	    return 0;
-	}
-	header->Offset[2] = atof(read_token);
+	  }
+	  header->Offset[2] = atof(read_token);
     }
 
     else if(strcmp(read_token, "ElementType") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(strcmp(read_token, "MET_FLOAT") == 0) header->ElementType = MET_FLOAT;
-	else if(strcmp(read_token, "MET_DOUBLE") == 0) header->ElementType = MET_DOUBLE;
-	else{
-	    printf("\n Error: \"%s\" is not a valid value for ElementType in \"%s\".  Only MET_FLOAT and MET_DOUBLE formats are supported currently.\n\n", read_token, file_name);
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(strcmp(read_token, "MET_FLOAT") == 0) header->ElementType = MET_FLOAT;
+	  else if(strcmp(read_token, "MET_DOUBLE") == 0) header->ElementType = MET_DOUBLE;
+	  
+      // added by Dezhi Liu from JHMI
+	  else if (strcmp(read_token, "MET_INT") == 0) header->ElementType = MET_INT;
+	  else if (strcmp(read_token, "MET_SHORT") == 0) header->ElementType = MET_SHORT;
+	  
+	  else{
+	    printf("\n Error: \"%s\" is not a valid value for ElementType in \"%s\".  Supported formats are MET_FLOAT, MET_DOUBLE, MET_SHORT, and MET_INT.\n\n", read_token, file_name);
 	    return 0;
-	}
+	  }
     }
 
     else if(strcmp(read_token, "ElementByteOrderMSB") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(strcmp(read_token, "True") == 0 || strcmp(read_token, "true") == 0) header->ElementByteOrderMSB = 1;
-	else if(strcmp(read_token, "False") == 0 || strcmp(read_token, "false") == 0) header->ElementByteOrderMSB = 0;
-	else{
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(strcmp(read_token, "True") == 0 || strcmp(read_token, "true") == 0) header->ElementByteOrderMSB = 1;
+	  else if(strcmp(read_token, "False") == 0 || strcmp(read_token, "false") == 0) header->ElementByteOrderMSB = 0;
+	  else{
 	    printf("\n Error: \"%s\" is not a valid value for ElementByteOrderMSB in \"%s\".  The value must be True or False.\n\n", read_token, file_name);
 	    return 0;
-	}
+	  }
     }
 
     else if(strcmp(read_token, "ElementDataFile") == 0){
-	read_token = strtok(NULL, " \t=\r\n");
-	if(read_token == NULL){
+	  read_token = strtok(NULL, " \t=\r\n");
+	  if(read_token == NULL){
 	    printf("\n Error: \"%s\" is not a valid value for ElementDataFile in \"%s\".\n\n", read_token, file_name);
 	    return 0;
-	}
-	strcpy(header->ElementDataFile, read_token);
+	  }
+	  strcpy(header->ElementDataFile, read_token);
     }
 
   }
@@ -318,12 +323,34 @@ VAR_DATA *import_MHD_image(char *file_name, int *GridSize, VAR_DATA *VoxelLength
     fread(buffer, sizeof(double), header.ElementNumberOfChannels*GridSize[0]*GridSize[1]*GridSize[2], file_raw);
     int i;
     for(i=0; i<header.ElementNumberOfChannels*GridSize[0]*GridSize[1]*GridSize[2]; i++){
-	data[i] = (VAR_DATA)buffer[i];
+	  data[i] = (VAR_DATA)buffer[i];
     }
     free(buffer);
   }
   else if(header.ElementType == MET_DOUBLE && VAR_DATA_PRECISION==2){
     fread(data, sizeof(double), header.ElementNumberOfChannels*GridSize[0]*GridSize[1]*GridSize[2], file_raw);
+  }
+  
+  // added by Dezhi Liu from JHMI
+  else if (header.ElementType == MET_INT){
+	int *buffer = (int*)malloc(header.ElementNumberOfChannels*GridSize[0] * GridSize[1] * GridSize[2] * sizeof(int));
+	fread(buffer, sizeof(int), header.ElementNumberOfChannels*GridSize[0] * GridSize[1] * GridSize[2], file_raw);
+	int i;
+    for(i=0; i<header.ElementNumberOfChannels*GridSize[0]*GridSize[1]*GridSize[2]; i++){
+	  data[i] = (VAR_DATA)buffer[i];
+	}
+	free(buffer);
+  }
+  
+  // added by Dezhi Liu from JHMI
+  else if (header.ElementType == MET_SHORT){
+	short *buffer = (short*)malloc(header.ElementNumberOfChannels*GridSize[0] * GridSize[1] * GridSize[2] * sizeof(short));
+	fread(buffer, sizeof(short), header.ElementNumberOfChannels*GridSize[0] * GridSize[1] * GridSize[2], file_raw);
+	int i;
+    for(i=0; i<header.ElementNumberOfChannels*GridSize[0]*GridSize[1]*GridSize[2]; i++){
+	  data[i] = (VAR_DATA)buffer[i];
+	}
+	free(buffer);
   }
   else{
 	printf("Error: Unable to read data in \"%s\".\n", file_raw_path);

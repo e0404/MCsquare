@@ -20,8 +20,10 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 enum MHD_ElementType{ 
 	NotDefined,
 	MET_FLOAT,
-	MET_DOUBLE
-} ;
+	MET_DOUBLE,
+	MET_INT,
+	MET_SHORT
+};
 
 
 typedef struct MHD_header MHD_header;
