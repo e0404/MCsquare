@@ -73,9 +73,9 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
       r = plan->fields[i].RS_num;
 
       if(machine->RS_Type[r] == empty){
-	printf("\nEmpty range shifter set for beam %d:\n", i);
-	printf("\tRange shifter ID: %s\n", machine->RS_ID[r]);
-	continue;
+	    printf("\nEmpty range shifter set for beam %d:\n", i);
+	    printf("\tRange shifter ID: %s\n", machine->RS_ID[r]);
+	    continue;
       }
 
       FixedPosition = 1;
@@ -84,17 +84,17 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
       AlwaysOUT = 1;
       FirstPosition = -1;
       for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	if(FirstPosition == -1 && plan->fields[i].ControlPoints[j].RS_setting == IN){
-	  FirstPosition = plan->fields[i].ControlPoints[j].RS_IsocenterDist;
-	  FirstWET = plan->fields[i].ControlPoints[j].RS_WET;
-	  FirstThickness = plan->fields[i].ControlPoints[j].RS_Thickness;
-	}
-	if(plan->fields[i].ControlPoints[j].RS_setting == IN){
-	  AlwaysOUT = 0;
-	  if(FirstPosition != plan->fields[i].ControlPoints[j].RS_IsocenterDist) FixedPosition = 0;
-	  if(FirstWET != plan->fields[i].ControlPoints[j].RS_WET) FixedWET = 0;
-	}
-	if(plan->fields[i].ControlPoints[j].RS_setting == OUT) AlwaysIN = 0;
+	    if(FirstPosition == -1 && plan->fields[i].ControlPoints[j].RS_setting == IN){
+	      FirstPosition = plan->fields[i].ControlPoints[j].RS_IsocenterDist;
+	      FirstWET = plan->fields[i].ControlPoints[j].RS_WET;
+	      FirstThickness = plan->fields[i].ControlPoints[j].RS_Thickness;
+	    }
+	    if(plan->fields[i].ControlPoints[j].RS_setting == IN){
+	      AlwaysOUT = 0;
+	      if(FirstPosition != plan->fields[i].ControlPoints[j].RS_IsocenterDist) FixedPosition = 0;
+	      if(FirstWET != plan->fields[i].ControlPoints[j].RS_WET) FixedWET = 0;
+	    }
+	    if(plan->fields[i].ControlPoints[j].RS_setting == OUT) AlwaysIN = 0;
       }
       printf("\nRange shifter initialized for beam %d:\n", i);
       printf("\tRange shifter ID: %s\n", machine->RS_ID[r]);
@@ -104,7 +104,7 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
       printf("\tDensity: %.2lf g/cm3\n", machine->RS_Density[r]);
       if(AlwaysIN == 1) printf("\tEnabled for all layers\n");
       if(AlwaysOUT == 1) printf("\tDisabled for all layers\n");
-      if(FixedPosition == 1) printf("\tStatic position: %.2lf cm from isocenter\n", FirstPosition);
+      if(FixedPosition == 1 && AlwaysOUT == 0) printf("\tStatic position: %.2lf cm from isocenter\n", FirstPosition);
       if(FixedWET == 1) printf("\tStatic thickness: %.2lf cm (WET=%.2lf)\n", FirstThickness, FirstWET);
     }
   }
