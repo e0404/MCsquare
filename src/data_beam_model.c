@@ -515,12 +515,14 @@ void display_machine_parameters (machine_parameters *machine){
   printf("mDistanceSMXToIsocenter: %lf \n", machine->mDistanceSMXToIsocenter);
   printf("mDistanceSMYToIsocenter: %lf \n\n", machine->mDistanceSMYToIsocenter);
 
-  printf("Range Shifter:\n");
-  printf("RS_type: %d \n", machine->RS_Type);
-//  printf("RS_position: %lf \n", machine->RS_Position);
-//  printf("RS_thickness: %lf \n", machine->RS_Thickness);
-  printf("RS_material: %d \n", machine->RS_Material);
-  printf("RS_density: %lf \n\n", machine->RS_Density);
+  for(i=0; i<machine->RS_number; i++){
+    printf("Range Shifter %d:\n", i);
+    printf("RS_type: %d \n", machine->RS_Type[i]);
+//    printf("RS_position: %lf \n", machine->RS_Position);
+//    printf("RS_thickness: %lf \n", machine->RS_Thickness);
+    printf("RS_material: %d \n", machine->RS_Material[i]);
+    printf("RS_density: %f \n\n", machine->RS_Density[i]);
+  }
 
   if(machine->Beam_Model == UPenn){
     printf("Beam model type: UPenn\n\n");

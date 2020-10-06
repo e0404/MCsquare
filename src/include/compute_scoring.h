@@ -16,6 +16,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "define.h"
 #include "struct.h"
 #include "compute_EM_interaction.h"
+#include "data_mhd.h"
 
 DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_squared);
 void get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, int *v_index);

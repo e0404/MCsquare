@@ -88,7 +88,7 @@ void import_struct(DATA_Struct *Struct, char *file_name){
   Struct->Mask = NULL;
 
   header_file = fopen(file_name,"r");
-  if(header_file == NULL) return NULL;
+  if(header_file == NULL) return;
 
   while(fgets(read, 500, header_file) != NULL){
     if(read[0] == '#') continue;
@@ -103,7 +103,7 @@ void import_struct(DATA_Struct *Struct, char *file_name){
 
   if(isMHD == 1) Struct->Mask = import_MHD_image(file_name, Struct->GridSize, Struct->VoxelLength, Struct->Origin);
   else if(isSparse == 1) Struct->Mask = import_Sparse_image(file_name, Struct->GridSize, Struct->VoxelLength, Struct->Origin);
-  else return NULL;
+  else return;
 
   if(Struct->Mask == NULL) return;
 

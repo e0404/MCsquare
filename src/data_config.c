@@ -243,7 +243,7 @@ void Add_vec_real_Config_element(char *Tag, DATA_config_dictionary *config_dicti
 }
 
 
-void Add_vec_uint_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, VAR_DATA *config, int use_default, unsigned int default_value_X, unsigned int default_value_Y, unsigned int default_value_Z, unsigned int min_value,  unsigned int max_value){
+void Add_vec_uint_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, unsigned int *config, int use_default, unsigned int default_value_X, unsigned int default_value_Y, unsigned int default_value_Z, unsigned int min_value,  unsigned int max_value){
 
   strcpy(config_dictionary->type, "Vuint");
   config_dictionary->is_defined = 0;
@@ -458,7 +458,7 @@ int Parse_Config(DATA_config *config, char *file_name){
 	      return 1;
 	    }
 	    else if((VAR_DATA)atoi(read_token) < config_dictionary[i].min_value.uint_value || (VAR_DATA)atoi(read_token) > config_dictionary[i].max_value.uint_value){
-	      printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
+	      printf("\n Error: %s value must be between %d and %d in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
 	      fclose(file);
   	      free(config_dictionary);
 	      return 1;

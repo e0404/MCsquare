@@ -15,6 +15,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "define.h"
 #include "struct.h"
+#include <unistd.h>
 #include "File_process.h"
 #include "data_beam_model.h"
 

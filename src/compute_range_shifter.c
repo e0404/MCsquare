@@ -121,7 +121,7 @@ void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters *
   int i, j, count;
 
   ALIGNED_(64) VAR_COMPUTE RS_exit_position[VLENGTH];
-  ALIGNED_(64) int Hadron_ID[VLENGTH] = 0;
+  ALIGNED_(64) int Hadron_ID[VLENGTH] = {0};
 
   while(1){
     for(i=0; i<VLENGTH; i++){

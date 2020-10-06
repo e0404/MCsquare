@@ -240,7 +240,7 @@ void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, 
 
   int a,f;
   int tmp_current_phase, tmp_num_phases;
-  VAR_DATA **tmp_field_ptr;
+  VAR_DATA *tmp_field_ptr;
 
   strcpy(config->output_beams_suffix, "");
 
