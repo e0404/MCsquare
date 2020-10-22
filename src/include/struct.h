@@ -370,7 +370,7 @@ struct DATA_config{
 	VAR_DATA Current_Systematic_period;
 	VAR_DATA Current_Random_period;
 	VAR_DATA Current_Breathing_period;
-	VAR_DATA Current_init_delivery_points[10];
+	VAR_DATA Current_init_delivery_points[1000];
 	int Current_4D_phase;
 	int Current_Beam;
 	int Current_scenario;
