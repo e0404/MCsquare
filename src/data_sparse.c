@@ -536,7 +536,7 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
     strcat(out_header_path, ".txt");
   }
   
-  char from[200], ID[10];
+  char from[200], ID[10], cmd[300];
   sprintf(from, "%s1/%s", InputPath, file_header_path);
   CopyFile(out_header_path, from);
 
@@ -587,7 +587,9 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
     
     // Remove folder
     sprintf(from, "%s%d", InputPath, i+1);
-    rmdir(from);
+    // rmdir(from); // from unistd.h
+    sprintf(cmd, RMDIR_CMD, from); // RMDIR_CMD is defined in define.h according to the OS
+    system(cmd);
 
   }
 
