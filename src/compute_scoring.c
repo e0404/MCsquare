@@ -42,9 +42,9 @@ DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_square
     scoring.Origin[0] = config->Scoring_origin[0];
     scoring.Origin[1] = config->Scoring_origin[1];
     scoring.Origin[2] = config->Scoring_origin[2];
-    scoring.Offset[0] = ct->Origin[0] - config->Scoring_origin[0];
-    scoring.Offset[1] = ct->Origin[1] - config->Scoring_origin[1];
-    scoring.Offset[2] = ct->Origin[2] - config->Scoring_origin[2];
+    scoring.Offset[0] = config->Scoring_origin[0] - ct->Origin[0];
+    scoring.Offset[1] = config->Scoring_origin[1] - ct->Origin[1];
+    scoring.Offset[2] = config->Scoring_origin[2] - ct->Origin[2];
     scoring.Length[0] = config->Scoring_grid_size[0] * config->Scoring_voxel_spacing[0];
     scoring.Length[1] = config->Scoring_grid_size[1] * config->Scoring_voxel_spacing[1];
     scoring.Length[2] = config->Scoring_grid_size[2] * config->Scoring_voxel_spacing[2];
@@ -98,9 +98,9 @@ void get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y
   __assume_aligned(v_z, 64);
   __assume_aligned(v_index, 64);
 
-  v_index[vALL] = 	(int)floor( (-v_x[vALL] + scoring->Length[0]) / scoring->VoxelLength[0] ) 
-			+ scoring->GridSize[0] * (int)floor( v_y[vALL] / scoring->VoxelLength[1] ) 
-			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( v_z[vALL] / scoring->VoxelLength[2] );
+  v_index[vALL] = 	(int)floor( (scoring->Length[0]-v_x[vALL]+scoring->Offset[0]) / scoring->VoxelLength[0] ) 
+			+ scoring->GridSize[0] * (int)floor( (v_y[vALL]-scoring->Offset[1]) / scoring->VoxelLength[1] ) 
+			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( (v_z[vALL]-scoring->Offset[2]) / scoring->VoxelLength[2] );
 
   if(v_x[vALL] < scoring->Offset[0] || v_y[vALL] < scoring->Offset[1] || v_z[vALL] < scoring->Offset[2] || 
 	 v_x[vALL] > scoring->Grid_end[0] || v_y[vALL] > scoring->Grid_end[1] || v_z[vALL] > scoring->Grid_end[2] ||
@@ -113,9 +113,9 @@ int get_single_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_
   
   if(position_x < scoring->Offset[0] || position_y < scoring->Offset[1] || position_z < scoring->Offset[2] || position_x > scoring->Grid_end[0] || position_y > scoring->Grid_end[1] || position_z > scoring->Grid_end[2]) return -1;
 
-   int index = 	(int)floor( (-position_x + scoring->Length[0]) / scoring->VoxelLength[0] ) 
-			+ scoring->GridSize[0] * (int)floor( position_y / scoring->VoxelLength[1] ) 
-			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( position_z / scoring->VoxelLength[2] );
+   int index = 	(int)floor( (scoring->Length[0]-position_x+scoring->Offset[0]) / scoring->VoxelLength[0] ) 
+			+ scoring->GridSize[0] * (int)floor( (position_y-scoring->Offset[1]) / scoring->VoxelLength[1] ) 
+			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( (position_z-scoring->Offset[2]) / scoring->VoxelLength[2] );
 
   if(index > scoring->Nbr_voxels) return -1;
 

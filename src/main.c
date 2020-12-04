@@ -133,6 +133,7 @@ int main(int argc, char *argv[]){
 
   // check scoring grid
   if(config.Independent_scoring_grid == 1){
+  /*
     VAR_COMPUTE Offset_x = config.Scoring_origin[0] - ct->Origin[0];
     VAR_COMPUTE Offset_y = config.Scoring_origin[1] - ct->Origin[1];
     VAR_COMPUTE Offset_z = config.Scoring_origin[2] - ct->Origin[2];
@@ -150,6 +151,7 @@ int main(int argc, char *argv[]){
       if(End_z > 1e-4) printf("In z direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[2] + ct->Length[2]), (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]));
       return 1;
     }
+    */
 
     if(config.Compute_DVH == 1){
       printf("\nError: The computation of DVH is not compatible yet with the use of independent scoring grid!\n");
