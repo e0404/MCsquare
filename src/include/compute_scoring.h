@@ -21,6 +21,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_squared);
 void get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, int *v_index);
 int get_single_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z);
+int Scoring_to_CT_index(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct);
 void Energy_Scoring_from_index(DATA_Scoring *scoring, int *v_index, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config);
 void Energy_Scoring_from_coordinates(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config);
 void LET_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config);

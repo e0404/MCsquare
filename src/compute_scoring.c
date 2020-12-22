@@ -124,6 +124,25 @@ int get_single_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_
 }
 
 
+int Scoring_to_CT_index(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct){
+
+  int IDz = (int) floor( Scoring_ID / (scoring->GridSize[0]*scoring->GridSize[1]) );
+  int IDy = (int) floor( (Scoring_ID-IDz*scoring->GridSize[0]*scoring->GridSize[1]) / scoring->GridSize[0] );
+  int IDx = Scoring_ID - IDz*scoring->GridSize[0]*scoring->GridSize[1] - IDy*scoring->GridSize[0];
+  
+  VAR_COMPUTE x = scoring->Length[0] + scoring->Offset[0] - (0.5+IDx) * scoring->VoxelLength[0];
+  VAR_COMPUTE y = scoring->Offset[1] + (0.5+IDy) * scoring->VoxelLength[1];
+  VAR_COMPUTE z = scoring->Offset[2] + (0.5+IDz) * scoring->VoxelLength[2];
+  
+  int CT_ID = (int)floor( (-x + ct->Length[0]) / ct->VoxelLength[0] ) 
+			+ ct->GridSize[0] * (int)floor( y / ct->VoxelLength[1] ) 
+			+ ct->GridSize[0] * ct->GridSize[1] * (int)floor( z / ct->VoxelLength[2] );
+			
+  return CT_ID;
+
+}
+
+
 void Energy_Scoring_from_index(DATA_Scoring *scoring, int *v_index, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config){
 
   __assume_aligned(v_index, 64);
@@ -205,12 +224,18 @@ void PG_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE posit
 void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material, VAR_COMPUTE normalization, unsigned long Nbr_simulated_primaries, DATA_config *config){
 
   double voxel_volume = scoring->VoxelLength[0]*scoring->VoxelLength[1]*scoring->VoxelLength[2];
-  int ii,j,k,index=0;
+  int ii,j,k,CT_ID,index=0;
 
 
   if(config->DoseToWater == 1){ // dose-to-water conversion by post-processing
-    for(ii=0; ii<scoring->Nbr_voxels; ii++){
-      scoring->dose[ii] /= material[ct->material[ii]].SPR;
+    if(config->Independent_scoring_grid == 0){
+      for(ii=0; ii<scoring->Nbr_voxels; ii++) scoring->dose[ii] /= material[ct->material[ii]].SPR;
+    }
+    else{ // independent scoring grid
+      for(ii=0; ii<scoring->Nbr_voxels; ii++){
+        CT_ID = Scoring_to_CT_index(ii, scoring, ct);
+        scoring->dose[ii] /= material[ct->material[CT_ID]].SPR;
+      }
     }
   }
 
@@ -221,8 +246,14 @@ void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material
   }
 
   if(config->Dose_Segmentation != 0){
-    for(ii=0; ii<scoring->Nbr_voxels; ii++){
-      scoring->dose[ii] *= (ct->density[ii] > config->Segmentation_Density_Threshold);
+    if(config->Independent_scoring_grid == 0){
+      for(ii=0; ii<scoring->Nbr_voxels; ii++) scoring->dose[ii] *= (ct->density[ii] > config->Segmentation_Density_Threshold);
+    }
+    else{ // independent scoring grid
+      for(ii=0; ii<scoring->Nbr_voxels; ii++){
+        CT_ID = Scoring_to_CT_index(ii, scoring, ct);
+        scoring->dose[ii] *= (ct->density[CT_ID] > config->Segmentation_Density_Threshold);
+      }
     }
   }
 
@@ -252,15 +283,27 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
 
   //double voxel_volume = Tot_scoring->VoxelLength[0]*Tot_scoring->VoxelLength[1]*Tot_scoring->VoxelLength[2];
   VAR_SCORING tmp, sigma=0, max_dose=0;
-  int count=0;
+  int CT_ID,count=0;
 
-  #pragma omp parallel for reduction(max: max_dose)
-  for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
-    //batch->dose[j] = batch->dose[j] / voxel_volume; // Volume weighting
-    Tot_scoring->dose[j] += batch->dose[j];
-    Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
-    if(ct->density[j] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
-  }
+  if(config->Independent_scoring_grid == 0){
+    #pragma omp parallel for reduction(max: max_dose)
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
+      //batch->dose[j] = batch->dose[j] / voxel_volume; // Volume weighting
+      Tot_scoring->dose[j] += batch->dose[j];
+      Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
+      if(ct->density[j] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
+    }
+   }
+   else{ // independent scoring grid
+    #pragma omp parallel for reduction(max: max_dose)
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
+      //batch->dose[j] = batch->dose[j] / voxel_volume; // Volume weighting
+      Tot_scoring->dose[j] += batch->dose[j];
+      Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
+      CT_ID = Scoring_to_CT_index(j, Tot_scoring, ct);
+      if(ct->density[CT_ID] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
+    }
+   }
 
   if(config->Score_Energy == 1){
     #pragma omp parallel for
@@ -287,11 +330,22 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
     for(int j=0; j<config->PG_Spectrum_NumBin; j++) Tot_scoring->PG_spectrum[j] += batch->PG_spectrum[j];
   }
 
+
+  // compute statistical uncertainty
   count = 0;
-  for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
-    if(Tot_scoring->dose[j] > 0.5*max_dose){
-      //sigma += sqrt(Tot_scoring->dose_squared[j] - Tot_scoring->dose[j]*Tot_scoring->dose[j]/Num_batch) / (Tot_scoring->dose[j]/Num_batch);
-      if(config->Ignore_low_density_voxels == 0 || ct->density[j] > 0.1){
+  if(config->Independent_scoring_grid == 0){
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
+      if(Tot_scoring->dose[j] > 0.5*max_dose && (config->Ignore_low_density_voxels == 0 || ct->density[j] > 0.1)){
+        //sigma += sqrt(Tot_scoring->dose_squared[j] - Tot_scoring->dose[j]*Tot_scoring->dose[j]/Num_batch) / (Tot_scoring->dose[j]/Num_batch);
+        sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
+        count++;
+      }
+    }
+  }
+  else{ // independent scoring grid
+    for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
+      CT_ID = Scoring_to_CT_index(j, Tot_scoring, ct);
+      if(Tot_scoring->dose[j] > 0.5*max_dose && (config->Ignore_low_density_voxels == 0 || ct->density[CT_ID] > 0.1)){
         sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
         count++;
       }
@@ -310,12 +364,24 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
     double voxel_volume = Tot_scoring->VoxelLength[0]*Tot_scoring->VoxelLength[1]*Tot_scoring->VoxelLength[2];
 
     int ii;
-    for(ii=0; ii<Tot_scoring->Nbr_voxels; ii++){
-      batch_dose[ii] = Tot_scoring->dose[ii] / (Num_batch*config->Num_Primaries/MIN_NUM_BATCH);
-      if(config->DoseToWater == 1) batch_dose[ii] /= material[ct->material[ii]].SPR; // dose to water conversion by post-processing
-      batch_dose[ii] *= (batch_dose[ii] > 0);
-      batch_dose[ii] = batch_dose[ii] / voxel_volume; // Volume weighting
-      if(config->Dose_Segmentation != 0) batch_dose[ii] *= (ct->density[ii] > config->Segmentation_Density_Threshold);
+    if(config->Independent_scoring_grid == 0){
+      for(ii=0; ii<Tot_scoring->Nbr_voxels; ii++){
+        batch_dose[ii] = Tot_scoring->dose[ii] / (Num_batch*config->Num_Primaries/MIN_NUM_BATCH);
+        if(config->DoseToWater == 1) batch_dose[ii] /= material[ct->material[ii]].SPR; // dose to water conversion by post-processing
+        batch_dose[ii] *= (batch_dose[ii] > 0);
+        batch_dose[ii] = batch_dose[ii] / voxel_volume; // Volume weighting
+        if(config->Dose_Segmentation != 0) batch_dose[ii] *= (ct->density[ii] > config->Segmentation_Density_Threshold);
+      }
+    }
+    else{ // independent scoring grid
+      for(ii=0; ii<Tot_scoring->Nbr_voxels; ii++){
+        CT_ID = Scoring_to_CT_index(ii, Tot_scoring, ct);
+        batch_dose[ii] = Tot_scoring->dose[ii] / (Num_batch*config->Num_Primaries/MIN_NUM_BATCH);
+        if(config->DoseToWater == 1) batch_dose[ii] /= material[ct->material[CT_ID]].SPR; // dose to water conversion by post-processing
+        batch_dose[ii] *= (batch_dose[ii] > 0);
+        batch_dose[ii] = batch_dose[ii] / voxel_volume; // Volume weighting
+        if(config->Dose_Segmentation != 0) batch_dose[ii] *= (ct->density[CT_ID] > config->Segmentation_Density_Threshold);
+      }
     }
 
     char file_path[100];
