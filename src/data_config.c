@@ -71,7 +71,7 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   Add_bool_Config_element("Beamlet_Parallelization", &config_dictionary[49], &config->Beamlet_Parallelization, 1, 0);
   Add_Enum_Config_element("Dose_to_Water_conversion", &config_dictionary[50], &config->DoseToWater, 1, 0, "Disabled;PostProcessing;OnlineSPR");
   Add_ureal_Config_element("MCS_const", &config_dictionary[51], &config->MCS_const, 1, 20.3, 0.001, 200);
-  Add_Enum_Config_element("Scenario_selection", &config_dictionary[52], &config->Scenario_selection, 1, 0, "All;Random");
+  Add_Enum_Config_element("Scenario_selection", &config_dictionary[52], &config->Scenario_selection, 1, 0, "All;Random;ReducedSet");
   Add_Enum_Config_element("Field_type", &config_dictionary[53], &config->Field_type, 1, 1, "Displacement;Velocity");
   Add_bool_Config_element("Create_4DCT_from_Ref", &config_dictionary[54], &config->Create_4DCT_from_Ref, 1, 0);
   Add_bool_Config_element("Create_Ref_from_4DCT", &config_dictionary[55], &config->Create_Ref_from_4DCT, 1, 0);

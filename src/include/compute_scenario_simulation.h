@@ -23,7 +23,14 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "compute_4D.h"
 #include "compute_treatment_uncertainties.h"
 
-void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path);
+enum Scenario_selection_shape{ 
+	HyperSphere,
+	HyperCylinder,
+	HyperCube
+} ;
+
+void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path, enum Scenario_selection_shape Selection_shape);
+void Scenarios_selection_reduced(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path, enum Scenario_selection_shape Selection_shape);
 void Scenarios_selection_random(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path);
 void Scenario_simulation(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields);
 

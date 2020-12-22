@@ -319,6 +319,7 @@ int main(int argc, char *argv[]){
       fprintf(file_hdl, "Random motion period error = %.2f %%\n", config.Random_Period_Error);
     }
     if(config.Scenario_selection == 1) fprintf(file_hdl, "Scenario selection: random sampling\n");
+    else if(config.Scenario_selection == 2) fprintf(file_hdl, "Scenario selection: reduced set of scenarios\n");
     else fprintf(file_hdl, "Scenario selection: all combinations\n");
     fprintf(file_hdl, "\n");
     fprintf(file_hdl, "Uncertainty scenarios:\n");
@@ -377,7 +378,8 @@ int main(int argc, char *argv[]){
 
     // Robustness scenarios:
     if(config.Scenario_selection == 1) Scenarios_selection_random(&config, material, ct, CT_phases, plan, &machine, Fields, file_path);
-    else Scenarios_selection_all(&config, material, ct, CT_phases, plan, &machine, Fields, file_path);
+    else if(config.Scenario_selection == 2) Scenarios_selection_reduced(&config, material, ct, CT_phases, plan, &machine, Fields, file_path, HyperCylinder);
+    else Scenarios_selection_all(&config, material, ct, CT_phases, plan, &machine, Fields, file_path, HyperCylinder);
 
 
     // Free dynamic variables

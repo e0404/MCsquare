@@ -13,11 +13,11 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "include/compute_scenario_simulation.h"
 
 
-void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path){
+void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path, enum Scenario_selection_shape Selection_shape){
 
-  int a, i, j, k, l;
+  int a, x, y, z, r;
   FILE *file_hdl = NULL;
-  VAR_COMPUTE norm;
+  VAR_COMPUTE setup_norm, range_norm;
 
   config->TotalNumScenarios = 81;
   config->Current_scenario = 0;
@@ -28,83 +28,140 @@ void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *
   if(config->Systematic_Setup_Error[2] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
   if(config->Systematic_Range_Error == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
 
-  for(l=-1; l<=1; l++){
-    if(config->Systematic_Range_Error == 0.0) l=1;
+  for(r=-1; r<=1; r++){
+    for(x=-1; x<=1; x++){
+      for(y=-1; y<=1; y++){
+        for(z=-1; z<=1; z++){
+        
+          // skip simulation of scenarios when error is null
+          if(config->Systematic_Range_Error == 0.0 && r != 0) continue; 
+          if(config->Systematic_Setup_Error[0] == 0.0 && x != 0) continue;
+          if(config->Systematic_Setup_Error[2] == 0.0 && y != 0) continue;
+          if(config->Systematic_Setup_Error[1] == 0.0 && z != 0) continue;
+          
+	      config->Current_scenario += 1;
+	      
+	      // scenarios selection shape in the error space
+	      if(Selection_shape == HyperCube){
+	        setup_norm = 1.0;
+	        range_norm = 1.0;
+	      }
+	      else if(Selection_shape == HyperCylinder){
+	        setup_norm = sqrt((double)x*x + (double)y*y + (double)z*z) + FLT_EPSILON;
+	        range_norm = 1.0;
+	      }
+	      else{ // HyperSphere
+	        setup_norm = sqrt((double)x*x + (double)y*y + (double)z*z + (double)r*r) + FLT_EPSILON;
+	        range_norm = sqrt((double)x*x + (double)y*y + (double)z*z + (double)r*r) + FLT_EPSILON;
+	      }
+          
+          // Systematic range error
+          config->Current_Range_error = r * config->Systematic_Range_Error / range_norm;
+          if(config->Simu_4D_Mode == 0){
+            Density_scaling(ct->Nominal_density, ct->Scaled_density, ct->Nbr_voxels, 1.0 + (config->Current_Range_error * 0.01));
+            ct->density = ct->Scaled_density;
+          }
+          else{ 
+            for(a=0; a <config->Num_4DCT_phases; a++){
+              Density_scaling(CT_phases[a]->Nominal_density, CT_phases[a]->Scaled_density, ct->Nbr_voxels, 1.0 + (config->Current_Range_error * 0.01));
+              CT_phases[a]->density = CT_phases[a]->Scaled_density;
+            }
+          }
 
-      // Systematic range error
-      if(l == 1){
-	if(config->Simu_4D_Mode == 0){
-	  Density_scaling(ct->Nominal_density, ct->Scaled_density, ct->Nbr_voxels, 1.0 + (config->Systematic_Range_Error * 0.01));
-	  ct->density = ct->Scaled_density;
-	}
-	else{ 
-	  for(a=0; a <config->Num_4DCT_phases; a++){
-	    Density_scaling(CT_phases[a]->Nominal_density, CT_phases[a]->Scaled_density, ct->Nbr_voxels, 1.0 + (config->Systematic_Range_Error * 0.01));
-	    CT_phases[a]->density = CT_phases[a]->Scaled_density;
-	  }
-	}
-	config->Current_Range_error = config->Systematic_Range_Error;
-      }
-      else if(l == -1){
-	if(config->Simu_4D_Mode == 0){
-	  Density_scaling(ct->Nominal_density, ct->Scaled_density, ct->Nbr_voxels, 1.0 - (config->Systematic_Range_Error * 0.01));
-	  ct->density = ct->Scaled_density;
-	}
-	else{ 
-	  for(a=0; a <config->Num_4DCT_phases; a++){
-	    Density_scaling(CT_phases[a]->Nominal_density, CT_phases[a]->Scaled_density, ct->Nbr_voxels, 1.0 - (config->Systematic_Range_Error * 0.01));
-	    CT_phases[a]->density = CT_phases[a]->Scaled_density;
-	  }
-	}
-	config->Current_Range_error = -config->Systematic_Range_Error;
-      }
-      else{
-	if(config->Simu_4D_Mode == 0) ct->density = ct->Nominal_density;
-	else for(a=0; a <config->Num_4DCT_phases; a++) CT_phases[a]->density = CT_phases[a]->Nominal_density;
-	config->Current_Range_error = 0.0;
-      }
+          // Systematic setup error
+          config->Current_Systematic_setup[0] = x * config->Systematic_Setup_Error[0] / setup_norm;
+          config->Current_Systematic_setup[1] = y * config->Systematic_Setup_Error[1] / setup_norm;
+          config->Current_Systematic_setup[2] = z * config->Systematic_Setup_Error[2] / setup_norm;
 
-      for(i=-1; i<=1; i++){
-        if(config->Systematic_Setup_Error[0] == 0.0) i=1;
+          // Random setup error
+          config->Current_Random_setup[0] = config->Random_Setup_Error[0];
+          config->Current_Random_setup[1] = config->Random_Setup_Error[1];
+          config->Current_Random_setup[2] = config->Random_Setup_Error[2];
 
-        for(j=-1; j<=1; j++){
-      	  if(config->Systematic_Setup_Error[1] == 0.0) j=1;
+          // log
+          sprintf(config->output_robustness_suffix, "_Scenario_%d-%d", config->Current_scenario, config->TotalNumScenarios);
+          file_hdl = fopen(file_path, "a");
+          fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f mm) Random_Setup(%.3f %.3f %.3f mm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, 10*config->Current_Systematic_setup[0], 10*config->Current_Systematic_setup[1], 10*config->Current_Systematic_setup[2], 10*config->Current_Random_setup[0], 10*config->Current_Random_setup[1], 10*config->Current_Random_setup[2], config->Current_Range_error);
+          fclose(file_hdl);
 
-          for(k=-1; k<=1; k++){
-            if(config->Systematic_Setup_Error[2] == 0.0) k=1;
-
-	    config->Current_scenario += 1;
-
-	    norm = sqrt((double)i*i + (double)j*j + (double)k*k);
-
-	    // Systematic setup error
-	    if(norm == 0){
-	        config->Current_Systematic_setup[0] = 0.0;
-	        config->Current_Systematic_setup[1] = 0.0;
-	        config->Current_Systematic_setup[2] = 0.0;
-	    }
-	    else{
-	        config->Current_Systematic_setup[0] = i * config->Systematic_Setup_Error[0] / norm;
-	        config->Current_Systematic_setup[1] = j * config->Systematic_Setup_Error[1] / norm;
-	        config->Current_Systematic_setup[2] = k * config->Systematic_Setup_Error[2] / norm;
-	    }
-
-	    // Random error
-    	    config->Current_Random_setup[0] = config->Random_Setup_Error[0];
-    	    config->Current_Random_setup[1] = config->Random_Setup_Error[1];
-    	    config->Current_Random_setup[2] = config->Random_Setup_Error[2];
-
-	    sprintf(config->output_robustness_suffix, "_Scenario_%d-%d", config->Current_scenario, config->TotalNumScenarios);
-	    
-	    file_hdl = fopen(file_path, "a");
-	    fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f mm) Random_Setup(%.3f %.3f %.3f mm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, 10*config->Current_Systematic_setup[0], 10*config->Current_Systematic_setup[1], 10*config->Current_Systematic_setup[2], 10*config->Current_Random_setup[0], 10*config->Current_Random_setup[1], 10*config->Current_Random_setup[2], config->Current_Range_error);
-	    fclose(file_hdl);
-
-	    Scenario_simulation(config, material, ct, CT_phases, plan, machine, Fields);
-	  }
+          // run simulation
+          Scenario_simulation(config, material, ct, CT_phases, plan, machine, Fields);
+          
         }
       }
     }
+  }
+
+}
+
+
+void Scenarios_selection_reduced(DATA_config *config, Materials *material, DATA_CT *ct, DATA_CT **CT_phases, plan_parameters *plan, machine_parameters *machine, DATA_4D_Fields *Fields, char *file_path, enum Scenario_selection_shape Selection_shape){
+
+  int a, setup_direction, setup_shift, r;
+  FILE *file_hdl = NULL;
+  VAR_COMPUTE norm;
+
+  config->TotalNumScenarios = 21;
+  config->Current_scenario = 0;
+  config->Current_scenario_type = Uncertainty;
+
+  if(config->Systematic_Setup_Error[0] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios - 6;
+  if(config->Systematic_Setup_Error[1] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios - 6;
+  if(config->Systematic_Setup_Error[2] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios - 6;
+  if(config->Systematic_Range_Error == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
+
+  for(r=-1; r<=1; r++){
+    for (setup_direction=0; setup_direction<=2; setup_direction++){
+      for (setup_shift=-1; setup_shift<=1; setup_shift++){
+        
+        // skip simulation of scenarios when error is null
+        if(config->Systematic_Range_Error == 0.0 && r != 0) continue; 
+        if(config->Systematic_Setup_Error[setup_direction] == 0.0 && setup_shift != 0) continue;
+        if(setup_shift == 0 && setup_direction != 0) continue;
+          
+	    config->Current_scenario += 1;
+	      
+	    // scenarios selection shape in the error space
+	    if(Selection_shape == HyperCube) norm = 1.0;
+	    else if(Selection_shape == HyperCylinder) norm = 1.0;
+	    else norm = sqrt((double)setup_shift*setup_shift + (double)r*r) + FLT_EPSILON; // HyperSphere
+          
+        // Systematic range error
+        config->Current_Range_error = r * config->Systematic_Range_Error / norm;
+        if(config->Simu_4D_Mode == 0){
+          Density_scaling(ct->Nominal_density, ct->Scaled_density, ct->Nbr_voxels, 1.0 + (config->Current_Range_error * 0.01));
+          ct->density = ct->Scaled_density;
+        }
+        else{ 
+          for(a=0; a <config->Num_4DCT_phases; a++){
+            Density_scaling(CT_phases[a]->Nominal_density, CT_phases[a]->Scaled_density, ct->Nbr_voxels, 1.0 + (config->Current_Range_error * 0.01));
+            CT_phases[a]->density = CT_phases[a]->Scaled_density;
+          }
+        }
+
+        // Systematic setup error
+        config->Current_Systematic_setup[0] = 0.0;
+	    config->Current_Systematic_setup[1] = 0.0;
+	    config->Current_Systematic_setup[2] = 0.0;
+	    config->Current_Systematic_setup[setup_direction] = setup_shift * config->Systematic_Setup_Error[setup_direction] / norm;
+
+        // Random setup error
+        config->Current_Random_setup[0] = config->Random_Setup_Error[0];
+        config->Current_Random_setup[1] = config->Random_Setup_Error[1];
+        config->Current_Random_setup[2] = config->Random_Setup_Error[2];
+
+        // log
+        sprintf(config->output_robustness_suffix, "_Scenario_%d-%d", config->Current_scenario, config->TotalNumScenarios);
+        file_hdl = fopen(file_path, "a");
+        fprintf(file_hdl, "Scenario (%d/%d): Systematic_Setup(%.3f %.3f %.3f mm) Random_Setup(%.3f %.3f %.3f mm) Systematic_Range(%.2f %%)\n", config->Current_scenario, config->TotalNumScenarios, 10*config->Current_Systematic_setup[0], 10*config->Current_Systematic_setup[1], 10*config->Current_Systematic_setup[2], 10*config->Current_Random_setup[0], 10*config->Current_Random_setup[1], 10*config->Current_Random_setup[2], config->Current_Range_error);
+        fclose(file_hdl);
+
+        // run simulation
+        Scenario_simulation(config, material, ct, CT_phases, plan, machine, Fields);
+          
+      }
+    }
+  }
 
 }
 
