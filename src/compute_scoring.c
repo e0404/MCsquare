@@ -134,9 +134,20 @@ int Scoring_to_CT_index(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct){
   VAR_COMPUTE y = scoring->Offset[1] + (0.5+IDy) * scoring->VoxelLength[1];
   VAR_COMPUTE z = scoring->Offset[2] + (0.5+IDz) * scoring->VoxelLength[2];
   
+  if(x < 0) x = ct->VoxelLength[0]/2;
+  if(y < 0) y = ct->VoxelLength[1]/2;
+  if(z < 0) z = ct->VoxelLength[2]/2;
+  if(x > ct->Length[0]) x = ct->Length[0] - ct->VoxelLength[0]/2;
+  if(y > ct->Length[1]) y = ct->Length[1] - ct->VoxelLength[1]/2;
+  if(z > ct->Length[2]) z = ct->Length[2] - ct->VoxelLength[2]/2;
+  
+  
   int CT_ID = (int)floor( (-x + ct->Length[0]) / ct->VoxelLength[0] ) 
 			+ ct->GridSize[0] * (int)floor( y / ct->VoxelLength[1] ) 
 			+ ct->GridSize[0] * ct->GridSize[1] * (int)floor( z / ct->VoxelLength[2] );
+			
+  if(CT_ID < 0) CT_ID = 0;
+  if(CT_ID > ct->Nbr_voxels) CT_ID = ct->Nbr_voxels - 1;
 			
   return CT_ID;
 
@@ -295,9 +306,8 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
     }
    }
    else{ // independent scoring grid
-    #pragma omp parallel for reduction(max: max_dose)
+    #pragma omp parallel for reduction(max: max_dose) private(CT_ID)
     for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
-      //batch->dose[j] = batch->dose[j] / voxel_volume; // Volume weighting
       Tot_scoring->dose[j] += batch->dose[j];
       Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
       CT_ID = Scoring_to_CT_index(j, Tot_scoring, ct);
