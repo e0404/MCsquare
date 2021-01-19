@@ -154,6 +154,47 @@ int Scoring_to_CT_index(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct){
 }
 
 
+int Voxel_contains_low_density(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct){
+
+  int IDz = (int) floor( Scoring_ID / (scoring->GridSize[0]*scoring->GridSize[1]) );
+  int IDy = (int) floor( (Scoring_ID-IDz*scoring->GridSize[0]*scoring->GridSize[1]) / scoring->GridSize[0] );
+  int IDx = Scoring_ID - IDz*scoring->GridSize[0]*scoring->GridSize[1] - IDy*scoring->GridSize[0];
+  
+  int CT_ID, dx, dy, dz;  
+  VAR_COMPUTE x, y, z;
+  
+  for(dx=0; dx<=ceil(scoring->VoxelLength[0]/ct->VoxelLength[0]); dx++){
+    for(dy=0; dy<=ceil(scoring->VoxelLength[1]/ct->VoxelLength[1]); dy++){
+      for(dz=0; dz<=ceil(scoring->VoxelLength[2]/ct->VoxelLength[2]); dz++){
+        
+        x = scoring->Length[0] + scoring->Offset[0] - IDx*scoring->VoxelLength[0] - dx*ct->VoxelLength[0];
+        y = scoring->Offset[1] + IDy*scoring->VoxelLength[1] + dy*ct->VoxelLength[1];
+        z = scoring->Offset[2] + IDz*scoring->VoxelLength[2] + dz*ct->VoxelLength[2];
+        
+        if(x < 0) x = ct->VoxelLength[0]/2;
+        if(y < 0) y = ct->VoxelLength[1]/2;
+        if(z < 0) z = ct->VoxelLength[2]/2;
+        if(x > ct->Length[0]) x = ct->Length[0] - ct->VoxelLength[0]/2;
+        if(y > ct->Length[1]) y = ct->Length[1] - ct->VoxelLength[1]/2;
+        if(z > ct->Length[2]) z = ct->Length[2] - ct->VoxelLength[2]/2;
+
+        CT_ID = (int)floor( (-x + ct->Length[0]) / ct->VoxelLength[0] ) 
+			+ ct->GridSize[0] * (int)floor( y / ct->VoxelLength[1] ) 
+			+ ct->GridSize[0] * ct->GridSize[1] * (int)floor( z / ct->VoxelLength[2] );
+			
+        if(CT_ID < 0) CT_ID = 0;
+        if(CT_ID > ct->Nbr_voxels) CT_ID = ct->Nbr_voxels - 1;
+        
+        if(ct->density[CT_ID] <= 0.2) return 1;
+      }
+    }
+  }
+  
+  return 0;        
+        
+}
+
+
 void Energy_Scoring_from_index(DATA_Scoring *scoring, int *v_index, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config){
 
   __assume_aligned(v_index, 64);
@@ -286,7 +327,7 @@ void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material
       scoring->LET[ii] = (scoring->LET[ii] > 0) * scoring->LET[ii] / ((scoring->LET_denominator[ii] * 1e7) + FLT_EPSILON);
     }
   }
-
+  
 }
 
 
@@ -295,25 +336,26 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
   //double voxel_volume = Tot_scoring->VoxelLength[0]*Tot_scoring->VoxelLength[1]*Tot_scoring->VoxelLength[2];
   VAR_SCORING tmp, sigma=0, max_dose=0;
   int CT_ID,count=0;
+  
+  #pragma omp declare reduction(my_max : VAR_SCORING : omp_out = omp_out > omp_in ? omp_out : omp_in) initializer(omp_priv=0)
 
   if(config->Independent_scoring_grid == 0){
-    #pragma omp parallel for reduction(max: max_dose)
+    #pragma omp parallel for reduction(my_max: max_dose)
     for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
       //batch->dose[j] = batch->dose[j] / voxel_volume; // Volume weighting
       Tot_scoring->dose[j] += batch->dose[j];
       Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
-      if(ct->density[j] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
+      if(ct->density[j] > 0.2 && max_dose < Tot_scoring->dose[j]) max_dose = (4*max_dose + Tot_scoring->dose[j])/5; // slow increase of max_dose to avoid noise bias
     }
-   }
-   else{ // independent scoring grid
-    #pragma omp parallel for reduction(max: max_dose) private(CT_ID)
+  }
+  else{ // independent scoring grid
+    #pragma omp parallel for reduction(my_max: max_dose) private(CT_ID)
     for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
       Tot_scoring->dose[j] += batch->dose[j];
       Tot_scoring->dose_squared[j] += batch->dose[j] * batch->dose[j];
-      CT_ID = Scoring_to_CT_index(j, Tot_scoring, ct);
-      if(ct->density[CT_ID] > 0.1 && max_dose < Tot_scoring->dose[j]) max_dose = Tot_scoring->dose[j];
+      if(max_dose < Tot_scoring->dose[j] && Voxel_contains_low_density(j, Tot_scoring, ct) == 0) max_dose = (4*max_dose + Tot_scoring->dose[j])/5; // slow increase of max_dose to avoid noise bias
     }
-   }
+  }
 
   if(config->Score_Energy == 1){
     #pragma omp parallel for
@@ -340,13 +382,11 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
     for(int j=0; j<config->PG_Spectrum_NumBin; j++) Tot_scoring->PG_spectrum[j] += batch->PG_spectrum[j];
   }
 
-
   // compute statistical uncertainty
   count = 0;
   if(config->Independent_scoring_grid == 0){
     for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
-      if(Tot_scoring->dose[j] > 0.5*max_dose && (config->Ignore_low_density_voxels == 0 || ct->density[j] > 0.1)){
-        //sigma += sqrt(Tot_scoring->dose_squared[j] - Tot_scoring->dose[j]*Tot_scoring->dose[j]/Num_batch) / (Tot_scoring->dose[j]/Num_batch);
+      if(Tot_scoring->dose[j] > 0.5*max_dose && (config->Ignore_low_density_voxels == 0 || ct->density[j] > 0.2)){
         sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
         count++;
       }
@@ -355,7 +395,7 @@ VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materi
   else{ // independent scoring grid
     for(int j=0; j<Tot_scoring->Nbr_voxels; j++){
       CT_ID = Scoring_to_CT_index(j, Tot_scoring, ct);
-      if(Tot_scoring->dose[j] > 0.5*max_dose && (config->Ignore_low_density_voxels == 0 || ct->density[CT_ID] > 0.1)){
+      if(Tot_scoring->dose[j] > 0.5*max_dose && (config->Ignore_low_density_voxels == 0 || Voxel_contains_low_density(j, Tot_scoring, ct) == 0)){
         sigma += sqrt(Num_batch * (Tot_scoring->dose_squared[j]*Num_batch/(Tot_scoring->dose[j]*Tot_scoring->dose[j]) - 1.0) );
         count++;
       }
