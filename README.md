@@ -50,6 +50,10 @@ make all
 ```
 
 ## Run MCsquare (Linux)
+You can test your executable by printing the version using this command in your terminal:
+```
+./MCsquare_linux -v
+```
 Configure your simulation in the config.txt file.
 Then, run the MCsquare launcher from your terminal:
 ```
