@@ -536,7 +536,7 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
     strcat(out_header_path, ".txt");
   }
   
-  char from[200], ID[10], cmd[300];
+  char from[200], ID[10];
   sprintf(from, "%s1/%s", InputPath, file_header_path);
   CopyFile(out_header_path, from);
 
@@ -584,16 +584,24 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
     remove(from);
     sprintf(from, "%s%d/%s", InputPath, i+1, file_header_path);
     remove(from);
-    
-    // Remove folder
-    sprintf(from, "\"%s%d\"", InputPath, i+1);
-    // rmdir(from); // from unistd.h
-    sprintf(cmd, RMDIR_CMD, from); // RMDIR_CMD is defined in define.h according to the OS
-    system(cmd);
 
   }
 
   fclose(fd_to);
+  return 0;
+}
+
+
+int Remove_temporary_folders(char *InputPath, int NbrDirectories){
+  char path[200], cmd[300];
+  int i;
+  for(i=0; i<NbrDirectories; i++){
+    // Remove sub folder
+    sprintf(path, "\"%s%d\"", InputPath, i+1);
+    // rmdir(path); // from unistd.h
+    sprintf(cmd, RMDIR_CMD, path); // RMDIR_CMD is defined in define.h according to the OS
+    system(cmd);
+  }
   return 0;
 }
 

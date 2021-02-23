@@ -471,6 +471,9 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
 	Merge_Sparse_Files(InPath, InFile, config->TotalNbrSpots, OutPath);
       }
     }
+    
+    sprintf(InPath, "%stmp/Beamlet_", config->Output_Directory);
+    Remove_temporary_folders(InPath, config->TotalNbrSpots);
   
     
   }

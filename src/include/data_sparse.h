@@ -38,5 +38,6 @@ DATA_Sparse_Header Read_Sparse_Header(char *file_name);
 void Display_Sparse_Header(DATA_Sparse_Header *Header);
 DATA_Sparse_Header Init_Sparse_Header();
 int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char *OutputFile);
+int Remove_temporary_folders(char *InputPath, int NbrDirectories);
 
 #endif
