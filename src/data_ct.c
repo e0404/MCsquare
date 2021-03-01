@@ -42,7 +42,7 @@ int Read_Density_conversion_data(char *file_name, DATA_CT *ct){
   char tmp[256];
   char *data;
   int Num_data=0, i=0;
-  VAR_DATA previous = -9999;
+  VAR_DATA previous = -99999;
 
   file = fopen(file_name,"r");
   if(file == NULL){
