@@ -5,22 +5,22 @@ This_Dir="`dirname \"$0\"`"
 export MCsquare_Materials_Dir=$This_Dir/Materials
 
 if [ "$(uname)" == "Darwin" ]; then
-	export DYLD_LIBRARY_PATH=$This_Dir/lib_mac:$DYLD_LIBRARY_PATH
-	if sysctl -a | grep --quiet AVX
-  		then $This_Dir/MCsquare_mac
-  		else $This_Dir/MCsquare_mac_NoArch
-	fi
+  export DYLD_LIBRARY_PATH=$This_Dir/lib_mac:$DYLD_LIBRARY_PATH
+  if sysctl -a | grep --quiet AVX
+    then $This_Dir/MCsquare_mac $1
+  else $This_Dir/MCsquare_mac_NoArch $1
+  fi
 else
-	if grep --quiet AuthenticAMD /proc/cpuinfo
-  		then $This_Dir/MCsquare_linux
-	elif grep --quiet avx512 /proc/cpuinfo
-  		then $This_Dir/MCsquare_linux_avx512
-	elif grep --quiet avx2 /proc/cpuinfo
-		then $This_Dir/MCsquare_linux_avx2
-	elif grep --quiet avx /proc/cpuinfo
-		then $This_Dir/MCsquare_linux_avx
-	elif grep --quiet sse4 /proc/cpuinfo
-		then $This_Dir/MCsquare_linux_sse4
-  	else $This_Dir/MCsquare_linux
-	fi
+  if grep --quiet AuthenticAMD /proc/cpuinfo
+    then $This_Dir/MCsquare_linux $1
+  elif grep --quiet avx512 /proc/cpuinfo
+    then $This_Dir/MCsquare_linux_avx512 $1
+  elif grep --quiet avx2 /proc/cpuinfo
+    then $This_Dir/MCsquare_linux_avx2 $1
+  elif grep --quiet avx /proc/cpuinfo
+    then $This_Dir/MCsquare_linux_avx $1
+  elif grep --quiet sse4 /proc/cpuinfo
+    then $This_Dir/MCsquare_linux_sse4 $1
+  else $This_Dir/MCsquare_linux $1
+  fi
 fi

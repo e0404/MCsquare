@@ -30,3 +30,5 @@ echo %TAB% $(CC) $(SRC) $(LIB) $(OPTIONS) $(FULL_VERSION) $(LIB_PATH) -link -out
 
 
 nmake -f Makfile.mak
+
+del *.obj

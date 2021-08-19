@@ -20,7 +20,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
   double time_init, time_MC, time_end;
   time_init = omp_get_wtime();
 
-  char file_path[100], progress_message[50];
+  char file_path[200], progress_message[50];
 
   unsigned long Num_simulated_primaries = 0;
   VAR_SCORING stat_uncertainty = 1.0;
@@ -351,7 +351,7 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 void Display_simulation_progression(DATA_config *config, char *progress_message){
 
   FILE *progress_file = NULL;
-  char file_path[100];
+  char file_path[200];
   strcpy(file_path, config->Output_Directory);
   strcat(file_path, "Simulation_progress.txt");
 
