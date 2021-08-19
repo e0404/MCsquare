@@ -61,6 +61,11 @@ Then, run the MCsquare launcher from your terminal:
 ```
 The launcher will automatically call the executable that correspond to your computer hardware.
 
+You can try to run MCsquare with the sample input data:
+```
+./MCsquare Sample_input_data/config.txt 
+```
+
 
 
 ## Instructions for Windows
