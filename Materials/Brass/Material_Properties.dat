@@ -1,0 +1,11 @@
+Name 			Brass
+Molecular_Weight 	0.0 		 # N.C.
+Density 		8.40000000 	 # in g/cm3 
+Electron_Density 	2.28471e+24 	 # in cm-3 
+Radiation_Length 	11.649441 	 # in g/cm2 
+
+Nuclear_Data 		Mixture 2 	# mixture with 2 components
+
+		# 	Label 	Name 		fraction by mass (in %)
+Mixture_Component	10 	copper		86.377290 
+Mixture_Component	12 	lead		13.622710 

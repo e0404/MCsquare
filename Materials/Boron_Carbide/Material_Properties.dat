@@ -1,0 +1,10 @@
+Name 			Boron_Carbide
+Molecular_Weight 	0.0 		 # N.C.
+Density 		2.52000000 	 # in g/cm3 
+Electron_Density 	7.14091e+23 	 # in cm-3 
+Radiation_Length 	50.136992 	 # in g/cm2 
+
+Nuclear_Data 		Mixture 1 	# mixture with 1 components
+
+		# 	Label 	Name 		fraction by mass (in %)
+Mixture_Component	2 	carbon		100.000000 
