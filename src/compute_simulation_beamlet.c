@@ -37,7 +37,6 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
     VAR_SCORING *PG_Spectrum_accumulation;
     VAR_SCORING *LET_accumulation;
     VAR_COMPUTE *deformed;
-    VAR_COMPUTE norm_factor = 1;
 
     DATA_CT *ct = NULL;
 
@@ -139,6 +138,7 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
 
       int export_results = 0;
       int ii;
+      VAR_COMPUTE norm_factor = 1;
 
       if((config->Simu_4D_Mode == 0 || config->Dose_4D_Accumulation == 0) && config->Fraction_accumulation == 0) export_results = 1;
       else{
@@ -188,7 +188,6 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
             Tot_scoring.dose = dose_accumulation;
           }
         }
-
 
         if(config->Score_PromptGammas == 1){
 
