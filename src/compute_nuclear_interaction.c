@@ -51,6 +51,8 @@ void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_mat
   ALIGNED_(64) VAR_COMPUTE v_T2[VLENGTH];
   v_T2[vALL] = (v_index[vALL]+1) * UMeV * INTERP_BIN;
 
+  if(v_index[vALL] >= 249) v_index[vALL] = 0; // nuclear cross sections tabulated up to 250 MeV
+
   ALIGNED_(64) VAR_COMPUTE v_Cross_section1[VLENGTH];
   for(i=0; i<VLENGTH; i++){
     v_Cross_section1[i] = (VAR_COMPUTE)material[v_material_label[i]].Interp_Total_Nuclear_Cross_Section[v_index[i]];
@@ -64,7 +66,6 @@ void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_mat
   vec_Linear_Interpolation(hadron->v_T, v_T1, v_T2, v_Cross_section1, v_Cross_section2, v_result);
 
   v_result[vALL] = v_result[vALL] * v_density[vALL];
-
 
   return;
 }
@@ -86,7 +87,7 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
   // Pure material (no mixture)
   else if(material[material_label].Nuclear_data_type == ICRU){  
 
-    if(Energy > 7.0){
+    if(Energy > 7.0 && Energy < 249.0){
       rnd = single_rand_uniform(RNG_Stream);
  
       index = (int)floor(Energy / INTERP_BIN);
@@ -157,7 +158,7 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
       }
 
       else if(material[target_label].Nuclear_data_type == ICRU){
-	if(Energy > 7.0){
+	if(Energy > 7.0 && Energy < 249.0){
 	  index = Binary_Search(Energy, material[target_label].Elastic_Energy_List, material[target_label].Nbr_Elastic_Energy);
 	  cross_section += material[material_label].Mixture_Components_fraction[i] * Linear_Interpolation(	Energy, 
 														material[target_label].Elastic_Energy_List[index], 
