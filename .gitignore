@@ -2,3 +2,7 @@
 *.dll
 *.mak
 settings.json
+MCsquare_linux*
+MCsquare_win*
+*.py
+old_versions
