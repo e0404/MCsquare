@@ -144,6 +144,9 @@ struct DATA_Struct{
 	VAR_DATA VoxelLength[3];
 	VAR_DATA Origin[3];
 	VAR_DATA *Mask;
+	unsigned short int Override;
+	VAR_DATA rho;
+	unsigned short int material;
 	int N_Index;
 	int *IndexList;
 };

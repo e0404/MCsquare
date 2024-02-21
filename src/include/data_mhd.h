@@ -35,14 +35,18 @@ struct MHD_header{
   int DimSize[3];
   VAR_DATA ElementSpacing[3];
   VAR_DATA Offset[3];
+  unsigned short int Override;
+  VAR_DATA Density;
+  unsigned short int Material;
   enum MHD_ElementType ElementType;
   int ElementByteOrderMSB;
   char ElementDataFile[100];
+  
 
 };
 
 void export_MHD_image(char *file_name, int GridSize[3], VAR_DATA VoxelLength[3], VAR_DATA Offset[3], VAR_SCORING *data);
 int Parse_MHD_header(char *file_name, MHD_header *header);
-VAR_DATA *import_MHD_image(char *file_name, int *GridSize, VAR_DATA *VoxelLength, VAR_DATA *Origin);
+VAR_DATA *import_MHD_image(char *file_name, int *GridSize, VAR_DATA *VoxelLength, VAR_DATA *Origin, MHD_header *header);
 
 #endif
