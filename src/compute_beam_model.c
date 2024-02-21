@@ -102,6 +102,8 @@ void deviates (double U[2][2], double sigmas[2], double R[2], VSLStreamStatePtr 
     for ( i = 0; i < n; i++ ) {
         V[i] *= sigmas[i];
     }
+
+
     
     R[0]=U[0][0]*V[0]+U[0][1]*V[1];
     R[1]=U[1][0]*V[0]+U[1][1]*V[1];
@@ -124,7 +126,7 @@ void diagonalize (double A[2][2],double B[2], double T[2][2])
     T[1][0]=1/r_1*(-A[1][0]/(A[1][1]-B[0]));
     T[1][1]=1/r_2*(-A[1][0]/(A[1][1]-B[1]));
     
-//    printf("%f %f %f %f %f %f\n",r_1, r_2,T[1][1],T[1][0],B[0],B[1]);
+    //printf("%f %f %f %f %f %f\n",r_1, r_2,T[1][1],T[1][0],B[0],B[1]);
 }
 
 
@@ -436,7 +438,7 @@ void Sample_particle (Hadron_buffer *hadron, VAR_DATA CT_Length[3], machine_para
     
     double rotation[3];
     rotation[0]= M_PI+atan(spot->Spot_Y/mac->mDistanceSMYToIsocenter);
-    rotation[1]= -atan(spot->Spot_X/mac->mDistanceSMXToIsocenter);
+    rotation[1]= -atan(spot->Spot_X/mac->mDistanceSMXToIsocenter);    
     rotation[2]=0.0;
 
 

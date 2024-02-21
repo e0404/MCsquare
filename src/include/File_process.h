@@ -22,6 +22,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 int File_exists(const char *FileName);
 double get_units(char *str);
 int isUnsignedInt(char *str);
+int isInt(char *str);
 int isUnsignedFloat(char *str);
 int isFloat(char *str);
 int isBoolean(char *str);

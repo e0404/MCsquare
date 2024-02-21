@@ -55,14 +55,20 @@ int main(int argc, char *argv[]){
 
   config.timestamp = time(NULL);
 
-  if(config.Num_Threads == 0) config.Num_Threads = omp_get_num_procs();
+  if(config.Num_Threads == 0) config.Num_Threads = omp_get_num_procs() + config.Num_Threads;
+  else if (config.Num_Threads < 0) {
+      config.Num_Threads += omp_get_num_procs();
+      if (config.Num_Threads <= 0) {
+        printf("\n Warning: Num_Threads is set to %d but only %u processing units are available. Setting Num_Threads to 1.\n\n", config.Num_Threads-omp_get_num_procs(), omp_get_num_procs());
+        config.Num_Threads = 1;
+      }
+  }
   else if(config.Num_Threads > omp_get_num_procs()){
-    printf("\n Warning: Num_Threads is set to %u but only %u processing units are available\n\n", config.Num_Threads, omp_get_num_procs());
+    printf("\n Warning: Num_Threads is set to %d but only %u processing units are available\n\n", config.Num_Threads, omp_get_num_procs());
   }
 
   omp_set_num_threads(config.Num_Threads);
   double time_start = omp_get_wtime();
-
   if(config.Robustness_Mode == 1 && config.Simu_4D_Mode == 1 && (config.Systematic_Amplitude_Error != 0.0 || config.Random_Amplitude_Error != 0.0) && config.Field_type != 1){
     printf("\nError: Velocity fields are required to simulate variation of breathing amplitude!\n");
     return 1;
@@ -168,7 +174,6 @@ int main(int argc, char *argv[]){
   //Display_Density_conversion_data(ct);
   //Display_Material_conversion_data(ct);
 
-
   // Import material database
   Materials *material = Init_materials(&config.Num_Materials, &config.Num_Components, &config);
   if(material == NULL){
@@ -205,15 +210,14 @@ int main(int argc, char *argv[]){
   if(error == 1){
     if(config.Simu_4D_Mode == 0) Free_CT_DATA(ct);
     else{
-	Free_4DCT(CT_phases, config.Num_4DCT_phases);
-	if(config.Dose_4D_Accumulation == 1) Free_4D_Fields(Fields);
+	    Free_4DCT(CT_phases, config.Num_4DCT_phases);
+	    if(config.Dose_4D_Accumulation == 1) Free_4D_Fields(Fields);
     }
     Free_Materials_DATA(material, config.Num_Materials);
     Free_Plan_Parameters(plan);
     return 1;
   }
   Display_RangeShifter_Data(plan, &machine, material);
-
 
   // Export density map
   char file_path[200];
@@ -252,13 +256,13 @@ int main(int argc, char *argv[]){
     free(mat);
   }
 
-
   //////////////////////
   // Start computation
   //////////////////////
 
   config.Current_fraction = plan->NumberOfFractions;
   config.Fraction_accumulation = 0;
+
 
   if(config.Robustness_Mode == 0){	// Not Robustness_Mode
 
@@ -332,7 +336,7 @@ int main(int argc, char *argv[]){
 
     // Nominal plan:
     if(config.Simulate_nominal_plan == 1){
-	config.Current_scenario_type = Nominal;
+	    config.Current_scenario_type = Nominal;
     	config.Current_Systematic_setup[0] = 0.0;
     	config.Current_Systematic_setup[1] = 0.0;
     	config.Current_Systematic_setup[2] = 0.0;
@@ -345,8 +349,8 @@ int main(int argc, char *argv[]){
     	config.Current_Breathing_amplitude = 1.0;
     	config.Current_Systematic_period = 0.0;
     	config.Current_Random_period = 0.0;
-        config.Current_Breathing_period = config.Breathing_period;
-        for(a=0; a < plan->NumberOfFields; a++) config.Current_init_delivery_points[a] = 0.0;
+      config.Current_Breathing_period = config.Breathing_period;
+      for(a=0; a < plan->NumberOfFields; a++) config.Current_init_delivery_points[a] = 0.0;
 
     	strcpy(config.output_beamlet_suffix, "");
     	strcpy(config.output_robustness_suffix, "_Nominal");
@@ -408,8 +412,8 @@ int main(int argc, char *argv[]){
 
   if(config.Simu_4D_Mode == 0) Free_CT_DATA(ct);
   else{
-	Free_4DCT(CT_phases, config.Num_4DCT_phases);
-	if(config.Dose_4D_Accumulation == 1 || config.Create_4DCT_from_Ref == 1) Free_4D_Fields(Fields);
+    Free_4DCT(CT_phases, config.Num_4DCT_phases);
+    if(config.Dose_4D_Accumulation == 1 || config.Create_4DCT_from_Ref == 1) Free_4D_Fields(Fields);
   }
   Free_Materials_DATA(material, config.Num_Materials);
   Free_Plan_Parameters(plan);
