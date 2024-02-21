@@ -154,13 +154,11 @@ void display_structs_information(DATA_StructList *StructList){
     printf("Mask VoxelLength: %f %f %f (cm)\n", StructList->Structs[i].VoxelLength[0], StructList->Structs[i].VoxelLength[1], StructList->Structs[i].VoxelLength[2]);
     printf("Mask Origin: %f %f %f (cm)\n", StructList->Structs[i].Origin[0], StructList->Structs[i].Origin[1], StructList->Structs[i].Origin[2]);
     printf("Number voxels inside mask: %d\n", StructList->Structs[i].N_Index);
-    /*
     printf("Override: %d\n", StructList->Structs[i].Override);
     if (StructList->Structs[i].Override!=0) {
       printf("Density: %f\n", StructList->Structs[i].rho);
       printf("Material num: %f\n", StructList->Structs[i].material);
     }
-    */
     printf("\n");
   }
 
