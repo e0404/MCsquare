@@ -55,7 +55,7 @@ int main(int argc, char *argv[]){
 
   config.timestamp = time(NULL);
 
-  if(config.Num_Threads == 0) config.Num_Threads = omp_get_num_procs() + config.Num_Threads;
+  if(config.Num_Threads == 0) config.Num_Threads = omp_get_num_procs();
   else if (config.Num_Threads < 0) {
       config.Num_Threads += omp_get_num_procs();
       if (config.Num_Threads <= 0) {
