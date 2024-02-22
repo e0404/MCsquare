@@ -20,7 +20,7 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   DATA_config_dictionary *config_dictionary = (DATA_config_dictionary*) malloc(Num_Config_Tags * sizeof(DATA_config_dictionary));
 
   Add_uint_Config_element("_Internal_Num_Config_Tags", &config_dictionary[0], &config->Num_Config_Tags, 1, Num_Config_Tags, 0, UINT_MAX);
-  Add_uint_Config_element("Num_Threads", &config_dictionary[1], &config->Num_Threads, 1, 0, 0, UINT_MAX);
+  Add_int_Config_element("Num_Threads", &config_dictionary[1], &config->Num_Threads, 1, 0, -INT_MAX, INT_MAX);
   Add_ulong_Config_element("Num_Primaries", &config_dictionary[2], &config->Num_Primaries, 1, 10000000, 1, ULONG_MAX);
   Add_string_Config_element("CT_File", &config_dictionary[3], config->CT_File, 1, "CT.mhd", 1, 200);
   Add_ureal_Config_element("E_Cut_Pro", &config_dictionary[4], &config->Ecut_Pro, 1, 0.5, 0.001, 200);
@@ -99,6 +99,25 @@ DATA_config_dictionary *Init_Config(DATA_config *config){
   return config_dictionary;
 }
 
+
+void Add_int_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, int *config, int use_default, int default_value, int min_value, int max_value){
+
+  strcpy(config_dictionary->type, "int");
+  config_dictionary->is_defined = 0;
+
+  if(use_default == 0) config_dictionary->is_default = 0;
+  else{
+    config_dictionary->is_default = 1;
+    *config = default_value;
+  }
+
+  strcpy(config_dictionary->Tag, Tag);
+  config_dictionary->adress.int_adr = config;
+  config_dictionary->min_value.int_value = min_value;
+  config_dictionary->max_value.int_value = max_value;
+
+  return;
+}
 
 
 void Add_bool_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, unsigned int *config, int use_default, unsigned int default_value){
@@ -310,213 +329,234 @@ int Parse_Config(DATA_config *config, char *file_name){
     parsed = 0;
 
     for(i = 0; i < config->Num_Config_Tags; i++){
+
       if(strcmp(read_token, config_dictionary[i].Tag) == 0){
 
-	read_token = strtok_r(NULL, " \t\r\n", &save_token);
+        read_token = strtok_r(NULL, " \t\r\n", &save_token);
 
-	///// Bool /////
+        ///// Bool /////
         if(strcmp(config_dictionary[i].type, "bool") == 0){
-	  if(!isBoolean(read_token)){
-	    printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else{
-	    *config_dictionary[i].adress.uint_adr = getBoolean(read_token);
-	    config_dictionary[i].is_defined = 1;
-	  }
+          if(!isBoolean(read_token)){
+            printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else{
+            *config_dictionary[i].adress.uint_adr = getBoolean(read_token);
+            config_dictionary[i].is_defined = 1;
+          }
         }
 
-	///// String /////
+        ///// String /////
         else if(strcmp(config_dictionary[i].type, "string") == 0){
-	  if(strlen(read_token) < config_dictionary[i].min_value.uint_value || strlen(read_token) > config_dictionary[i].max_value.uint_value){
-	    printf("\n Error: %s value must contain between %u and %u characters in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else{
-	    strcpy(config_dictionary[i].adress.string_adr, read_token);
-	    config_dictionary[i].is_defined = 1;
-	  }
+          if(strlen(read_token) < config_dictionary[i].min_value.uint_value || strlen(read_token) > config_dictionary[i].max_value.uint_value){
+            printf("\n Error: %s value must contain between %u and %u characters in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else{
+            strcpy(config_dictionary[i].adress.string_adr, read_token);
+            config_dictionary[i].is_defined = 1;
+          }
         }
 
-	///// UINT /////
+        ///// UINT /////
         else if(strcmp(config_dictionary[i].type, "uint") == 0){
-	  if(!isUnsignedInt(read_token)){
-	    printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else if((unsigned)atoi(read_token) < config_dictionary[i].min_value.uint_value || (unsigned)atoi(read_token) > config_dictionary[i].max_value.uint_value){
-	    printf("\n Error: %s value must be between %u and %u in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else{
-	    *config_dictionary[i].adress.uint_adr = (unsigned)atoi(read_token);
-	    config_dictionary[i].is_defined = 1;
-	  }
+          if(!isUnsignedInt(read_token)){
+            printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+            fclose(file);
+            free(config_dictionary);
+            return 1;
+          }
+          else if((unsigned)atoi(read_token) < config_dictionary[i].min_value.uint_value || (unsigned)atoi(read_token) > config_dictionary[i].max_value.uint_value){
+            printf("\n Error: %s value must be between %u and %u in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else{
+            *config_dictionary[i].adress.uint_adr = (unsigned)atoi(read_token);
+            config_dictionary[i].is_defined = 1;
+          }
         }
 
-	///// ULONG /////
+        ///// INT /////
+        else if(strcmp(config_dictionary[i].type, "int") == 0){
+          if(!isInt(read_token)){
+            printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+            fclose(file);
+            free(config_dictionary);
+            return 1;
+          }
+          else if(atoi(read_token) < config_dictionary[i].min_value.int_value || atoi(read_token) > config_dictionary[i].max_value.int_value){
+            printf("\n Error: %s value must be between %u and %u in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.int_value, config_dictionary[i].max_value.int_value, file_name);
+            fclose(file);
+            free(config_dictionary);
+            return 1;
+          }
+          else{
+            *config_dictionary[i].adress.int_adr = atoi(read_token);
+            config_dictionary[i].is_defined = 1;
+          }
+        }
+
+        ///// ULONG /////
         else if(strcmp(config_dictionary[i].type, "ulong") == 0){
-	  if(!isUnsignedFloat(read_token)){
-	    printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else if((unsigned long)atof(read_token) < config_dictionary[i].min_value.ulong_value || (unsigned long)atof(read_token) > config_dictionary[i].max_value.ulong_value){
-	    printf("\n Error: %s value must be between %lu and %lu in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.ulong_value, config_dictionary[i].max_value.ulong_value, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else{
-	    *config_dictionary[i].adress.ulong_adr = (unsigned long)atof(read_token);
-	    config_dictionary[i].is_defined = 1;
-	  }
+          if(!isUnsignedFloat(read_token)){
+            printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else if((unsigned long)atof(read_token) < config_dictionary[i].min_value.ulong_value || (unsigned long)atof(read_token) > config_dictionary[i].max_value.ulong_value){
+            printf("\n Error: %s value must be between %lu and %lu in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.ulong_value, config_dictionary[i].max_value.ulong_value, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else{
+            *config_dictionary[i].adress.ulong_adr = (unsigned long)atof(read_token);
+            config_dictionary[i].is_defined = 1;
+          }
         }
 
-	///// UReal /////
+        ///// UReal /////
         else if(strcmp(config_dictionary[i].type, "ureal") == 0){
-	  if(!isUnsignedFloat(read_token)){
-	    printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
-	    printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
-	  else{
-	    *config_dictionary[i].adress.real_adr = (VAR_DATA)atof(read_token);
-	    config_dictionary[i].is_defined = 1;
-	  }
+          if(!isUnsignedFloat(read_token)){
+            printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
+            printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
+          else{
+            *config_dictionary[i].adress.real_adr = (VAR_DATA)atof(read_token);
+            config_dictionary[i].is_defined = 1;
+          }
         }
 
-	///// Vector UReal /////
+        ///// Vector UReal /////
         else if(strcmp(config_dictionary[i].type, "Vureal") == 0){
-	  for(j=0; j<3; j++){
-	    if(!isUnsignedFloat(read_token)){
-	      printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	      fclose(file);
-  	      free(config_dictionary);
-	      return 1;
-	    }
-	    else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
-	      printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
-	      fclose(file);
-  	      free(config_dictionary);
-	      return 1;
-	    }
-	    else{
-	      config_dictionary[i].adress.real_adr[j] = (VAR_DATA)atof(read_token);
-	      if(j==2) config_dictionary[i].is_defined = 1;
-	    }
-	    read_token = strtok_r(NULL, " \t", &save_token);
-	  }
+          for(j=0; j<3; j++){
+            if(!isUnsignedFloat(read_token)){
+              printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+              fclose(file);
+                free(config_dictionary);
+              return 1;
+            }
+            else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
+              printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
+              fclose(file);
+                free(config_dictionary);
+              return 1;
+            }
+            else{
+              config_dictionary[i].adress.real_adr[j] = (VAR_DATA)atof(read_token);
+              if(j==2) config_dictionary[i].is_defined = 1;
+            }
+            read_token = strtok_r(NULL, " \t", &save_token);
+          }
         }
 
-	///// Vector Real /////
+        ///// Vector Real /////
         else if(strcmp(config_dictionary[i].type, "Vreal") == 0){
-	  for(j=0; j<3; j++){
-	    if(!isFloat(read_token)){
-	      printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	      fclose(file);
-  	      free(config_dictionary);
-	      return 1;
-	    }
-	    else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
-	      printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
-	      fclose(file);
-  	      free(config_dictionary);
-	      return 1;
-	    }
-	    else{
-	      config_dictionary[i].adress.real_adr[j] = (VAR_DATA)atof(read_token);
-	      if(j==2) config_dictionary[i].is_defined = 1;
-	    }
-	    read_token = strtok_r(NULL, " \t", &save_token);
-	  }
+          for(j=0; j<3; j++){
+            if(!isFloat(read_token)){
+              printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+              fclose(file);
+              free(config_dictionary);
+              return 1;
+            }
+            else if((VAR_DATA)atof(read_token) < config_dictionary[i].min_value.real_value || (VAR_DATA)atof(read_token) > config_dictionary[i].max_value.real_value){
+              printf("\n Error: %s value must be between %f and %f in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.real_value, config_dictionary[i].max_value.real_value, file_name);
+              fclose(file);
+              free(config_dictionary);
+              return 1;
+            }
+            else{
+              config_dictionary[i].adress.real_adr[j] = (VAR_DATA)atof(read_token);
+              if(j==2) config_dictionary[i].is_defined = 1;
+            }
+            read_token = strtok_r(NULL, " \t", &save_token);
+          }
         }
 
-	///// Vector UInt /////
+        ///// Vector UInt /////
         else if(strcmp(config_dictionary[i].type, "Vuint") == 0){
-	  for(j=0; j<3; j++){
-	    if(!isUnsignedInt(read_token)){
-	      printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
-	      fclose(file);
-  	      free(config_dictionary);
-	      return 1;
-	    }
-	    else if((VAR_DATA)atoi(read_token) < config_dictionary[i].min_value.uint_value || (VAR_DATA)atoi(read_token) > config_dictionary[i].max_value.uint_value){
-	      printf("\n Error: %s value must be between %d and %d in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
-	      fclose(file);
-  	      free(config_dictionary);
-	      return 1;
-	    }
-	    else{
-	      config_dictionary[i].adress.uint_adr[j] = (VAR_DATA)atoi(read_token);
-	      if(j==2) config_dictionary[i].is_defined = 1;
-	    }
-	    read_token = strtok_r(NULL, " \t", &save_token);
-	  }
+          for(j=0; j<3; j++){
+            if(!isUnsignedInt(read_token)){
+              printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"\n\n", read_token, config_dictionary[i].Tag, file_name);
+              fclose(file);
+                free(config_dictionary);
+              return 1;
+            }
+            else if((VAR_DATA)atoi(read_token) < config_dictionary[i].min_value.uint_value || (VAR_DATA)atoi(read_token) > config_dictionary[i].max_value.uint_value){
+              printf("\n Error: %s value must be between %d and %d in \"%s\"\n\n", config_dictionary[i].Tag, config_dictionary[i].min_value.uint_value, config_dictionary[i].max_value.uint_value, file_name);
+              fclose(file);
+                free(config_dictionary);
+              return 1;
+            }
+            else{
+              config_dictionary[i].adress.uint_adr[j] = (VAR_DATA)atoi(read_token);
+              if(j==2) config_dictionary[i].is_defined = 1;
+            }
+            read_token = strtok_r(NULL, " \t", &save_token);
+          }
         }
 
-	///// Enum /////
+        ///// Enum /////
         else if(strcmp(config_dictionary[i].type, "enum") == 0){
-	  strcpy(list, config_dictionary[i].List);
-	  read_list = strtok_r(list, ";", &save_list);
-          j = -1;
-	  k = -1;
-	  while(read_list != NULL){
-	    j += 1;
-	    if(strcmp(read_list, read_token) == 0){
-	      k = j;
-	      *config_dictionary[i].adress.int_adr = k;
-	      config_dictionary[i].is_defined = 1;
-	      break;
-	    }
-	    read_list = strtok_r(NULL, ";", &save_list);
-	  }
-	  if(k == -1){
-	    printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"", read_token, config_dictionary[i].Tag, file_name);
-	    printf("\n Possible values are: \n");
-	    strcpy(list, config_dictionary[i].List);
-	    read_list = strtok_r(list, ";", &save_list);
-	    while(read_list != NULL){
-	      printf("\t%s\n", read_list);
-	      read_list = strtok_r(NULL, ";", &save_list);
-	    }
-	    printf("\n\n");
-	    fclose(file);
-  	    free(config_dictionary);
-	    return 1;
-	  }
+          strcpy(list, config_dictionary[i].List);
+          read_list = strtok_r(list, ";", &save_list);
+                j = -1;
+          k = -1;
+          while(read_list != NULL){
+            j += 1;
+            if(strcmp(read_list, read_token) == 0){
+              k = j;
+              *config_dictionary[i].adress.int_adr = k;
+              config_dictionary[i].is_defined = 1;
+              break;
+            }
+            read_list = strtok_r(NULL, ";", &save_list);
+          }
+          if(k == -1){
+            printf("\n Error: \"%s\" is not a valid value for %s Tag in \"%s\"", read_token, config_dictionary[i].Tag, file_name);
+            printf("\n Possible values are: \n");
+            strcpy(list, config_dictionary[i].List);
+            read_list = strtok_r(list, ";", &save_list);
+            while(read_list != NULL){
+              printf("\t%s\n", read_list);
+              read_list = strtok_r(NULL, ";", &save_list);
+            }
+            printf("\n\n");
+            fclose(file);
+              free(config_dictionary);
+            return 1;
+          }
         }
 
-	else{
-	  printf("\n Error: Variable type \"%s\" is not supported for %s Tag in \"%s\"\n\n", config_dictionary[i].type, config_dictionary[i].Tag, file_name);
-	  fclose(file);
-  	  free(config_dictionary);
-	  return 1;
-	}
-	
-	parsed = 1;
-	break;
+        else{
+          printf("\n Error: Variable type \"%s\" is not supported for %s Tag in \"%s\"\n\n", config_dictionary[i].type, config_dictionary[i].Tag, file_name);
+          fclose(file);
+            free(config_dictionary);
+          return 1;
+        }
+    
+        parsed = 1;
+        break;
       }
     } // end for
 
     if(parsed == 0){
-	printf("\n Warning: Unknown tag \"%s\" in \"%s\"\n\n", read_token, file_name);
+	    printf("\n Warning: Unknown tag \"%s\" in \"%s\"\n\n", read_token, file_name);
     }
 
   } // end while
@@ -558,8 +598,8 @@ int Parse_Config(DATA_config *config, char *file_name){
 
 void display_config(DATA_config *config){
 
-if(config->Num_Threads == 0) printf("\n\nNum threads = auto (%u)\n", omp_get_num_procs());
-else printf("\n\nNum threads = %u \n", config->Num_Threads);
+if(config->Num_Threads <= 0) printf("\n\nNum threads = auto (%d)\n", omp_get_num_procs()+config->Num_Threads);
+else printf("\n\nNum threads = %d \n", config->Num_Threads);
 printf("Num primaries = %lu \n", config->Num_Primaries);
 printf("RNG_Seed = %u \n", config->RNG_Seed);
 printf("Ecut_Pro = %f \n", config->Ecut_Pro);
