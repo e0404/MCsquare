@@ -51,6 +51,7 @@ struct DATA_config_dictionary{
 
 
 DATA_config_dictionary *Init_Config(DATA_config *config);
+void Add_int_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, int *config, int use_default, int default_value, int min_value, int max_value);
 void Add_bool_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, unsigned int *config, int use_default, unsigned int default_value);
 void Add_string_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, char *config, int use_default, char *default_value, unsigned int min_size,  unsigned int max_size);
 void Add_uint_Config_element(char *Tag, DATA_config_dictionary *config_dictionary, unsigned int *config, int use_default, unsigned int default_value, unsigned int min_value,  unsigned int max_value);

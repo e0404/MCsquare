@@ -79,10 +79,9 @@ struct Materials{
 //	DATA_Stop_Pow *SP_list;// Pouvoir d'arret
 	VAR_DATA *SP_Energy;	// energies corresponding to the SP table
 	VAR_DATA *Stop_Pow;	// Stopping power table
-
 	VAR_DATA SPR;
 
-        // Nuclear data :
+    // Nuclear data :
 	enum { 
 	  None,
 	  ICRU,
@@ -260,7 +259,7 @@ struct DATA_config{
 	unsigned int Num_Config_Tags;
 
 	// Simulation parameters
-	unsigned int Num_Threads;
+	int Num_Threads;
 	unsigned int RNG_Seed;
 	unsigned long Num_Primaries;
 	VAR_DATA Ecut_Pro;
