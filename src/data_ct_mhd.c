@@ -69,25 +69,23 @@ DATA_CT *Read_CT_MHD(DATA_config *config){
 
   int i, j;
   
+  // CT conversion
+  #pragma omp parallel for private(i)
+  for(i=0; i<CT->Nbr_voxels; i++){
+    CT->density[i] = (VAR_DATA)HU_to_Density_convertion(hu[i], CT);
+    //CT->material[i] = (unsigned short int)Density_to_Material_convertion(CT->density[i], CT);
+    CT->material[i] = (unsigned short int)HU_to_Material_convertion(hu[i], CT);
+  }
+
+  // Material override
   for (j=0;j<config->StructList->Nbr_Structs;j++){
-	  if (config->StructList->Structs[j].Override == 0) {
+	  if (config->StructList->Structs[j].Override != 0) {
 		  #pragma omp parallel for private(i)
 		  for(i=0; i<CT->Nbr_voxels; i++){
-			CT->density[i] = (VAR_DATA)HU_to_Density_convertion(hu[i], CT);
-			//CT->material[i] = (unsigned short int)Density_to_Material_convertion(CT->density[i], CT);
-			CT->material[i] = (unsigned short int)HU_to_Material_convertion(hu[i], CT);
-		  }
-	  }
-	  else {
-		  #pragma omp parallel for private(i)
-		  for(i=0; i<CT->Nbr_voxels; i++){
-			CT->density[i] = (VAR_DATA)HU_to_Density_convertion(hu[i], CT);
-			//CT->material[i] = (unsigned short int)Density_to_Material_convertion(CT->density[i], CT);
-			CT->material[i] = (unsigned short int)HU_to_Material_convertion(hu[i], CT);
-			if (config->StructList->Structs[j].Mask[i]!=0.0){
-				CT->density[i] = config->StructList->Structs[j].rho;
-				CT->material[i] = config->StructList->Structs[j].material;
-			}
+        if (config->StructList->Structs[j].Mask[i]!=0.0){
+          CT->density[i] = config->StructList->Structs[j].rho;
+          CT->material[i] = config->StructList->Structs[j].material;
+        }
 		  }
 	  }
   }
