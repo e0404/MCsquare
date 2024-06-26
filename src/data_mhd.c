@@ -95,7 +95,7 @@ int Parse_MHD_header(char *file_name, MHD_header *header){
   header->Offset[2] = 0.0;
   header->Override = 0;
   header->Density = 1.0;
-  header->Material = 20;
+  header->Material = 17; // Water
   header->ElementType = NotDefined;
   header->ElementByteOrderMSB = 0;
   strcpy(header->ElementDataFile, "");
