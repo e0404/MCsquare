@@ -29,8 +29,8 @@ struct spot_parameters
 };
 
 enum RangeShifter_setting{
-	OUT,
-	IN
+	RS_OUT,
+	RS_IN
 } ;
 
 typedef struct ControlPoint_parameters ControlPoint_parameters;

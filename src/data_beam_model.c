@@ -866,7 +866,7 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
 	    	    plan->fields[l].ControlPoints[j].CumulativeMetersetWeight = 0.0;
 	    	    plan->fields[l].ControlPoints[j].Energy = 0.0;
 		    plan->fields[l].ControlPoints[j].NbOfScannedSpots = 0;
-		    plan->fields[l].ControlPoints[j].RS_setting = OUT;
+		    plan->fields[l].ControlPoints[j].RS_setting = RS_OUT;
 		    plan->fields[l].ControlPoints[j].RS_IsocenterDist = 40.0;
 		    plan->fields[l].ControlPoints[j].RS_WET = 0.0;
 		  }
@@ -898,8 +898,8 @@ plan_parameters* read_plan_parameters(char* plan_name, DATA_config *config, mach
 		else if(strcmp(read_token, "####RangeShifterSetting") == 0){
 	    	  fgets(read, 500, plan_file);
 	    	  read_token = strtok(read, " \t\r\n");
-	    	  if(strcmp(read_token, "OUT") == 0) plan->fields[l].ControlPoints[j].RS_setting = OUT;
-	    	  else if(strcmp(read_token, "IN") == 0) plan->fields[l].ControlPoints[j].RS_setting = IN;
+	    	  if(strcmp(read_token, "OUT") == 0) plan->fields[l].ControlPoints[j].RS_setting = RS_OUT;
+	    	  else if(strcmp(read_token, "IN") == 0) plan->fields[l].ControlPoints[j].RS_setting = RS_IN;
 		  else{
 	      	    printf("\n Error: \"%s\" is not a valid value for RangeShifterSetting in \"%s\"\n\n", read_token, plan_name);
 	    	  }
