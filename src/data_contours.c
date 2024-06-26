@@ -103,8 +103,12 @@ void import_struct(DATA_Struct *Struct, char *file_name){
   if(isMHD == 1) {
 	  MHD_header header;
 	  Struct->Mask = import_MHD_image(file_name, Struct->GridSize, Struct->VoxelLength, Struct->Origin, &header);
-	  Struct->Override = header.Override;
-	  if (header.Override!=0) {
+
+	  if (header.Override == 0) {
+	    Struct->Override = 0;
+    }
+    else {
+      Struct->Override = 1;
 		  Struct->rho = header.Density;
 		  Struct->material = header.Material;
 	  }
