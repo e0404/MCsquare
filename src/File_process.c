@@ -28,7 +28,7 @@ int File_exists(const char *FileName){
 
 int Directory_exists(const char *DirName){
     DIR *directory;
-    if(directory = opendir(DirName) != NULL){
+    if((directory = opendir(DirName)) != NULL){
       closedir(directory);
       return 1;
     }
