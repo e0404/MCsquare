@@ -78,16 +78,18 @@ DATA_CT *Read_CT_MHD(DATA_config *config){
   }
 
   // Material override
-  for (j=0;j<config->StructList->Nbr_Structs;j++){
-	  if (config->StructList->Structs[j].Override != 0) {
-		  #pragma omp parallel for private(i)
-		  for(i=0; i<CT->Nbr_voxels; i++){
-        if (config->StructList->Structs[j].Mask[i]!=0.0){
-          CT->density[i] = config->StructList->Structs[j].rho;
-          CT->material[i] = config->StructList->Structs[j].material;
+  if(config->StructList != NULL){
+    for (j=0;j<config->StructList->Nbr_Structs;j++){
+      if (config->StructList->Structs[j].Override != 0) {
+        #pragma omp parallel for private(i)
+        for(i=0; i<CT->Nbr_voxels; i++){
+          if (config->StructList->Structs[j].Mask[i]!=0.0){
+            CT->density[i] = config->StructList->Structs[j].rho;
+            CT->material[i] = config->StructList->Structs[j].material;
+          }
         }
-		  }
-	  }
+      }
+    }
   }
 
   free(hu);
