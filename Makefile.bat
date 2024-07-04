@@ -29,7 +29,11 @@ set "TAB=	"
 
 echo default : MCsquare_win.exe >> Makfile.mak
 echo: >> Makfile.mak
-echo all : MCsquare_win.exe MCsquare_win_sse4.exe MCsquare_win_avx.exe MCsquare_win_avx2.exe MCsquare_win_avx512.exe >> Makfile.mak
+echo all : MCsquare_win_all.exe MCsquare_win.exe MCsquare_win_sse4.exe MCsquare_win_avx.exe MCsquare_win_avx2.exe MCsquare_win_avx512.exe >> Makfile.mak
+echo: >> Makfile.mak
+
+echo MCsquare_win_all.exe: $(SRC) >> Makfile.mak
+echo %TAB% $(CC) $(SRC) $(LIB) $(OPTIONS) /QaxSSE4.2,AVX,CORE-AVX2,CORE-AVX512 $(FULL_VERSION) $(LIB_PATH) -link -out:MCsquare_win_all.exe >> Makfile.mak
 echo: >> Makfile.mak
 
 echo MCsquare_win.exe: $(SRC) >> Makfile.mak

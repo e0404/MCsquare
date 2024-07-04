@@ -143,6 +143,9 @@ struct DATA_Struct{
 	VAR_DATA VoxelLength[3];
 	VAR_DATA Origin[3];
 	VAR_DATA *Mask;
+	unsigned short int Override; // enable material override on this ROI
+	VAR_DATA rho;				 // mass density for material override
+	unsigned short int material; // material ID for material override
 	int N_Index;
 	int *IndexList;
 };

@@ -538,7 +538,7 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
   
   char from[200], ID[10];
   sprintf(from, "%s1/%s", InputPath, file_header_path);
-  CopyFile(out_header_path, from);
+  myCopyFile(out_header_path, from);
 
   FILE *fd_to, *fd_from;
   char buf[4096];

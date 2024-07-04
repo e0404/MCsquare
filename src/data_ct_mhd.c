@@ -21,8 +21,8 @@ DATA_CT *Read_CT_MHD(DATA_config *config){
 
 //  CT->density = import_MHD_image(config->CT_File, GridSize, VoxelLength);
 //  if(CT->density == NULL) return NULL;
-
-  hu = import_MHD_image(config->CT_File, GridSize, VoxelLength, Origin);
+  MHD_header header;
+  hu = import_MHD_image(config->CT_File, GridSize, VoxelLength, Origin, &header);
   if(hu == NULL) return NULL;
 
   CT->GridSize[0] = GridSize[0];
@@ -67,8 +67,9 @@ DATA_CT *Read_CT_MHD(DATA_config *config){
   CT->density = (VAR_DATA*)malloc(CT->Nbr_voxels * sizeof(VAR_DATA));
   CT->material = (unsigned short int*)malloc(CT->Nbr_voxels * sizeof(unsigned short int));
 
-  int i;
-
+  int i, j;
+  
+  // CT conversion
   #pragma omp parallel for private(i)
   for(i=0; i<CT->Nbr_voxels; i++){
     CT->density[i] = (VAR_DATA)HU_to_Density_convertion(hu[i], CT);
@@ -76,7 +77,25 @@ DATA_CT *Read_CT_MHD(DATA_config *config){
     CT->material[i] = (unsigned short int)HU_to_Material_convertion(hu[i], CT);
   }
 
+  // Material override
+  if(config->StructList != NULL){
+    for (j=0;j<config->StructList->Nbr_Structs;j++){
+      if (config->StructList->Structs[j].Override != 0) {
+        #pragma omp parallel for private(i)
+        for(i=0; i<CT->Nbr_voxels; i++){
+          if (config->StructList->Structs[j].Mask[i]!=0.0){
+            CT->density[i] = config->StructList->Structs[j].rho;
+            CT->material[i] = config->StructList->Structs[j].material;
+          }
+        }
+      }
+    }
+  }
+
   free(hu);
 
   return CT;
 }
+
+
+

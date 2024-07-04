@@ -585,7 +585,7 @@ void Transport_to_RangeShifter(Hadron_buffer *hadron, ControlPoint_parameters **
   double IsocenterDistance;
 
   for(i=0; i<Nbr_hadrons; i++){
-    if(layer_data[i]->RS_setting == OUT || layer_data[i]->RS_Thickness <= 0.0) continue;
+    if(layer_data[i]->RS_setting == RS_OUT || layer_data[i]->RS_Thickness <= 0.0) continue;
     IsocenterDistance = layer_data[i]->RS_IsocenterDist + layer_data[i]->RS_Thickness;
 //printf("\nTransportRS: IsoDist: [%.3f]", IsocenterDistance);
 //printf("\nTransportRS: init position: [%.3f ; %.3f ; %.3f]", hadron[i].x, hadron[i].y, hadron[i].z);
@@ -628,7 +628,7 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
 
     New_hadrons_field[i] = &plan->fields[v_field_index[i]];
     New_hadrons_layer[i] = &plan->fields[v_field_index[i]].ControlPoints[v_ControlPoint_index[i]];
-    if(New_hadrons_layer[i]->RS_setting == IN && New_hadrons_layer[i]->RS_WET > 0) use_RS = 1;
+    if(New_hadrons_layer[i]->RS_setting == RS_IN && New_hadrons_layer[i]->RS_WET > 0) use_RS = 1;
   }
 
   // Range shifter simulation

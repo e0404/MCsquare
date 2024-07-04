@@ -53,15 +53,14 @@ DATA_StructList *load_all_structs(){
         if(file_extension==NULL) continue;
         if(strcmp(file_extension, ".txt")!=0 && strcmp(file_extension, ".TXT")!=0 && strcmp(file_extension, ".mhd")!=0 && strcmp(file_extension, ".MHD")!=0) continue;
 
-	strcpy(StructList->Structs[NbrStructs].Name, struct_file->d_name);
+        strcpy(StructList->Structs[NbrStructs].Name, struct_file->d_name);
         StructList->Structs[NbrStructs].Name[strlen(StructList->Structs[NbrStructs].Name)-4] = '\0';
 
-	strcpy(struct_file_path, "./structs/");
-	strcat(struct_file_path, struct_file->d_name);
-	import_struct(&StructList->Structs[NbrStructs], struct_file_path);
-	if(StructList->Structs[NbrStructs].Mask == NULL) continue;
-
-	NbrStructs++;
+        strcpy(struct_file_path, "./structs/");
+        strcat(struct_file_path, struct_file->d_name);
+		    import_struct(&StructList->Structs[NbrStructs], struct_file_path);
+		    if(StructList->Structs[NbrStructs].Mask == NULL) continue;
+		    NbrStructs++;
       }
   
       if(NbrStructs < StructList->Nbr_Structs) StructList->Nbr_Structs = NbrStructs;
@@ -101,7 +100,19 @@ void import_struct(DATA_Struct *Struct, char *file_name){
 
   fclose(header_file);
 
-  if(isMHD == 1) Struct->Mask = import_MHD_image(file_name, Struct->GridSize, Struct->VoxelLength, Struct->Origin);
+  if(isMHD == 1) {
+	  MHD_header header;
+	  Struct->Mask = import_MHD_image(file_name, Struct->GridSize, Struct->VoxelLength, Struct->Origin, &header);
+
+	  if (header.Override == 0) {
+	    Struct->Override = 0;
+    }
+    else {
+      Struct->Override = 1;
+		  Struct->rho = header.Density;
+		  Struct->material = header.Material;
+	  }
+  }
   else if(isSparse == 1) Struct->Mask = import_Sparse_image(file_name, Struct->GridSize, Struct->VoxelLength, Struct->Origin);
   else return;
 
@@ -147,6 +158,11 @@ void display_structs_information(DATA_StructList *StructList){
     printf("Mask VoxelLength: %f %f %f (cm)\n", StructList->Structs[i].VoxelLength[0], StructList->Structs[i].VoxelLength[1], StructList->Structs[i].VoxelLength[2]);
     printf("Mask Origin: %f %f %f (cm)\n", StructList->Structs[i].Origin[0], StructList->Structs[i].Origin[1], StructList->Structs[i].Origin[2]);
     printf("Number voxels inside mask: %d\n", StructList->Structs[i].N_Index);
+    printf("Override: %d\n", StructList->Structs[i].Override);
+    if (StructList->Structs[i].Override!=0) {
+      printf("Density: %f\n", StructList->Structs[i].rho);
+      printf("Material num: %f\n", StructList->Structs[i].material);
+    }
     printf("\n");
   }
 

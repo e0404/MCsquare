@@ -13,6 +13,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/define.h"
 #include "include/struct.h"
+#include "include/File_process.h"
 #include "include/data_config.h"
 #include "include/data_materials.h"
 #include "include/data_ct.h"
@@ -85,7 +86,11 @@ int main(int argc, char *argv[]){
     if(Fields == NULL) return 1;
   }
   else Fields = NULL;
-
+  
+  // Import all contours
+  if((Directory_exists("./structs")) == 1) 
+    config.StructList = load_all_structs();
+  
   // Import CT image(s)
   DATA_CT **CT_phases = NULL;
   DATA_CT *ct = NULL;
@@ -136,7 +141,7 @@ int main(int argc, char *argv[]){
     if(ct == NULL) return 1;
     config.Num_4DCT_phases = 1;
   }
-
+  
   // check scoring grid
   if(config.Independent_scoring_grid == 1){
   /*

@@ -69,7 +69,7 @@ DATA_CT **Import_4DCT(DATA_config *config){
   VAR_DATA VoxelLength[3], Origin[3];
   int phaseID = 0;
   VAR_DATA *hu;
-
+  MHD_header header;
 
   for(phaseID=0; phaseID<config->Num_4DCT_phases; phaseID++){
 
@@ -87,7 +87,7 @@ DATA_CT **Import_4DCT(DATA_config *config){
     }
 
     sprintf(phase_file_path, "./4DCT/CT_%d.mhd", phaseID+1);
-    hu = import_MHD_image(phase_file_path, GridSize, VoxelLength, Origin);
+    hu = import_MHD_image(phase_file_path, GridSize, VoxelLength, Origin, &header);
     if(hu == NULL){
       Free_4DCT(CT, config->Num_4DCT_phases);
       return NULL;
@@ -153,7 +153,8 @@ VAR_DATA *Import_Def_Field(char *file_path, int *GridSize, VAR_DATA *Spacing, VA
 
   int i, j, k, l, m;
   
-  VAR_DATA *Field_tmp = import_MHD_image(file_path, GridSize, Spacing, Origin);
+  MHD_header header;
+  VAR_DATA *Field_tmp = import_MHD_image(file_path, GridSize, Spacing, Origin, &header);
   if(Field_tmp == NULL) return NULL;
 
   int NumVoxels = GridSize[0]*GridSize[1]*GridSize[2];

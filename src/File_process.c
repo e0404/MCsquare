@@ -26,6 +26,17 @@ int File_exists(const char *FileName){
 }
 
 
+int Directory_exists(const char *DirName){
+    DIR *directory;
+    if((directory = opendir(DirName)) != NULL){
+      closedir(directory);
+      return 1;
+    }
+    
+    return 0;
+}
+
+
 double get_units(char *str){
   if(strcmp(str, "mm") == 0){
       return Umm;
@@ -179,7 +190,7 @@ void CreateDir(char *DirName){
 }
 
 
-int CopyFile(char *to, char *from){
+int myCopyFile(char *to, char *from){
 
   FILE *fd_to, *fd_from;
   char buf[4096];

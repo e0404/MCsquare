@@ -25,7 +25,7 @@ int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, M
 	// Check RS type
 	if(machine->RS_Type[r] == empty){
       	  for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	    plan->fields[i].ControlPoints[j].RS_setting = OUT;
+	    plan->fields[i].ControlPoints[j].RS_setting = RS_OUT;
           }
 	  continue;
 	}
@@ -38,12 +38,12 @@ int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, M
 	SPR = machine->RS_Density[r] * material[machine->RS_Material[r]].Stop_Pow[(int)floor(100/PSTAR_BIN)] / material[config->Water_Material_ID].Stop_Pow[(int)floor(100/PSTAR_BIN)];
 
 	for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	  if(plan->fields[i].ControlPoints[j].RS_setting == IN && plan->fields[i].ControlPoints[j].RS_WET > 0){
+	  if(plan->fields[i].ControlPoints[j].RS_setting == RS_IN && plan->fields[i].ControlPoints[j].RS_WET > 0){
 	    RS_layer_enabled = 1;
 	    plan->fields[i].ControlPoints[j].RS_Thickness = plan->fields[i].ControlPoints[j].RS_WET / SPR;
 	  }
 	  else{
-	    plan->fields[i].ControlPoints[j].RS_setting = OUT;
+	    plan->fields[i].ControlPoints[j].RS_setting = RS_OUT;
 	    plan->fields[i].ControlPoints[j].RS_WET = 0.0;
 	    plan->fields[i].ControlPoints[j].RS_Thickness = 0.0;
 	  }
@@ -51,7 +51,7 @@ int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, M
     }
     else{
       for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	plan->fields[i].ControlPoints[j].RS_setting = OUT;
+	plan->fields[i].ControlPoints[j].RS_setting = RS_OUT;
       }
     }
   }
@@ -84,17 +84,17 @@ void Display_RangeShifter_Data(plan_parameters *plan, machine_parameters *machin
       AlwaysOUT = 1;
       FirstPosition = -1;
       for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	    if(FirstPosition == -1 && plan->fields[i].ControlPoints[j].RS_setting == IN){
+	    if(FirstPosition == -1 && plan->fields[i].ControlPoints[j].RS_setting == RS_IN){
 	      FirstPosition = plan->fields[i].ControlPoints[j].RS_IsocenterDist;
 	      FirstWET = plan->fields[i].ControlPoints[j].RS_WET;
 	      FirstThickness = plan->fields[i].ControlPoints[j].RS_Thickness;
 	    }
-	    if(plan->fields[i].ControlPoints[j].RS_setting == IN){
+	    if(plan->fields[i].ControlPoints[j].RS_setting == RS_IN){
 	      AlwaysOUT = 0;
 	      if(FirstPosition != plan->fields[i].ControlPoints[j].RS_IsocenterDist) FixedPosition = 0;
 	      if(FirstWET != plan->fields[i].ControlPoints[j].RS_WET) FixedWET = 0;
 	    }
-	    if(plan->fields[i].ControlPoints[j].RS_setting == OUT) AlwaysIN = 0;
+	    if(plan->fields[i].ControlPoints[j].RS_setting == RS_OUT) AlwaysIN = 0;
       }
       printf("\nRange shifter initialized for beam %d:\n", i);
       printf("\tRange shifter ID: %s\n", machine->RS_ID[r]);
@@ -132,7 +132,7 @@ void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters *
 
       if(hadron.v_type[i] == Unknown){
         for(j=Nbr_HadronSimulated; j<*Nbr_hadrons; j++){
-          if(layer_data[j]->RS_setting == OUT){
+          if(layer_data[j]->RS_setting == RS_OUT){
             Nbr_HadronSimulated += 1;
             continue;
           }
