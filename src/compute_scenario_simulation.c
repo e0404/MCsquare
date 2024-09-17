@@ -27,6 +27,7 @@ void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *
   if(config->Systematic_Setup_Error[1] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
   if(config->Systematic_Setup_Error[2] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
   if(config->Systematic_Range_Error == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
+  if(config->Random_Setup_Error[0] == 0.0 && config->Random_Setup_Error[1] == 0.0 && config->Random_Setup_Error[2] == 0.0) config->TotalNumScenarios -= 1;
 
   for(r=-1; r<=1; r++){
     for(x=-1; x<=1; x++){
@@ -38,6 +39,11 @@ void Scenarios_selection_all(DATA_config *config, Materials *material, DATA_CT *
           if(config->Systematic_Setup_Error[0] == 0.0 && x != 0) continue;
           if(config->Systematic_Setup_Error[2] == 0.0 && y != 0) continue;
           if(config->Systematic_Setup_Error[1] == 0.0 && z != 0) continue;
+
+          if ((config->Random_Setup_Error[0] == 0.0 && config->Random_Setup_Error[1] == 0.0
+             && config->Random_Setup_Error[2] == 0.0) && (r==0 && x==0 && y==0 && z==0)){
+             continue;        
+          }
           
 	      config->Current_scenario += 1;
 	      
@@ -109,6 +115,7 @@ void Scenarios_selection_reduced(DATA_config *config, Materials *material, DATA_
   if(config->Systematic_Setup_Error[1] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios - 6;
   if(config->Systematic_Setup_Error[2] == 0.0) config->TotalNumScenarios = config->TotalNumScenarios - 6;
   if(config->Systematic_Range_Error == 0.0) config->TotalNumScenarios = config->TotalNumScenarios / 3;
+  if(config->Random_Setup_Error[0] == 0.0 && config->Random_Setup_Error[1] == 0.0 && config->Random_Setup_Error[2] == 0.0) config->TotalNumScenarios -= 1;
 
   for(r=-1; r<=1; r++){
     for (setup_direction=0; setup_direction<=2; setup_direction++){
@@ -118,6 +125,11 @@ void Scenarios_selection_reduced(DATA_config *config, Materials *material, DATA_
         if(config->Systematic_Range_Error == 0.0 && r != 0) continue; 
         if(config->Systematic_Setup_Error[setup_direction] == 0.0 && setup_shift != 0) continue;
         if(setup_shift == 0 && setup_direction != 0) continue;
+
+        if ((config->Random_Setup_Error[0] == 0.0 && config->Random_Setup_Error[1] == 0.0
+             && config->Random_Setup_Error[2] == 0.0) && (r==0 && setup_shift==0)){
+             continue;        
+          }
           
 	    config->Current_scenario += 1;
 	      
@@ -141,9 +153,9 @@ void Scenarios_selection_reduced(DATA_config *config, Materials *material, DATA_
 
         // Systematic setup error
         config->Current_Systematic_setup[0] = 0.0;
-	    config->Current_Systematic_setup[1] = 0.0;
-	    config->Current_Systematic_setup[2] = 0.0;
-	    config->Current_Systematic_setup[setup_direction] = setup_shift * config->Systematic_Setup_Error[setup_direction] / norm;
+        config->Current_Systematic_setup[1] = 0.0;
+        config->Current_Systematic_setup[2] = 0.0;
+        config->Current_Systematic_setup[setup_direction] = setup_shift * config->Systematic_Setup_Error[setup_direction] / norm;
 
         // Random setup error
         config->Current_Random_setup[0] = config->Random_Setup_Error[0];
