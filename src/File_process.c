@@ -26,6 +26,17 @@ int File_exists(const char *FileName){
 }
 
 
+int Directory_exists(const char *DirName){
+    DIR *directory;
+    if((directory = opendir(DirName)) != NULL){
+      closedir(directory);
+      return 1;
+    }
+    
+    return 0;
+}
+
+
 double get_units(char *str){
   if(strcmp(str, "mm") == 0){
       return Umm;
@@ -54,6 +65,24 @@ int isUnsignedInt(char *str){
 
   return 1;
 }
+
+
+int isInt(char *str){
+  if(str == NULL) return 0;
+
+  int i=0;
+  int len = strlen(str);
+
+  if (str[i] == '-' || str[i] == '+') i++;
+
+  while (i < len) {
+    if (!isdigit(str[i]) && str[i] != 'e' && str[i] != 'E') return 0;
+    i++;
+  }
+
+  return 1;
+}
+
 
 int isUnsignedFloat(char *str){
   if(str == NULL) return 0;
@@ -99,23 +128,23 @@ int isFloat(char *str){
   for (i=0; i<len; i++){
     if (!isdigit(str[i])){
       if (str[i] == '.'){
-	if(withDecimal) return 0;
-	withDecimal =1;
+        if(withDecimal) return 0;
+        withDecimal =1;
       }
       else if (str[i] == '-'){
         if(i > 0){
-	  if(str[i-1] != 'e' && str[i-1] != 'E') return 0;
-	}
-      } 
+          if(str[i-1] != 'e' && str[i-1] != 'E') return 0;
+        }
+      }
       else if (str[i] == 'e' || str[i] == 'E'){
-	if(withExp) return 0;
-	withExp =1;
+        if(withExp) return 0;
+        withExp =1;
       }
       else if (str[i] == '+'){
         if(i > 0){
-	  if(str[i-1] != 'e' && str[i-1] != 'E') return 0;
-	}
-	else return 0;
+	        if(str[i-1] != 'e' && str[i-1] != 'E') return 0;
+        }
+        else return 0;
       }
       else return 0;
     }
@@ -161,7 +190,7 @@ void CreateDir(char *DirName){
 }
 
 
-int CopyFile(char *to, char *from){
+int myCopyFile(char *to, char *from){
 
   FILE *fd_to, *fd_from;
   char buf[4096];

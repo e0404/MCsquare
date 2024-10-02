@@ -13,6 +13,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/define.h"
 #include "include/struct.h"
+#include "include/File_process.h"
 #include "include/data_config.h"
 #include "include/data_materials.h"
 #include "include/data_ct.h"
@@ -20,12 +21,13 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "include/data_ct_penelope.h"
 #include "include/data_mhd.h"
 #include "include/data_ct_mhd.h"
+#include "include/data_contours.h"
+#include "include/data_beam_model.h"
 #include "include/compute_4D.h"
 #include "include/compute_simulation.h"
 #include "include/compute_simulation_beamlet.h"
 #include "include/compute_treatment_uncertainties.h"
 #include "include/compute_random.h"
-#include "include/data_beam_model.h"
 #include "include/compute_beam_model.h"
 #include "include/compute_math.h"
 #include "include/compute_range_shifter.h"
@@ -52,13 +54,19 @@ int main(int argc, char *argv[]){
   config.timestamp = time(NULL);
 
   if(config.Num_Threads == 0) config.Num_Threads = omp_get_num_procs();
+  else if (config.Num_Threads < 0) {
+      config.Num_Threads += omp_get_num_procs();
+      if (config.Num_Threads <= 0) {
+        printf("\n Warning: Num_Threads is set to %d but only %u processing units are available. Setting Num_Threads to 1.\n\n", config.Num_Threads-omp_get_num_procs(), omp_get_num_procs());
+        config.Num_Threads = 1;
+      }
+  }
   else if(config.Num_Threads > omp_get_num_procs()){
-    printf("\n Warning: Num_Threads is set to %u but only %u processing units are available\n\n", config.Num_Threads, omp_get_num_procs());
+    printf("\n Warning: Num_Threads is set to %d but only %u processing units are available\n\n", config.Num_Threads, omp_get_num_procs());
   }
 
   omp_set_num_threads(config.Num_Threads);
   double time_start = omp_get_wtime();
-
   if(config.Robustness_Mode == 1 && config.Simu_4D_Mode == 1 && (config.Systematic_Amplitude_Error != 0.0 || config.Random_Amplitude_Error != 0.0) && config.Field_type != 1){
     printf("\nError: Velocity fields are required to simulate variation of breathing amplitude!\n");
     return 1;
@@ -70,12 +78,16 @@ int main(int argc, char *argv[]){
 
   // Import deformation fields
   DATA_4D_Fields *Fields = NULL;
-  if(config.Simu_4D_Mode == 1 && (config.Dose_4D_Accumulation == 1 || config.Create_Ref_from_4DCT == 1 || config.Create_4DCT_from_Ref == 1)){
+  if(config.Simu_4D_Mode == 1 && (config.Dose_4D_Accumulation == 1 || config.Create_Ref_from_4DCT == 1 || config.Create_4DCT_from_Ref == 1 || config.Robustness_Mode == 1)){
     Fields = Import_4D_Fields(&config);
     if(Fields == NULL) return 1;
   }
   else Fields = NULL;
-
+  
+  // Import all contours
+  if((Directory_exists("./structs")) == 1) 
+    config.StructList = load_all_structs();
+  
   // Import CT image(s)
   DATA_CT **CT_phases = NULL;
   DATA_CT *ct = NULL;
@@ -117,7 +129,7 @@ int main(int argc, char *argv[]){
       }
     }
 
-    config.Num_Primaries = (unsigned long)config.Num_Primaries / config.Num_4DCT_phases;
+    if(config.Dose_4D_Accumulation == 1) config.Num_Primaries = (unsigned long)config.Num_Primaries / config.Num_4DCT_phases;
   }
 
   else{						// 3D mode
@@ -126,10 +138,43 @@ int main(int argc, char *argv[]){
     if(ct == NULL) return 1;
     config.Num_4DCT_phases = 1;
   }
+  
+  // check scoring grid
+  if(config.Independent_scoring_grid == 1){
+  /*
+    VAR_COMPUTE Offset_x = config.Scoring_origin[0] - ct->Origin[0];
+    VAR_COMPUTE Offset_y = config.Scoring_origin[1] - ct->Origin[1];
+    VAR_COMPUTE Offset_z = config.Scoring_origin[2] - ct->Origin[2];
+    VAR_COMPUTE End_x = (config.Scoring_origin[0] + config.Scoring_grid_size[0] * config.Scoring_voxel_spacing[0]) - (ct->Origin[0] + ct->Length[0]);
+    VAR_COMPUTE End_y = (config.Scoring_origin[1] + config.Scoring_grid_size[1] * config.Scoring_voxel_spacing[1]) - (ct->Origin[1] + ct->Length[1]);
+    VAR_COMPUTE End_z = (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]) - (ct->Origin[2] + ct->Length[2]);
+
+    if(Offset_x < -1e-4 || Offset_y < -1e-4 || Offset_z < -1e-4 || End_x > 1e-4 || End_y > 1e-4 || End_z > 1e-4){
+      printf("\nError: The scoring grid (defined in the configuration file) must be contained inside the CT image!\n");
+      if(Offset_x < -1e-4) printf("In x direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[0], config.Scoring_origin[0]);
+      if(Offset_y < -1e-4) printf("In y direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[1], config.Scoring_origin[1]);
+      if(Offset_z < -1e-4) printf("In z direction, the CT origin coordinate is %f, but the scoring grid coordinate is %f\n", ct->Origin[2], config.Scoring_origin[2]);
+      if(End_x > 1e-4) printf("In x direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[0] + ct->Length[0]), (config.Scoring_origin[0] + config.Scoring_grid_size[0] * config.Scoring_voxel_spacing[0]));
+      if(End_y > 1e-4) printf("In y direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[1] + ct->Length[1]), (config.Scoring_origin[1] + config.Scoring_grid_size[1] * config.Scoring_voxel_spacing[1]));
+      if(End_z > 1e-4) printf("In z direction, the CT end at coordinate %f, but the scoring grid end at %f\n", (ct->Origin[2] + ct->Length[2]), (config.Scoring_origin[2] + config.Scoring_grid_size[2] * config.Scoring_voxel_spacing[2]));
+      return 1;
+    }
+    */
+
+    if(config.Compute_DVH == 1){
+      printf("\nError: The computation of DVH is not compatible yet with the use of independent scoring grid!\n");
+      return 1;
+    }
+    
+    if(config.Dose_weighting_algorithm == 1){
+      printf("\nError: The mass weighting algorithm is not implemented yet! Change to volume weighting.\n");
+      return 1;
+    }
+	
+  }
 
   //Display_Density_conversion_data(ct);
   //Display_Material_conversion_data(ct);
-
 
   // Import material database
   Materials *material = Init_materials(&config.Num_Materials, &config.Num_Components, &config);
@@ -167,8 +212,8 @@ int main(int argc, char *argv[]){
   if(error == 1){
     if(config.Simu_4D_Mode == 0) Free_CT_DATA(ct);
     else{
-	Free_4DCT(CT_phases, config.Num_4DCT_phases);
-	if(config.Dose_4D_Accumulation == 1) Free_4D_Fields(Fields);
+	    Free_4DCT(CT_phases, config.Num_4DCT_phases);
+	    if(config.Dose_4D_Accumulation == 1) Free_4D_Fields(Fields);
     }
     Free_Materials_DATA(material, config.Num_Materials);
     Free_Plan_Parameters(plan);
@@ -176,21 +221,20 @@ int main(int argc, char *argv[]){
   }
   Display_RangeShifter_Data(plan, &machine, material);
 
-
   // Export density map
   char file_path[200];
   int a;
   if(config.Densities_Output == 1){
     if(config.Simu_4D_Mode == 0){
       sprintf(file_path, "%sDensities.mhd", config.Output_Directory);
-      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->density);
+      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->Origin, ct->density);
     }
     else{
       sprintf(file_path, "%sDensities_ref.mhd", config.Output_Directory);
-      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->density);
+      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->Origin, ct->density);
       for(a=0; a <config.Num_4DCT_phases; a++){
         sprintf(file_path, "%sDensities_%d.mhd", config.Output_Directory,a);
-      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, CT_phases[a]->density);
+      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, ct->Origin, CT_phases[a]->density);
       }
     }
   }
@@ -202,13 +246,13 @@ int main(int argc, char *argv[]){
     if(config.Simu_4D_Mode == 0){
       for(o=0; o<ct->Nbr_voxels; o++){ mat[o] = (VAR_SCORING)ct->material[o]; }
       sprintf(file_path, "%sMaterials_out.mhd", config.Output_Directory);
-      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, mat);
+      export_MHD_image(file_path, ct->GridSize, ct->VoxelLength, ct->Origin, mat);
     }
     else{
       for(a=0; a <config.Num_4DCT_phases; a++){
 	for(o=0; o<CT_phases[a]->Nbr_voxels; o++){ mat[o] = (VAR_SCORING)CT_phases[a]->material[o]; }
         sprintf(file_path, "%sMaterials_out_%d.mhd", config.Output_Directory,a);
-      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, mat);
+      	export_MHD_image(file_path, CT_phases[a]->GridSize, CT_phases[a]->VoxelLength, CT_phases[a]->Origin, mat);
       }
     }
     free(mat);
@@ -220,6 +264,7 @@ int main(int argc, char *argv[]){
 
   config.Current_fraction = plan->NumberOfFractions;
   config.Fraction_accumulation = 0;
+
 
   if(config.Robustness_Mode == 0){	// Not Robustness_Mode
 
@@ -241,7 +286,7 @@ int main(int argc, char *argv[]){
     config.Current_Systematic_period = 0.0;
     config.Current_Random_period = 0.0;
     config.Current_Breathing_period = config.Breathing_period;
-    for(a=0;a<<plan->NumberOfFields;a++) config.Current_init_delivery_points[a] = 0.0;
+    for(a=0; a < plan->NumberOfFields; a++) config.Current_init_delivery_points[a] = 0.0;
 
     Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
 
@@ -280,6 +325,7 @@ int main(int argc, char *argv[]){
       fprintf(file_hdl, "Random motion period error = %.2f %%\n", config.Random_Period_Error);
     }
     if(config.Scenario_selection == 1) fprintf(file_hdl, "Scenario selection: random sampling\n");
+    else if(config.Scenario_selection == 2) fprintf(file_hdl, "Scenario selection: reduced set of scenarios\n");
     else fprintf(file_hdl, "Scenario selection: all combinations\n");
     fprintf(file_hdl, "\n");
     fprintf(file_hdl, "Uncertainty scenarios:\n");
@@ -292,7 +338,7 @@ int main(int argc, char *argv[]){
 
     // Nominal plan:
     if(config.Simulate_nominal_plan == 1){
-	config.Current_scenario_type = Nominal;
+	    config.Current_scenario_type = Nominal;
     	config.Current_Systematic_setup[0] = 0.0;
     	config.Current_Systematic_setup[1] = 0.0;
     	config.Current_Systematic_setup[2] = 0.0;
@@ -305,8 +351,8 @@ int main(int argc, char *argv[]){
     	config.Current_Breathing_amplitude = 1.0;
     	config.Current_Systematic_period = 0.0;
     	config.Current_Random_period = 0.0;
-        config.Current_Breathing_period = config.Breathing_period;
-        for(a=0;a<<plan->NumberOfFields;a++) config.Current_init_delivery_points[a] = 0.0;
+      config.Current_Breathing_period = config.Breathing_period;
+      for(a=0; a < plan->NumberOfFields; a++) config.Current_init_delivery_points[a] = 0.0;
 
     	strcpy(config.output_beamlet_suffix, "");
     	strcpy(config.output_robustness_suffix, "_Nominal");
@@ -324,13 +370,22 @@ int main(int argc, char *argv[]){
 	fprintf(file_hdl, "\n");
 
 	fclose(file_hdl);
-
-	Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
+	
+	if(config.Simu_4D_Mode == 1 && config.Dose_4D_Accumulation == 0){
+	  config.Simu_4D_Mode = 0;
+      Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
+	  config.Simu_4D_Mode = 1;
+	}
+	else{
+	  Scenario_simulation(&config, material, ct, CT_phases, plan, &machine, Fields);
+	}
+	
     }
 
     // Robustness scenarios:
     if(config.Scenario_selection == 1) Scenarios_selection_random(&config, material, ct, CT_phases, plan, &machine, Fields, file_path);
-    else Scenarios_selection_all(&config, material, ct, CT_phases, plan, &machine, Fields, file_path);
+    else if(config.Scenario_selection == 2) Scenarios_selection_reduced(&config, material, ct, CT_phases, plan, &machine, Fields, file_path, HyperCylinder);
+    else Scenarios_selection_all(&config, material, ct, CT_phases, plan, &machine, Fields, file_path, HyperCylinder);
 
 
     // Free dynamic variables
@@ -359,12 +414,13 @@ int main(int argc, char *argv[]){
 
   if(config.Simu_4D_Mode == 0) Free_CT_DATA(ct);
   else{
-	Free_4DCT(CT_phases, config.Num_4DCT_phases);
-	if(config.Dose_4D_Accumulation == 1 || config.Create_4DCT_from_Ref == 1) Free_4D_Fields(Fields);
+    Free_4DCT(CT_phases, config.Num_4DCT_phases);
+    if(config.Dose_4D_Accumulation == 1 || config.Create_4DCT_from_Ref == 1) Free_4D_Fields(Fields);
   }
   Free_Materials_DATA(material, config.Num_Materials);
   Free_Plan_Parameters(plan);
   Free_Machine_Parameters(&machine);
+  Free_all_structs(&config.StructList);
 
   return 0;
 }

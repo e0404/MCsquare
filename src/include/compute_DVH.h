@@ -15,18 +15,9 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "define.h"
 #include "struct.h"
-#include "data_mhd.h"
-#include "data_sparse.h"
-
-#if defined(_MSC_VER)
-  #include "lib/win_dirent.h"
-#else
-  #include <dirent.h>
-#endif
-
+#include "data_contours.h"
 
 void compute_all_DVH(DATA_config *config, VAR_SCORING *Dose, VAR_SCORING DoseScaling);
-int *import_mask(char *file_name, int *ListSize);
 void compute_DVH(int *ListIndex, int ListSize, VAR_SCORING *Dose, VAR_SCORING DoseScaling, char *Output_file);
 
 #endif

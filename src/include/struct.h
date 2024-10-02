@@ -79,10 +79,9 @@ struct Materials{
 //	DATA_Stop_Pow *SP_list;// Pouvoir d'arret
 	VAR_DATA *SP_Energy;	// energies corresponding to the SP table
 	VAR_DATA *Stop_Pow;	// Stopping power table
-
 	VAR_DATA SPR;
 
-        // Nuclear data :
+    // Nuclear data :
 	enum { 
 	  None,
 	  ICRU,
@@ -137,6 +136,27 @@ struct DATA_CT{
 };
 
 
+typedef struct DATA_Struct DATA_Struct;
+struct DATA_Struct{
+	char Name[50];
+	int GridSize[3];
+	VAR_DATA VoxelLength[3];
+	VAR_DATA Origin[3];
+	VAR_DATA *Mask;
+	unsigned short int Override; // enable material override on this ROI
+	VAR_DATA rho;				 // mass density for material override
+	unsigned short int material; // material ID for material override
+	int N_Index;
+	int *IndexList;
+};
+
+typedef struct DATA_StructList DATA_StructList;
+struct DATA_StructList{
+	int Nbr_Structs;
+	DATA_Struct *Structs;
+};
+
+
 typedef struct DATA_4D_Fields DATA_4D_Fields;
 struct DATA_4D_Fields{
 	int Nbr_Fields;
@@ -159,6 +179,12 @@ struct DATA_Scoring{
 	VAR_SCORING *LET;
 	VAR_SCORING *LET_denominator;
 	int Nbr_voxels;
+	int GridSize[3];
+	VAR_COMPUTE Origin[3];
+	VAR_COMPUTE Offset[3];
+	VAR_COMPUTE Length[3];
+	VAR_COMPUTE Grid_end[3];
+	VAR_COMPUTE VoxelLength[3];
 };
 
 
@@ -233,7 +259,7 @@ struct DATA_config{
 	unsigned int Num_Config_Tags;
 
 	// Simulation parameters
-	unsigned int Num_Threads;
+	int Num_Threads;
 	unsigned int RNG_Seed;
 	unsigned long Num_Primaries;
 	VAR_DATA Ecut_Pro;
@@ -280,6 +306,14 @@ struct DATA_config{
 	unsigned int Beamlet_Mode;
 	unsigned int Beamlet_Parallelization;
 
+	// Statistical noise and stopping criteria
+	unsigned int Compute_stat_uncertainty;
+	VAR_DATA Stat_uncertainty;
+	unsigned int Ignore_low_density_voxels;
+	unsigned int Export_batch_dose;
+	unsigned long Max_Num_Primaries;
+	unsigned int Max_Simulation_time;
+
 	// Output parameters
 	char Output_Directory[200];
 	unsigned int Energy_ASCII_Output;
@@ -307,8 +341,11 @@ struct DATA_config{
 	int DoseToWater;
 	unsigned int Dose_Segmentation;
 	VAR_DATA Segmentation_Density_Threshold;
-	unsigned int Compute_stat_uncertainty;
-	VAR_DATA Stat_uncertainty;
+	unsigned int Independent_scoring_grid;
+	VAR_DATA  Scoring_origin[3];
+	unsigned int Scoring_grid_size[3];
+	VAR_DATA  Scoring_voxel_spacing[3];
+	int Dose_weighting_algorithm;
 
 	// Internal variables
 	unsigned int Particle_Generated_outside;
@@ -335,7 +372,7 @@ struct DATA_config{
 	VAR_DATA Current_Systematic_period;
 	VAR_DATA Current_Random_period;
 	VAR_DATA Current_Breathing_period;
-	VAR_DATA Current_init_delivery_points[10];
+	VAR_DATA Current_init_delivery_points[1000];
 	int Current_4D_phase;
 	int Current_Beam;
 	int Current_scenario;
@@ -344,6 +381,8 @@ struct DATA_config{
 	enum Scenario_type Current_scenario_type;
 	VAR_DATA MCS_const;
 	unsigned int Score_LET;
+	unsigned int Score_Energy;
+	DATA_StructList *StructList;
 
 };
 

@@ -102,7 +102,7 @@ void vec_Linear_Interpolation(VAR_COMPUTE *v_x, VAR_COMPUTE *v_x1, VAR_COMPUTE *
 VAR_COMPUTE Trilinear_Interpolation(VAR_DATA *x, VAR_DATA *image, int *GridSize){
 
 
-  // We assume that the deformation vector x is given in voxel units with the same spacing than the image.
+  // We assume that the deformation vector x is given in voxel units with the same spacing as the image.
 
   int Id_x = floor(x[0]);
   VAR_COMPUTE X = x[0];
@@ -159,7 +159,7 @@ VAR_COMPUTE Trilinear_Interpolation(VAR_DATA *x, VAR_DATA *image, int *GridSize)
   return (C1 - C0) * (Z - Id_z) + C0;
 
 /*
-  // We assume that the deformation vector x is given in distance units with the same spacing than the image.
+  // We assume that the deformation vector x is given in distance units with the same spacing as the image.
 
   int Id_x = floor(x[0] / Spacing[0]);
   if(Id_x > GridSize[0]-2) Id_x = GridSize[0]-2;

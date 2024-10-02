@@ -102,6 +102,8 @@ void deviates (double U[2][2], double sigmas[2], double R[2], VAR_RND_SEED RNG_S
     for ( i = 0; i < n; i++ ) {
         V[i] *= sigmas[i];
     }
+
+
     
     R[0]=U[0][0]*V[0]+U[0][1]*V[1];
     R[1]=U[1][0]*V[0]+U[1][1]*V[1];
@@ -124,7 +126,7 @@ void diagonalize (double A[2][2],double B[2], double T[2][2])
     T[1][0]=1/r_1*(-A[1][0]/(A[1][1]-B[0]));
     T[1][1]=1/r_2*(-A[1][0]/(A[1][1]-B[1]));
     
-//    printf("%f %f %f %f %f %f\n",r_1, r_2,T[1][1],T[1][0],B[0],B[1]);
+    //printf("%f %f %f %f %f %f\n",r_1, r_2,T[1][1],T[1][0],B[0],B[1]);
 }
 
 
@@ -436,7 +438,7 @@ void Sample_particle (Hadron_buffer *hadron, VAR_DATA CT_Length[3], machine_para
     
     double rotation[3];
     rotation[0]= M_PI+atan(spot->Spot_Y/mac->mDistanceSMYToIsocenter);
-    rotation[1]= -atan(spot->Spot_X/mac->mDistanceSMXToIsocenter);
+    rotation[1]= -atan(spot->Spot_X/mac->mDistanceSMXToIsocenter);    
     rotation[2]=0.0;
 
 
@@ -533,7 +535,7 @@ void BEV_to_CT_frame(Hadron_buffer *hadron, machine_parameters *mac, field_param
 
 
 
-void Transport_to_CT(Hadron_buffer *hadron, VAR_DATA CT_Length[3]){
+void Transport_to_CT(Hadron_buffer *hadron, VAR_DATA CT_Length[3], DATA_config *config){
 
   if(hadron->x >= 0 && hadron->y >= 0 && hadron->z >= 0 && hadron->x <= CT_Length[0] && hadron->y <= CT_Length[1] && hadron->z <= CT_Length[2]) return;
 
@@ -572,7 +574,7 @@ void Transport_to_CT(Hadron_buffer *hadron, VAR_DATA CT_Length[3]){
   double dE = SP_air * Translation[i];
   
   hadron->T = hadron->T - dE;
-  if(hadron->T < 0) hadron->type = Unknown;
+  if(hadron->T < (config->Ecut_Pro * UMeV)) hadron->type = Unknown;
 
 }
 
@@ -583,7 +585,7 @@ void Transport_to_RangeShifter(Hadron_buffer *hadron, ControlPoint_parameters **
   double IsocenterDistance;
 
   for(i=0; i<Nbr_hadrons; i++){
-    if(layer_data[i]->RS_setting == OUT || layer_data[i]->RS_Thickness <= 0.0) continue;
+    if(layer_data[i]->RS_setting == RS_OUT || layer_data[i]->RS_Thickness <= 0.0) continue;
     IsocenterDistance = layer_data[i]->RS_IsocenterDist + layer_data[i]->RS_Thickness;
 //printf("\nTransportRS: IsoDist: [%.3f]", IsocenterDistance);
 //printf("\nTransportRS: init position: [%.3f ; %.3f ; %.3f]", hadron[i].x, hadron[i].y, hadron[i].z);
@@ -612,9 +614,9 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
   ALIGNED_(64) int v_ControlPoint_index[VLENGTH];
   ALIGNED_(64) int v_spot_index[VLENGTH];
 
-  Hadron_buffer New_hadrons[50];
-  field_parameters *New_hadrons_field[50];
-  ControlPoint_parameters *New_hadrons_layer[50];
+  Hadron_buffer New_hadrons[100];
+  field_parameters *New_hadrons_field[100];
+  ControlPoint_parameters *New_hadrons_layer[100];
   int Nbr_New_hadrons = VLENGTH;
 
   int use_RS = 0;
@@ -630,7 +632,7 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
 
     New_hadrons_field[i] = &plan->fields[v_field_index[i]];
     New_hadrons_layer[i] = &plan->fields[v_field_index[i]].ControlPoints[v_ControlPoint_index[i]];
-    if(New_hadrons_layer[i]->RS_setting == IN && New_hadrons_layer[i]->RS_WET > 0) use_RS = 1;
+    if(New_hadrons_layer[i]->RS_setting == RS_IN && New_hadrons_layer[i]->RS_WET > 0) use_RS = 1;
   }
 
   // Range shifter simulation
@@ -654,7 +656,7 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
     Translation_uncertainty(&New_hadrons[i], config, RNG_Stream);
 //printf("\nAfterSim: translation uncertainty: [%.3f ; %.3f ; %.3f]", New_hadrons[i].x, New_hadrons[i].y, New_hadrons[i].z);
 
-    Transport_to_CT(&New_hadrons[i], CT_Length);
+    Transport_to_CT(&New_hadrons[i], CT_Length, config);
 //printf("\nAfterSim: transport CT: [%.3f ; %.3f ; %.3f]", New_hadrons[i].x, New_hadrons[i].y, New_hadrons[i].z);
 
     if(New_hadrons[i].x < 0 || New_hadrons[i].y < 0 || New_hadrons[i].z < 0 || New_hadrons[i].x > CT_Length[0] || New_hadrons[i].y > CT_Length[1] || New_hadrons[i].z > CT_Length[2] || isnan(New_hadrons[i].x) || isnan(New_hadrons[i].y) || isnan(New_hadrons[i].z)){
@@ -718,6 +720,7 @@ void Select_spot(plan_parameters *Plan, plan_parameters *Beamlet, int FieldID, i
   Beamlet->fields[0].IsocenterPositionZ = Plan->fields[FieldID].IsocenterPositionZ;
   Beamlet->fields[0].ControlPoints_cumulative_PDF[0] = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
   Beamlet->fields[0].RS_Type = Plan->fields[FieldID].RS_Type;
+  Beamlet->fields[0].RS_num = Plan->fields[FieldID].RS_num;
   Beamlet->fields[0].ControlPoints[0].ControlPointIndex = Plan->fields[FieldID].ControlPoints[ControlPointID].ControlPointIndex;
   Beamlet->fields[0].ControlPoints[0].SpotTunnedID = Plan->fields[FieldID].ControlPoints[ControlPointID].SpotTunnedID;
   Beamlet->fields[0].ControlPoints[0].CumulativeMetersetWeight = Plan->fields[FieldID].ControlPoints[ControlPointID].spots[SpotID].Spot_Weight;
@@ -761,6 +764,7 @@ plan_parameters* Select_beam(plan_parameters *Plan, int Beam){
   beam_plan->fields[0].IsocenterPositionZ = Plan->fields[Beam].IsocenterPositionZ;
   beam_plan->fields[0].NumberOfControlPoints = Plan->fields[Beam].NumberOfControlPoints;
   beam_plan->fields[0].RS_Type = Plan->fields[Beam].RS_Type;
+  beam_plan->fields[0].RS_num = Plan->fields[Beam].RS_num;
   beam_plan->fields[0].ControlPoints = (ControlPoint_parameters*)malloc(Plan->fields[Beam].NumberOfControlPoints * sizeof(ControlPoint_parameters));
   beam_plan->fields[0].ControlPoints_cumulative_PDF = (VAR_DATA*)malloc(Plan->fields[Beam].NumberOfControlPoints * sizeof(VAR_DATA));
 

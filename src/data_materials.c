@@ -258,6 +258,27 @@ Materials *Init_materials(unsigned int *Nbr_Materials, unsigned int *Max_Compone
     return NULL;
   }
 
+  // copy water material in label 0
+    strcpy(material[0].Name, "water");
+    material[0].A = material[config->Water_Material_ID].A;
+    material[0].Density = material[config->Water_Material_ID].Density;
+    material[0].N_el =  material[config->Water_Material_ID].N_el;
+    material[0].X0 = material[config->Water_Material_ID].X0;
+    material[0].SPR = material[config->Water_Material_ID].SPR;
+    material[0].Nuclear_data_type = material[config->Water_Material_ID].Nuclear_data_type;
+    material[0].NbrComponents = material[config->Water_Material_ID].NbrComponents;
+    material[0].Mixture_Components_label = material[config->Water_Material_ID].Mixture_Components_label;
+    material[0].Mixture_Components_fraction = material[config->Water_Material_ID].Mixture_Components_fraction;
+    material[0].Nuclear_Elastic = material[config->Water_Material_ID].Nuclear_Elastic;
+    material[0].Elastic_Energy_List = material[config->Water_Material_ID].Elastic_Energy_List;
+    material[0].Nuclear_Inelastic = material[config->Water_Material_ID].Nuclear_Inelastic;
+    material[0].Inelastic_Energy_List = material[config->Water_Material_ID].Inelastic_Energy_List;
+    material[0].PG_data = material[config->Water_Material_ID].PG_data;
+    material[0].PG_Energy_List = material[config->Water_Material_ID].PG_Energy_List;
+    material[0].SP_Energy = material[config->Water_Material_ID].SP_Energy;
+    material[0].Stop_Pow = material[config->Water_Material_ID].Stop_Pow;
+    material[0].Interp_Total_Nuclear_Cross_Section = material[config->Water_Material_ID].Interp_Total_Nuclear_Cross_Section;
+
   
   // Compute SPR:
   const int ID_Energy = (int)floor(100/PSTAR_BIN);
@@ -368,7 +389,7 @@ void Free_Materials_DATA(Materials *material, unsigned int Nbr_Materials){
   if (material == NULL) return;
 
   int i;
-  for(i=0; i<Nbr_Materials; i++){
+  for(i=1; i<Nbr_Materials; i++){
     if(material[i].SP_Energy != NULL) free(material[i].SP_Energy);
     if(material[i].Stop_Pow != NULL) free(material[i].Stop_Pow);
     if(material[i].Mixture_Components_label != NULL) free(material[i].Mixture_Components_label);

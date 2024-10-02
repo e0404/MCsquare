@@ -18,16 +18,24 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#if defined(_MSC_VER)
+  #include "lib/win_dirent.h"
+#else
+  #include <dirent.h>
+#endif
+
 
 int File_exists(const char *FileName);
+int Directory_exists(const char *DirName);
 double get_units(char *str);
 int isUnsignedInt(char *str);
+int isInt(char *str);
 int isUnsignedFloat(char *str);
 int isFloat(char *str);
 int isBoolean(char *str);
 unsigned int getBoolean(char *str);
 void CreateDir(char *DirName);
-int CopyFile(char *to, char *from);
+int myCopyFile(char *to, char *from);
 void str_replace(char *search , char *replace , char *subject);
 
 #endif

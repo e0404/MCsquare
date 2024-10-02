@@ -5,7 +5,7 @@
 
 
 ### Simulation parameters:
-Num_Threads 	0		# Number of parallel calculation threads. Default: 0 = max available threads
+Num_Threads 	0		# Number of parallel calculation threads. Default: 0 = max available threads. Negative number can be used to keep -Num_Threads available for other purpose.
 RNG_Seed	0		# Seed for the random number generator (deterministic result only with single thread). Default: 0 = seed automaticly defined from run time
 Num_Primaries 	1e6		# Minimum number of primary protons to simulate. Default: 1e7
 E_Cut_Pro	0.5		# Energy cut (in MeV) below which heavy charged particles are locally absorbed. Default: 0.5
@@ -41,7 +41,7 @@ Breathing_period		7.0		# Period (in seconds) of the breathing motion. Default: 7
 
 ### Robustness simulation
 Robustness_Mode			False 		# Enable/Disable the robustness verification mode. Default: False
-Scenario_selection		All		# Method for scenario selection: All (simulate all combinations), Random (randomly sample scenarios). Default: All
+Scenario_selection		All		# Method for scenario selection: All (simulate all 81 combinations of errors), ReducedSet (simulate 21 scenarios), Random (randomly sample scenarios). Default: All
 Simulate_nominal_plan		True		# Simulate the nominal plan (without any systematic or random uncertainty). Default: True
 Num_Random_Scenarios		100		# Number of uncertainty scenarios to simulate in Random mode. Default: 100
 Systematic_Setup_Error		0.25 0.25 0.25	# Systematic error for the patient setup along the XYZ axes (cm). Default: 0.25 0.25 0.25
@@ -56,6 +56,15 @@ Random_Period_Error		5.0		# Random error in percent of the breathing motion peri
 ### Beamlet simulation
 Beamlet_Mode			False 	# Enable/Disable the beamlet computation mode. Default: False
 Beamlet_Parallelization		False	# Parallelization on beamlet level is sometimes faster for beamlet simulation. This requires more memory. Default: False
+
+
+### Statistical noise and stopping criteria
+Compute_stat_uncertainty	True	# Enable/Disable the estimation of statistical uncertainty. Default: True
+Stat_uncertainty 		0.0	# Maximum statistical uncertainty (in percent). Default: 0.0 = no maximum uncertainty (number of proton = Num_Primaries)
+Ignore_low_density_voxels	True	# Ignore low density voxels (< 0.2 g/cm3) for the estimation of statistical uncertainty. Default: True
+Export_batch_dose		False	# Export intermediate results after each batch calculation. Default: False
+Max_Num_Primaries		0	# Maximum number of particles to simulate. Default: 0 = no limit
+Max_Simulation_time		0	# Time limit (in minutes) after which the simulation stops. Default: 0 = no limit
 
 
 ### Output parameters
@@ -95,6 +104,10 @@ Dose_to_Water_conversion	Disabled # Select the method employed to convert simula
 Dose_Segmentation			False	# Enable/Disable a segmentation of the dose map based on a density thresholding (remove dose artifacts in the air). Default: False
 Density_Threshold_for_Segmentation	0.01	# Density threshold employed for the segmentation (in g/cm3). Default: 0.01
 
-Compute_stat_uncertainty	True	# Enable/Disable the estimation of statistical uncertainty. Default: True
-Stat_uncertainty 		0.0	# Maximum statistical uncertainty (in percent). Default: 0.0 = no maximum uncertainty (number of proton = Num_Primaries)
+Independent_scoring_grid	False		# Enable/Disable the independent scoring grid with respect to the CT image grid. Default: False = dose grid with same resolution as input CT image
+Scoring_origin			0.0 0.0 0.0	# Origin of the scoring grid (in cm) defined in the same reference frame as the CT image. Default: 0.0 0.0 0.0
+Scoring_grid_size		100 100 100	# Define the number of voxels for each dimension of the scoring grid. Default: 100 100 100
+Scoring_voxel_spacing		0.15 0.15 0.15	# Define the voxel spacing (in cm) for each dimension of the scoring grid. Default: 0.15 0.15 0.15
+Dose_weighting_algorithm	Volume		# Define the dose weighting algorithm (Volume weighting, or Mass weighting) used when the dose voxels contain multiple CT voxels. Default: Volume
+
 

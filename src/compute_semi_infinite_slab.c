@@ -35,9 +35,33 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   __assume_aligned(&hadron->v_Te_max, 64);
 
 
+  Update_Hadron(hadron);
+
+
+  int i,j,r;
+
+  // Compute physical quantities
   ALIGNED_(64) int v_material_label[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_init_density[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_N_el[VLENGTH];
+  ALIGNED_(64) VAR_COMPUTE v_X0[VLENGTH];
+  for(i=0; i<VLENGTH; i++){
+    if(hadron->v_type[i] == Unknown){
+      v_material_label[i] = 0;
+      v_init_density[i] = 1;
+      v_N_el[i] = 1;
+      v_X0[i] = 1;
+    }
+    else{
+      r = field_data[Hadron_ID[i]]->RS_num;
+      v_material_label[i] = machine->RS_Material[r];
+      v_init_density[i] = machine->RS_Density[r];
+      v_N_el[i] = material[machine->RS_Material[r]].N_el * v_init_density[i];
+      v_X0[i] = material[machine->RS_Material[r]].X0 / v_init_density[i];
+    }
+  }
+
+  // Compute total cross section
   ALIGNED_(64) VAR_COMPUTE v_Dist_Interface[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_stop_pow[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_step_max[VLENGTH];
@@ -117,7 +141,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
     // Lose energy
     if(hadron->v_type[v] == Unknown) v_dE[v] = 0;
       hadron->v_T[v] = hadron->v_T[v] - v_dE[v];
-    if(hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
+    if(hadron->v_type[vALL] != Unknown && hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
       hadron->v_type[v] = Unknown;
       hadron_list[Hadron_ID[v]].type = Unknown;
     }
@@ -145,15 +169,14 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
 
   // Nuclear interaction
   DATA_Scoring tmp;
-  int i,j;
   int previous_Nbr_hadrons;
 
   #pragma omp simd
   for(int v = 0; v<VLENGTH; v++){
     if(hadron->v_type[v] != Unknown && v_interaction_type[v] == 2){
       previous_Nbr_hadrons = *Nbr_hadrons;
-      Compute_Nuclear_interaction(v, hadron, material, machine->RS_Material, hadron_list, Nbr_hadrons, 0, &tmp, RNG_Stream, config);
-      if(hadron->v_type[v] == Unknown) hadron_list[Hadron_ID[v]].type = Unknown;
+      Compute_Nuclear_interaction(i, hadron, material, v_material_label[v], hadron_list, Nbr_hadrons, &tmp, RNG_Stream, config);
+      if(hadron->v_type[v] == Unknown) hadron_list[Hadron_ID[i]].type = Unknown;
       for(j=previous_Nbr_hadrons; j<*Nbr_hadrons; j++){
          layer_data[j] = layer_data[Hadron_ID[v]];
          field_data[j] = field_data[Hadron_ID[v]];

@@ -1,0 +1,16 @@
+Name 			Ti-6Al-4V
+Molecular_Weight 	0.0 		 # N.C.
+Density 		4.42000000 	 # in g/cm3 
+Electron_Density 	1.22634e+24 	 # in cm-3 
+Radiation_Length 	16.502317 	 # in g/cm2 
+
+Nuclear_Data 		Mixture 7 	# mixture with 7 components
+
+		# 	Label 	Name 		fraction by mass (in %)
+Mixture_Component	1 	hydrogen	0.005214 
+Mixture_Component	2 	carbon		0.025026 
+Mixture_Component	3 	nitrogen	0.006257 
+Mixture_Component	4 	oxygen		0.187696 
+Mixture_Component	5 	aluminium	6.256517 
+Mixture_Component	9 	titanium	93.501564 
+Mixture_Component	10 	iron		0.017727 

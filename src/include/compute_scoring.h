@@ -16,12 +16,19 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "define.h"
 #include "struct.h"
 #include "compute_EM_interaction.h"
+#include "data_mhd.h"
 
-DATA_Scoring Init_Scoring(DATA_config *config, int Nbr_voxels, int init_dose);
-void Energy_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE SPR);
-void LET_Scoring(DATA_Scoring *scoring, int index, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config);
+DATA_Scoring Init_Scoring(DATA_config *config, DATA_CT *ct, int init_dose_squared);
+void get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, int *v_index);
+int get_single_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z);
+int Scoring_to_CT_index(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct);
+int Voxel_contains_low_density(int Scoring_ID, DATA_Scoring *scoring, DATA_CT *ct);
+void Energy_Scoring_from_index(DATA_Scoring *scoring, int *v_index, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config);
+void Energy_Scoring_from_coordinates(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y, VAR_COMPUTE *v_z, VAR_COMPUTE *v_multiplicity, VAR_COMPUTE *v_dE, VAR_COMPUTE *v_density, VAR_COMPUTE *v_SPR, DATA_config *config);
+void LET_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE dE, VAR_COMPUTE step, VAR_COMPUTE stop_pow, DATA_config *config);
+void PG_Scoring(DATA_Scoring *scoring, VAR_COMPUTE position_x, VAR_COMPUTE position_y, VAR_COMPUTE position_z, VAR_COMPUTE multiplicity, VAR_COMPUTE PG_energy, DATA_config *config);
 void PostProcess_Scoring(DATA_Scoring *scoring, DATA_CT *ct, Materials *material, VAR_COMPUTE normalization, unsigned long Nbr_simulated_primaries, DATA_config *config);
-VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, DATA_CT *ct, int Num_batch, DATA_config *config);
+VAR_SCORING Process_batch(DATA_Scoring *Tot_scoring, DATA_Scoring *batch, Materials *material, DATA_CT *ct, int Num_batch, DATA_config *config);
 void Free_Scoring(DATA_Scoring *scoring);
 
 #endif

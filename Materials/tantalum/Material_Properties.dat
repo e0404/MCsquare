@@ -1,0 +1,7 @@
+Name			tantalum
+Atomic_Weight	180.948
+Density			16.654		# in g/cm3
+Electron_Density	4.0461e+24	# in cm-3
+Radiation_Length	6.8177		# in g/cm2
+
+Nuclear_Data		ICRU

@@ -538,7 +538,7 @@ void Interp_Nuclear_Cross_section(Materials *material, int Nbr_Materials){
   int i, j, k, index, label;
   for(i=0; i<Nbr_Materials; i++){
 
-    material[i].Interp_Total_Nuclear_Cross_Section = (VAR_DATA*) malloc(Nbr_bin * sizeof(VAR_DATA));
+    material[i].Interp_Total_Nuclear_Cross_Section = (VAR_DATA*) calloc(Nbr_bin, sizeof(VAR_DATA));
 
     if(material[i].Nuclear_data_type == Proton_Proton){
       for(j=0; j<Nbr_bin; j++){

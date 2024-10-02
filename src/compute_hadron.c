@@ -30,10 +30,10 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   __assume_aligned(&hadron->v_gamma, 64);
   __assume_aligned(&hadron->v_beta2, 64);
   __assume_aligned(&hadron->v_Te_max, 64);
+  
 
 
   Update_Hadron(hadron);
-
   // Init variables
   ALIGNED_(64) int v_index[VLENGTH];
   ALIGNED_(64) int v_material_label[VLENGTH];
@@ -253,7 +253,6 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
   Update_Hadron(hadron);
 
-
   // Compute CT index and remove particles out of geometry
   get_CT_Offset(hadron, ct, v_index);
 
@@ -330,9 +329,12 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     }
 
   }
-
-//  Update_Hadron(hadron);
-
+    
+  ALIGNED_(64) VAR_COMPUTE v_density[VLENGTH];
+  v_density[vALL] = ct->density[v_index[vALL]];
+  
+  if(config->Independent_scoring_grid == 0) Energy_Scoring_from_index(scoring, v_index, hadron->v_M, v_dE_hard, v_density, v_SPR, config);
+  else Energy_Scoring_from_coordinates(scoring, hadron->v_x, hadron->v_y, hadron->v_z, hadron->v_M, v_dE_hard, v_density, v_SPR, config);
 
   return;
 }

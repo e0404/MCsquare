@@ -12,7 +12,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/data_sparse.h"
 
-void export_Sparse_image(char *file_name, DATA_config *config, DATA_CT *ct, plan_parameters *plan, VAR_SCORING *data, VAR_SCORING threshold){
+void export_Sparse_image(char *file_name, DATA_config *config, DATA_Scoring *scoring, plan_parameters *plan, VAR_SCORING *data, VAR_SCORING threshold){
 
   char file_path[200];
   char file_header_name[200];
@@ -88,11 +88,13 @@ void export_Sparse_image(char *file_name, DATA_config *config, DATA_CT *ct, plan
 	fprintf(file_header, "SimulationMode = 4D\n");
 	fprintf(file_header, "Dose_Accumulation = enabled\n");
     }
-    fprintf(file_header, "ImageSize = %d %d %d\n", ct->GridSize[0], ct->GridSize[1], ct->GridSize[2]);
+    fprintf(file_header, "ImageSize = %d %d %d\n", scoring->GridSize[0], scoring->GridSize[1], scoring->GridSize[2]);
     #if VAR_DATA_PRECISION==1
-      fprintf(file_header, "VoxelSpacing = %f %f %f\n", 10*ct->VoxelLength[0], 10*ct->VoxelLength[1], 10*ct->VoxelLength[2]);
+      fprintf(file_header, "VoxelSpacing = %f %f %f\n", 10*scoring->VoxelLength[0], 10*scoring->VoxelLength[1], 10*scoring->VoxelLength[2]);
+      fprintf(file_header, "Offset = %f %f %f\n", 10*scoring->Origin[0], 10*scoring->Origin[1], 10*scoring->Origin[2]);
     #else
-      fprintf(file_header, "VoxelSpacing = %lf %lf %lf\n", 10*ct->VoxelLength[0], 10*ct->VoxelLength[1], 10*ct->VoxelLength[2]);
+      fprintf(file_header, "VoxelSpacing = %lf %lf %lf\n", 10*scoring->VoxelLength[0], 10*scoring->VoxelLength[1], 10*scoring->VoxelLength[2]);
+      fprintf(file_header, "Offset = %lf %lf %lf\n", 10*scoring->Origin[0], 10*scoring->Origin[1], 10*scoring->Origin[2]);
     #endif
     fprintf(file_header, "BinaryFile = %s\n", file_bin_name);
     fclose(file_header);
@@ -106,9 +108,9 @@ void export_Sparse_image(char *file_name, DATA_config *config, DATA_CT *ct, plan
   }
 
   uint32_t i,j,k, index=0, NbrSelectedVoxel=0;
-  for(i=1; i<=ct->GridSize[2]; i++){
-    for(j=1; j<=ct->GridSize[1]; j++){
-      for(k=1; k<=ct->GridSize[0]; k++){
+  for(i=1; i<=scoring->GridSize[2]; i++){
+    for(j=1; j<=scoring->GridSize[1]; j++){
+      for(k=1; k<=scoring->GridSize[0]; k++){
         if(data[index] > threshold) NbrSelectedVoxel++;
         index++;
       }
@@ -136,9 +138,9 @@ void export_Sparse_image(char *file_name, DATA_config *config, DATA_CT *ct, plan
   index = 0;
   float value;
 
-  for(i=1; i<=ct->GridSize[2]; i++){
-    for(j=1; j<=ct->GridSize[1]; j++){
-      for(k=1; k<=ct->GridSize[0]; k++){
+  for(i=1; i<=scoring->GridSize[2]; i++){
+    for(j=1; j<=scoring->GridSize[1]; j++){
+      for(k=1; k<=scoring->GridSize[0]; k++){
         if(data[index] > threshold){
 	  fwrite(&index, sizeof(uint32_t), 1, file_bin); // 1D-index
 	  value = (float)data[index];
@@ -169,12 +171,12 @@ void export_Sparse_image(char *file_name, DATA_config *config, DATA_CT *ct, plan
   }
 
   index = 0;
-  float *value_array = (float*)malloc(ct->GridSize[0]*ct->GridSize[1]*ct->GridSize[2] * sizeof(float));
+  float *value_array = (float*)malloc(scoring->GridSize[0]*scoring->GridSize[1]*scoring->GridSize[2] * sizeof(float));
   uint32_t FirstIndex, NumContinuousValues = 0;
 
-  for(i=1; i<=ct->GridSize[2]; i++){
-    for(j=1; j<=ct->GridSize[1]; j++){
-      for(k=1; k<=ct->GridSize[0]; k++){
+  for(i=1; i<=scoring->GridSize[2]; i++){
+    for(j=1; j<=scoring->GridSize[1]; j++){
+      for(k=1; k<=scoring->GridSize[0]; k++){
         if(data[index] > threshold){
 	  value_array[NumContinuousValues] = (float)data[index];
 	  if(NumContinuousValues == 0) FirstIndex = index;
@@ -536,7 +538,7 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
   
   char from[200], ID[10];
   sprintf(from, "%s1/%s", InputPath, file_header_path);
-  CopyFile(out_header_path, from);
+  myCopyFile(out_header_path, from);
 
   FILE *fd_to, *fd_from;
   char buf[4096];
@@ -580,13 +582,26 @@ int Merge_Sparse_Files(char *InputPath, char *FileName, int NbrDirectories, char
 
     // Remove Bin and header files
     remove(from);
-    strcpy(from, file_header_path);
-    str_replace("{Num}" , ID , from);
+    sprintf(from, "%s%d/%s", InputPath, i+1, file_header_path);
     remove(from);
 
   }
 
   fclose(fd_to);
+  return 0;
+}
+
+
+int Remove_temporary_folders(char *InputPath, int NbrDirectories){
+  char path[200], cmd[300];
+  int i;
+  for(i=0; i<NbrDirectories; i++){
+    // Remove sub folder
+    sprintf(path, "\"%s%d\"", InputPath, i+1);
+    // rmdir(path); // from unistd.h
+    sprintf(cmd, RMDIR_CMD, path); // RMDIR_CMD is defined in define.h according to the OS
+    system(cmd);
+  }
   return 0;
 }
 

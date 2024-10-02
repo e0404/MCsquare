@@ -16,109 +16,24 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 void compute_all_DVH(DATA_config *config, VAR_SCORING *Dose, VAR_SCORING DoseScaling){
 
   char DVH_file_path[200];
-  char struct_file_path[200];
-  char *file_extension;
 
-  int ListSize, NbrStructs = 0;
-  int *Struct;
+  if(config->StructList == NULL) config->StructList = load_all_structs();
 
-  DIR *directory;
-  struct dirent *struct_file;
-  
-  if((directory = opendir("./structs")) != NULL){
+  int i;
+  for(i=0; i<config->StructList->Nbr_Structs; i++){
     
-    while((struct_file = readdir(directory)) != NULL){
+    strcpy(DVH_file_path, config->Output_Directory);
+    strcat(DVH_file_path, "DVH_");
+    strcat(DVH_file_path, config->StructList->Structs[i].Name);
+    strcat(DVH_file_path, config->output_robustness_suffix);
+    strcat(DVH_file_path, config->output_beamlet_suffix);
+    strcat(DVH_file_path, config->output_4D_suffix);
+    strcat(DVH_file_path, config->output_beams_suffix);
+    strcat(DVH_file_path, ".txt");
 
-      file_extension = strrchr(struct_file->d_name, '.');
-      if(file_extension==NULL) continue;
-      if(strcmp(file_extension, ".txt")!=0 && strcmp(file_extension, ".TXT")!=0 && strcmp(file_extension, ".mhd")!=0 && strcmp(file_extension, ".MHD")!=0) continue;
-
-      //printf ("%s\n", struct_file->d_name);
-      strcpy(struct_file_path, "./structs/");
-      strcat(struct_file_path, struct_file->d_name);
-
-      Struct = import_mask(struct_file_path, &ListSize);
-      if(Struct == NULL) continue;
-
-      NbrStructs++;
-
-      strcpy(DVH_file_path, config->Output_Directory);
-      strcat(DVH_file_path, "DVH_");
-      strcat(DVH_file_path, struct_file->d_name);
-      DVH_file_path[strlen(DVH_file_path)-4] = '\0';
-      strcat(DVH_file_path, config->output_robustness_suffix);
-      strcat(DVH_file_path, config->output_beamlet_suffix);
-      strcat(DVH_file_path, config->output_4D_suffix);
-      strcat(DVH_file_path, config->output_beams_suffix);
-      strcat(DVH_file_path, ".txt");
-
-      //printf ("%s\n", DVH_file_path);
-
-      compute_DVH(Struct, ListSize, Dose, DoseScaling, DVH_file_path);
-      free(Struct);
-    }
-
-    closedir(directory);
-
-    if(NbrStructs == 0) printf("\n Warning: No RT-struct found in \"./structs\"\n\n");
+    compute_DVH(config->StructList->Structs[i].IndexList, config->StructList->Structs[i].N_Index, Dose, DoseScaling, DVH_file_path);
   }
-  else printf("\n Warning: Unable to open directory \"./structs\"\n\n");
-
-  return;
-}
-
-
-int *import_mask(char *file_name, int *ListSize){
-
-  FILE *header_file;
-  char read[500], *read_token;
-  int isMHD = 0, isSparse = 0;
-
-  header_file = fopen(file_name,"r");
-  if(header_file == NULL) return NULL;
-
-  while(fgets(read, 500, header_file) != NULL){
-    if(read[0] == '#') continue;
-    strtok(read, "#");
-    read_token = strtok(read, " \t=\r\n");
-    if(read_token == NULL) continue;
-    if(strcmp(read_token, "ElementDataFile") == 0) isMHD = 1;
-    if(strcmp(read_token, "BinaryFile") == 0) isSparse = 1;
-  }
-
-  fclose(header_file);
-
-  int GridSize[3];
-  VAR_DATA VoxelLength[3], Origin[3];
-  VAR_DATA *mask = NULL;
-
-  if(isMHD == 1) mask = import_MHD_image(file_name, GridSize, VoxelLength, Origin);
-  else if(isSparse == 1) mask = import_Sparse_image(file_name, GridSize, VoxelLength, Origin);
-  else return NULL;
-
-  if(mask == NULL) return NULL;
-
-  int NbrVoxels = GridSize[0]*GridSize[1]*GridSize[2];
-
-  int i, ListCount = 0;
-  for(i=0; i<NbrVoxels; i++){
-    if(mask[i] != 0) ListCount++;
-  }
-
-  *ListSize = ListCount;
-  int *ListIndex = (int*)malloc(ListCount * sizeof(int));
-
-  ListCount = 0;
-  for(i=0; i<NbrVoxels; i++){
-    if(mask[i] != 0){
-      ListIndex[ListCount] = i;
-      ListCount++;
-    }
-  }
-
-  if(mask != NULL) free(mask);
-
-  return ListIndex;
+    
 }
 
 

@@ -18,6 +18,7 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "compute_math.h"
 #include "compute_random.h"
 #include "compute_geometry.h"
+#include "compute_scoring.h"
 
 void proton_proton_cross_section(Hadron *hadron, VAR_COMPUTE *v_density, VAR_COMPUTE *v_result);
 void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_material_label, VAR_COMPUTE *v_density, VAR_COMPUTE *v_result);

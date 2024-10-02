@@ -15,7 +15,8 @@ else
   CC = icc
   SRC = $(wildcard src/*.c)
   LIB = -lm -qopenmp -mkl -D_GNU_SOURCE
-  OPTIONS = -Wall -O3
+#  OPTIONS = -Wall -O3
+  OPTIONS = -w -O3
   MIC_ENABLED = -mmic
   LIB_PATH =
 endif

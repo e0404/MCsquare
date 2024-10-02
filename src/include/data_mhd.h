@@ -20,8 +20,10 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 enum MHD_ElementType{ 
 	NotDefined,
 	MET_FLOAT,
-	MET_DOUBLE
-} ;
+	MET_DOUBLE,
+	MET_INT,
+	MET_SHORT
+};
 
 
 typedef struct MHD_header MHD_header;
@@ -36,11 +38,17 @@ struct MHD_header{
   enum MHD_ElementType ElementType;
   int ElementByteOrderMSB;
   char ElementDataFile[100];
+  // Extend MHD header with material override parameters
+  // to force a given density and material in a ROI loaded as binary mask
+  unsigned short int Override;
+  VAR_DATA Density;
+  unsigned short int Material;
+  
 
 };
 
-void export_MHD_image(char *file_name, int GridSize[3], VAR_DATA VoxelLength[3], VAR_SCORING *data);
+void export_MHD_image(char *file_name, int GridSize[3], VAR_DATA VoxelLength[3], VAR_DATA Offset[3], VAR_SCORING *data);
 int Parse_MHD_header(char *file_name, MHD_header *header);
-VAR_DATA *import_MHD_image(char *file_name, int *GridSize, VAR_DATA *VoxelLength, VAR_DATA *Origin);
+VAR_DATA *import_MHD_image(char *file_name, int *GridSize, VAR_DATA *VoxelLength, VAR_DATA *Origin, MHD_header *header);
 
 #endif

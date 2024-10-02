@@ -81,7 +81,7 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
   // Pure material (no mixture)
   else if(material[material_label].Nuclear_data_type == ICRU){  
 
-    if(Energy > 7.0){
+    if(Energy > 7.0 && Energy < 249.0){
       rnd = single_rand_uniform(RNG_Stream);
  
       index = (int)floor(Energy / INTERP_BIN);
@@ -114,7 +114,7 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
 	dE += Compute_Nuclear_Inelastic_alpha(hadron_index, hadron, secondary_hadron, Nbr_secondaries, &material[material_label], index, RNG_Stream, config);
 	dE += Compute_Nuclear_Inelastic_recoils(hadron->v_T[hadron_index], &material[material_label], index);
 	if(config->Score_PromptGammas == 1){
-	  Compute_PromptGamma(hadron_index, hadron, &material[material_label], scoring_index, scoring, RNG_Stream, config);
+	  Compute_PromptGamma(hadron_index, hadron, &material[material_label], scoring, RNG_Stream, config);
 	}
 	hadron->v_type[hadron_index] = Unknown;
 	return dE; 
@@ -152,7 +152,7 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
       }
 
       else if(material[target_label].Nuclear_data_type == ICRU){
-	if(Energy > 7.0){
+	if(Energy > 7.0 && Energy < 249.0){
 	  index = Binary_Search(Energy, material[target_label].Elastic_Energy_List, material[target_label].Nbr_Elastic_Energy);
 	  cross_section += material[material_label].Mixture_Components_fraction[i] * Linear_Interpolation(	Energy, 
 														material[target_label].Elastic_Energy_List[index], 
@@ -176,7 +176,7 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
 	    dE += Compute_Nuclear_Inelastic_alpha(hadron_index, hadron, secondary_hadron, Nbr_secondaries, &material[target_label], index, RNG_Stream, config);
 	    dE += Compute_Nuclear_Inelastic_recoils(hadron->v_T[hadron_index], &material[target_label], index);
 	    if(config->Score_PromptGammas == 1){
-	      Compute_PromptGamma(hadron_index, hadron, &material[target_label], scoring_index, scoring, RNG_Stream, config);
+	      Compute_PromptGamma(hadron_index, hadron, &material[target_label], scoring, RNG_Stream, config);
 	    }
 	    hadron->v_type[hadron_index] = Unknown;
 
@@ -709,11 +709,7 @@ void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, 
   free(diff_cross_section);
 
 
-  if(PG_energy >= config->PG_LowEnergyCut && PG_energy <= config->PG_HighEnergyCut){
-    scoring->PG_particles[scoring_index] += M;
-    if(PG_energy >= config->PG_Spectrum_Binning*config->PG_Spectrum_NumBin) scoring->PG_spectrum[config->PG_Spectrum_NumBin-1] += M;
-    else scoring->PG_spectrum[(int)floor(PG_energy / config->PG_Spectrum_Binning)] += M;
-  }
+  PG_Scoring(scoring, hadron->v_x[hadron_index], hadron->v_y[hadron_index], hadron->v_z[hadron_index], M, PG_energy, config);
 
   return;
 }
