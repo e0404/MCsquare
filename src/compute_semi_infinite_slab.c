@@ -35,7 +35,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   __assume_aligned(&hadron->v_Te_max, 64);
 
 
-  Update_Hadron(hadron);
+  //Update_Hadron(hadron);
 
 
   int i,j,r;
@@ -44,8 +44,8 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   ALIGNED_(64) int v_material_label[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_init_density[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_N_el[VLENGTH];
-  ALIGNED_(64) VAR_COMPUTE v_X0[VLENGTH];
-  for(i=0; i<VLENGTH; i++){
+  //ALIGNED_(64) VAR_COMPUTE v_X0[VLENGTH];
+  /*for(i=0; i<VLENGTH; i++){
     if(hadron->v_type[i] == Unknown){
       v_material_label[i] = 0;
       v_init_density[i] = 1;
@@ -59,7 +59,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
       v_N_el[i] = material[machine->RS_Material[r]].N_el * v_init_density[i];
       v_X0[i] = material[machine->RS_Material[r]].X0 / v_init_density[i];
     }
-  }
+  }*/
 
   // Compute total cross section
   ALIGNED_(64) VAR_COMPUTE v_Dist_Interface[VLENGTH];
@@ -85,9 +85,18 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   // Compute physical quantities
   #pragma omp simd
   for(int v = 0; v<VLENGTH; v++){
-    v_material_label[v] = machine->RS_Material;
-    v_init_density[v] = machine->RS_Density;
-    v_N_el[v] = material[machine->RS_Material].N_el * v_init_density[v];
+    if(hadron->v_type[v] == Unknown){
+      v_material_label[v] = 0;
+      v_init_density[v] = 1;
+      v_N_el[v] = 1;
+    }
+    else{
+      r = field_data[Hadron_ID[v]]->RS_num;
+      v_material_label[v] = machine->RS_Material[r];
+      v_init_density[v] = machine->RS_Density[r];
+      v_N_el[v] = material[machine->RS_Material[r]].N_el * v_init_density[v];
+      v_X0[v] = material[machine->RS_Material[r]].X0 / v_init_density[v];
+    }
     v_Dist_Interface[v] = hadron->v_z[v] - RS_exit_position[v] + 1e-4;
     if(v_Dist_Interface[v] < 0) v_Dist_Interface[v] = 0;
   }
@@ -126,7 +135,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   #pragma omp simd
   for(int v = 0; v<VLENGTH; v++){
     v_straggling[v] = sqrt(v_straggling[v]);
-    v_X0[v] = material[machine->RS_Material].X0 / v_init_density[v];
+    //v_X0[v] = material[machine->RS_Material].X0 / v_init_density[v];
   }
 
   rand_normal(RNG_Stream, v_dE, v_mean_dE, v_straggling);
@@ -141,7 +150,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
     // Lose energy
     if(hadron->v_type[v] == Unknown) v_dE[v] = 0;
       hadron->v_T[v] = hadron->v_T[v] - v_dE[v];
-    if(hadron->v_type[vALL] != Unknown && hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
+    if(hadron->v_type[v] != Unknown && hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
       hadron->v_type[v] = Unknown;
       hadron_list[Hadron_ID[v]].type = Unknown;
     }
@@ -171,7 +180,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   DATA_Scoring tmp;
   int previous_Nbr_hadrons;
 
-  #pragma omp simd
+  //#pragma omp simd
   for(int v = 0; v<VLENGTH; v++){
     if(hadron->v_type[v] != Unknown && v_interaction_type[v] == 2){
       previous_Nbr_hadrons = *Nbr_hadrons;
@@ -183,7 +192,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
       }
     }
 
-    if(hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
+    if(hadron->v_type[v] != Unknown && hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
       hadron->v_type[v] = Unknown;
       hadron_list[Hadron_ID[v]].type = Unknown;
     }

@@ -50,6 +50,7 @@ void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_mat
     v_index[v] = (int)floor(v_T[v]);
     v_T1[v] = v_index[v] * UMeV * INTERP_BIN;
     v_T2[v] = (v_index[v]+1) * UMeV * INTERP_BIN;
+    if(v_index[v] >= 249) v_index[v] = 0; // nuclear cross sections tabulated up to 250 MeV
     v_Cross_section1[v] = (VAR_COMPUTE)material[v_material_label[v]].Interp_Total_Nuclear_Cross_Section[v_index[v]];
     v_Cross_section2[v] = (VAR_COMPUTE)material[v_material_label[v]].Interp_Total_Nuclear_Cross_Section[v_index[v]+1];
   }
@@ -65,7 +66,7 @@ void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_mat
 }
 
 
-VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materials *material, int material_label, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, int scoring_index, DATA_Scoring *scoring, VAR_RND_SEED RNG_Stream, DATA_config *config){
+VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materials *material, int material_label, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, DATA_Scoring *scoring, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   VAR_COMPUTE rnd, dE;
   int index;
@@ -666,7 +667,7 @@ VAR_COMPUTE Compute_Nuclear_Inelastic_alpha(int hadron_index, Hadron *hadron, Ha
 }
 
 
-void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, int scoring_index, DATA_Scoring *scoring, VAR_RND_SEED RNG_Stream, DATA_config *config){
+void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, DATA_Scoring *scoring, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   VAR_COMPUTE Energy = hadron->v_T[hadron_index]/UMeV;
   int index, interp_index;

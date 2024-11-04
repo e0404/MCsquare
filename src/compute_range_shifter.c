@@ -24,9 +24,9 @@ int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, M
 
 	// Check RS type
 	if(machine->RS_Type[r] == empty){
-      	  for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
+    for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
 	    plan->fields[i].ControlPoints[j].RS_setting = RS_OUT;
-          }
+    }
 	  continue;
 	}
 	else if(plan->fields[i].RS_Type != machine->RS_Type[r]){
@@ -51,7 +51,7 @@ int Init_RangeShifter_Data(plan_parameters *plan, machine_parameters *machine, M
     }
     else{
       for(j=0; j<plan->fields[i].NumberOfControlPoints; j++){
-	plan->fields[i].ControlPoints[j].RS_setting = RS_OUT;
+	      plan->fields[i].ControlPoints[j].RS_setting = RS_OUT;
       }
     }
   }
@@ -129,24 +129,24 @@ void Simulate_RangeShifter(Hadron_buffer *hadron_list, ControlPoint_parameters *
     #pragma omp simd reduction(+:count)
     for(int v = 0; v<VLENGTH; v++){
       if(hadron.v_type[v] != Unknown && hadron.v_z[v] <= RS_exit_position[v]){
-	Extract_particle(&hadron_list[Hadron_ID[v]], v, &hadron);
-	hadron.v_type[v] = Unknown;
+	      Extract_particle(&hadron_list[Hadron_ID[v]], v, &hadron);
+	      hadron.v_type[v] = Unknown;
       }
 
       if(hadron.v_type[v] == Unknown){
-	for(j=Nbr_HadronSimulated; j<*Nbr_hadrons; j++){
-	  if(layer_data[j]->RS_setting == OUT){
-	    Nbr_HadronSimulated += 1;
-	    continue;
-	  }
-	  else{
-	    Insert_particle(&hadron, v, &hadron_list[Nbr_HadronSimulated]);
-	    RS_exit_position[v] = layer_data[j]->RS_IsocenterDist;
-	    Hadron_ID[v] = j;
-	    Nbr_HadronSimulated += 1;
-	    break;
-	  }
-	} // for loop HadronSimulated
+	      for(j=Nbr_HadronSimulated; j<*Nbr_hadrons; j++){
+	        if(layer_data[j]->RS_setting == RS_OUT){
+	          Nbr_HadronSimulated += 1;
+	          continue;
+	        }
+	        else{
+	          Insert_particle(&hadron, v, &hadron_list[Nbr_HadronSimulated]);
+	          RS_exit_position[v] = layer_data[j]->RS_IsocenterDist;
+	          Hadron_ID[v] = j;
+	          Nbr_HadronSimulated += 1;
+	          break;
+	        }
+	      } // for loop HadronSimulated
       } // if unknown
       count += hadron.v_type[v];
     } // for loop VLENGTH

@@ -18,14 +18,18 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   __assume_aligned(&hadron->v_x, 64);
   __assume_aligned(&hadron->v_y, 64);
   __assume_aligned(&hadron->v_z, 64);
+
   __assume_aligned(&hadron->v_u, 64);
   __assume_aligned(&hadron->v_v, 64);
   __assume_aligned(&hadron->v_w, 64);
+
   __assume_aligned(&hadron->v_T, 64);
   __assume_aligned(&hadron->v_M, 64);
   __assume_aligned(&hadron->v_charge, 64);
   __assume_aligned(&hadron->v_mass, 64);
+
   __assume_aligned(&hadron->v_type, 64);
+
   __assume_aligned(&hadron->v_E, 64);
   __assume_aligned(&hadron->v_gamma, 64);
   __assume_aligned(&hadron->v_beta2, 64);
@@ -203,9 +207,13 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // Dépot de l'énergie à un point choisi aléatoirement dans le step
   rand_uniform(RNG_Stream, v_rnd);
 
+  ALIGNED_(64) VAR_COMPUTE scoring_x[VLENGTH], scoring_y[VLENGTH], scoring_z[VLENGTH];
   #pragma omp simd
   for(int v = 0; v<VLENGTH; v++){
     v_tau[v] = v_rnd[v] * v_step[v];
+    scoring_x[v] = hadron->v_x[v] + v_tau[v] * hadron->v_u[v];
+    scoring_y[v] = hadron->v_y[v] + v_tau[v] * hadron->v_v[v];
+    scoring_z[v] = hadron->v_z[v] + v_tau[v] * hadron->v_w[v];
   }
 
   #if InterfaceCrossing==RandomHinge // Gestion des interfaces par la méthode du Random Hinge
@@ -247,9 +255,11 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
       hadron->v_type[v] = Unknown;
     }
     hadron->v_T[v] = hadron->v_T[v] - v_dE[v];
-
-    Energy_Scoring(scoring, v_hinge_index[v], hadron->v_M[v], v_dE[v], v_SPR[v]);
   }
+    //Energy_Scoring(scoring, v_hinge_index[v], hadron->v_M[v], v_dE[v], v_SPR[v]);
+  if(config->Independent_scoring_grid == 0) Energy_Scoring_from_index(scoring, v_hinge_index, hadron->v_M, v_dE, v_init_density, v_SPR, config);
+  else Energy_Scoring_from_coordinates(scoring, scoring_x, scoring_y, scoring_z, hadron->v_M, v_dE, v_init_density, v_SPR, config);
+
 
   Update_Hadron(hadron);
 
@@ -293,7 +303,6 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // }
 
   // Interaction Nucléaire et Scoring de la perte d'énergie
-  #pragma omp simd
   for(int v = 0; v<VLENGTH; v++){
     #if InterfaceCrossing==RandomHinge
       if(v_mask[v] == 0.0) continue;	// si on croise une interface, on ne continue pas le step.
@@ -304,14 +313,15 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
       // Nuclear interactions
       if(v_interaction_type[v] == 2){
-        v_dE_hard[v] = Compute_Nuclear_interaction(v, hadron, material, v_material_label[v], secondary_hadron, Nbr_secondaries, v_index[v], scoring, RNG_Stream, config);
+        v_dE_hard[v] = Compute_Nuclear_interaction(v, hadron, material, v_material_label[v], secondary_hadron, Nbr_secondaries, scoring, RNG_Stream, config);
 
         if(hadron->v_T[v] <= (config->Ecut_Pro * UMeV)){
-	  hadron->v_type[v] = Unknown;
-	  v_dE_hard[v] += hadron->v_T[v];
+	        hadron->v_type[v] = Unknown;
+	        v_dE_hard[v] += hadron->v_T[v];
         }
 
-	Energy_Scoring(scoring, v_index[v], hadron->v_M[v], v_dE_hard[v], 1.0);
+	      //Energy_Scoring(scoring, v_index[v], hadron->v_M[v], v_dE_hard[v], 1.0);
+        v_SPR[v] = 1.0; //SPR not use for dose-to-water conversion of nuclear interaction
       }
 
       // Scoring for EM interactions
@@ -321,9 +331,11 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
           hadron->v_type[v] = Unknown;
         }
 
-        if(config->Score_LET == 1) LET_Scoring(scoring, v_hinge_index[v], hadron->v_M[v], v_dE[v]+v_dE_hard[v], v_step[v], v_stop_pow[v], config);
+        //if(config->Score_LET == 1) LET_Scoring(scoring, v_hinge_index[v], hadron->v_M[v], v_dE[v]+v_dE_hard[v], v_step[v], v_stop_pow[v], config);
+        if(config->Score_LET == 1) LET_Scoring(scoring, scoring_x[v], scoring_y[v], scoring_z[v], hadron->v_M[v], v_dE[v]+v_dE_hard[v], v_step[v], v_stop_pow[v], config);
 
-        Energy_Scoring(scoring, v_index[v], hadron->v_M[v], v_dE_hard[v], v_SPR[v]);
+
+        //Energy_Scoring(scoring, v_index[v], hadron->v_M[v], v_dE_hard[v], v_SPR[v]);
       }
 
     }
@@ -331,7 +343,10 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   }
     
   ALIGNED_(64) VAR_COMPUTE v_density[VLENGTH];
-  v_density[vALL] = ct->density[v_index[vALL]];
+  #pragma omp simd
+  for(int v=0; v<VLENGTH; v++){
+    v_density[v] = ct->density[v_index[v]];
+  }
   
   if(config->Independent_scoring_grid == 0) Energy_Scoring_from_index(scoring, v_index, hadron->v_M, v_dE_hard, v_density, v_SPR, config);
   else Energy_Scoring_from_coordinates(scoring, hadron->v_x, hadron->v_y, hadron->v_z, hadron->v_M, v_dE_hard, v_density, v_SPR, config);

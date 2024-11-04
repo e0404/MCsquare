@@ -98,13 +98,17 @@ void get_scoring_index(DATA_Scoring *scoring, VAR_COMPUTE *v_x, VAR_COMPUTE *v_y
   __assume_aligned(v_z, 64);
   __assume_aligned(v_index, 64);
 
-  v_index[vALL] = 	(int)floor( (scoring->Length[0]-v_x[vALL]+scoring->Offset[0]) / scoring->VoxelLength[0] ) 
-			+ scoring->GridSize[0] * (int)floor( (v_y[vALL]-scoring->Offset[1]) / scoring->VoxelLength[1] ) 
-			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( (v_z[vALL]-scoring->Offset[2]) / scoring->VoxelLength[2] );
 
-  if(v_x[vALL] < scoring->Offset[0] || v_y[vALL] < scoring->Offset[1] || v_z[vALL] < scoring->Offset[2] || 
-	 v_x[vALL] > scoring->Grid_end[0] || v_y[vALL] > scoring->Grid_end[1] || v_z[vALL] > scoring->Grid_end[2] ||
-	 v_index[vALL] < 0 || v_index[vALL] > scoring->Nbr_voxels) v_index[vALL] = -1;
+  #pragma omp simd
+  for(int v=0; v<VLENGTH; v++){
+    v_index[v] = (int)floor( (scoring->Length[0]-v_x[v]+scoring->Offset[0]) / scoring->VoxelLength[0] ) 
+			+ scoring->GridSize[0] * (int)floor( (v_y[v]-scoring->Offset[1]) / scoring->VoxelLength[1] ) 
+			+ scoring->GridSize[0] * scoring->GridSize[1] * (int)floor( (v_z[v]-scoring->Offset[2]) / scoring->VoxelLength[2] );
+
+    if(v_x[v] < scoring->Offset[0] || v_y[v] < scoring->Offset[1] || v_z[v] < scoring->Offset[2] || 
+	    v_x[v] > scoring->Grid_end[0] || v_y[v] > scoring->Grid_end[1] || v_z[v] > scoring->Grid_end[2] ||
+	    v_index[v] < 0 || v_index[v] > scoring->Nbr_voxels) v_index[v] = -1;
+  }
   
 }
 
@@ -206,19 +210,17 @@ void Energy_Scoring_from_index(DATA_Scoring *scoring, int *v_index, VAR_COMPUTE 
   ALIGNED_(64) VAR_COMPUTE v_scored_value[VLENGTH];
  
   // SPR is used when online dose-to-water conversion is enabled
-  if(config->Dose_weighting_algorithm == 0) v_scored_value[vALL] = v_multiplicity[vALL] * v_dE[vALL] / (v_density[vALL] * v_SPR[vALL]); // Volume weighting
-  else v_scored_value[vALL] = v_multiplicity[vALL] * v_dE[vALL] / v_SPR[vALL];  // Mass weighting
+  #pragma omp simd
+  for(int v=0; v<VLENGTH; v++){
+    if(config->Dose_weighting_algorithm == 0) v_scored_value[v] = v_multiplicity[v] * v_dE[v] / (v_density[v] * v_SPR[v]); // Volume weighting
+    else v_scored_value[v] = v_multiplicity[v] * v_dE[v] / v_SPR[v];  // Mass weighting
     
-  int i;
-  for(i=0; i<VLENGTH; i++){
-    if(v_scored_value[i] != 0.0 && v_index[i] >= 0) scoring->dose[v_index[i]] += v_scored_value[i];
-  }
-
-  if(config->Score_Energy == 1){
-    v_scored_value[vALL] = v_multiplicity[vALL] * v_dE[vALL];
+    if(v_scored_value[v] != 0.0 && v_index[v] >= 0) scoring->dose[v_index[v]] += v_scored_value[v];
+  
+    if(config->Score_Energy == 1){
+      v_scored_value[v] = v_multiplicity[v] * v_dE[v];
     
-    for(i=0; i<VLENGTH; i++){
-      if(v_scored_value[i] != 0.0 && v_index[i] >= 0) scoring->energy[v_index[i]] += v_scored_value[i];
+      if(v_scored_value[v] != 0.0 && v_index[v] >= 0) scoring->energy[v_index[v]] += v_scored_value[v];
     }
   }
 
