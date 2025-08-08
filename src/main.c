@@ -46,7 +46,7 @@ int main(int argc, char *argv[]){
   int error;
   if(argc < 2) error = Parse_Config(&config, "config.txt");
   else if(strcmp(argv[1], "-v") == 0){
-    printf("\n\nMCsquare\n%s\n\n", VERSION);
+    printf("\n\nMCsquare\n%s\n\n", MCsquare_VERSION);
     return 0;
   }
   else error = Parse_Config(&config, argv[1]);

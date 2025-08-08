@@ -1,0 +1,109 @@
+/*
+This file is part of the MCsquare software
+Copyright © 2016-2017 Université catholique de Louvain (UCL)
+All rights reserved.
+
+The MCsquare software has been developed by Kevin Souris from UCL in the context of a collaboration with IBA s.a.
+Each use of this software must be attributed to Université catholique de Louvain (UCL, Louvain-la-Neuve). Any other additional authorizations may be asked to LTTO@uclouvain.be.
+The MCsquare software is released under the terms of the open-source Apache 2.0 license. Anyone can use or modify the code provided that the Apache 2.0 license conditions are met. See the Apache 2.0 license for more details https://www.apache.org/licenses/LICENSE-2.0
+The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*/
+
+
+#ifndef H_define_cmake_build
+#define H_define_cmake_build
+
+#cmakedefine01 USE_MKL_LIB 
+
+#cmakedefine VAR_DATA_PRECISION @VAR_DATA_PRECISION@	// 1 =  float, 2 = double
+#cmakedefine VAR_SCORING_PRECISION @VAR_SCORING_PRECISION@	// 1 =  float, 2 = double
+#cmakedefine VAR_COMPUTE_PRECISION @VAR_COMPUTE_PRECISION@	// 1 =  float, 2 = double
+
+#cmakedefine HAVE_STRTOK_R
+#cmakedefine HAVE_STRTOK_S
+#cmakedefine HAVE_MATH_H
+#cmakedefine HAVE_MATHIMF_H
+#cmakedefine HAVE_BASETSD_H
+#cmakedefine HAVE_DECLSPEC_ALIGNED
+#cmakedefine HAVE_ATTRIBUTE_ALIGNED
+#cmakedefine HAVE_ASSUME_ALIGNED
+#cmakedefine HAVE_BUILTIN_ASSUME_ALIGNED
+#cmakedefine HAVE_SSIZE_T
+
+#cmakedefine MCsquare_VERSION "@MCsquare_VERSION@"
+#cmakedefine MCsquare_VERSION_MAJOR @MCsquare_VERSION_MAJOR@
+#cmakedefine MCsquare_VERSION_MINOR @MCsquare_VERSION_MINOR@
+#cmakedefine MCsquare_VERSION_PATCH @MCsquare_VERSION_PATCH@
+#cmakedefine MCsquare_VERSION_TWEAK @MCsquare_VERSION_TWEAK@
+
+#cmakedefine MCsquare_GIT_TAG @MCsquare_GIT_TAG@
+#cmakedefine MCsquare_GIT_BRANCH @MCsquare_GIT_BRANCH@
+#cmakedefine MCsquare_GIT_REV @MCsquare_GIT_REV@
+
+#cmakedefine RMDIR_CMD "@RMDIR_CMD@"
+
+// Precision
+#if VAR_DATA_PRECISION==1
+  #define VAR_DATA float
+#else
+  #define VAR_DATA double
+#endif
+
+#if VAR_SCORING_PRECISION==1
+  #define VAR_SCORING float
+#else
+  #define VAR_SCORING double
+#endif
+
+#if VAR_COMPUTE_PRECISION==1
+  #define VAR_COMPUTE float
+  #define VLENGTH 16
+#else
+  #define VAR_COMPUTE double
+  #define VLENGTH 8
+#endif
+
+// Cross platform compatibility
+#ifdef HAVE_MATHIMF_H
+  #include <mathimf.h>
+#elif defined(HAVE_MATH_H)
+  #include <math.h>
+#else
+  #error "No math header found!"
+#endif
+
+#ifdef HAVE_BASETSD_H
+  #include <BaseTsd.h>
+  #ifndef HAVE_SSIZE_T
+    typedef SSIZE_T ssize_t;
+  #endif
+#endif
+
+#ifndef M_PI
+  #define M_PI 3.14159265359
+#endif
+
+#ifndef HAVE_STRTOK_R
+  #define strtok_r strtok_s
+#endif
+
+#ifdef HAVE_DECLSPEC_ALIGNED
+  #define ALIGNED_(n) __declspec(align(n))
+#elif defined(HAVE_ATTRIBUTE_ALIGNED)
+  #define ALIGNED_(n) __attribute__((aligned(n)))
+#else
+  #define ALIGNED_(n)
+#endif
+
+#if !defined(HAVE_ASSUME_ALIGNED) && defined(HAVE_BUILTIN_ASSUME_ALIGNED)
+  #define __assume_aligned __builtin_assume_aligned
+#else
+  #define __assume_aligned
+#endif
+
+#ifndef __INTEL_COMPILER
+  #pragma GCC diagnostic ignored "-Wunused-value"
+  #define __assume_aligned __builtin_assume_aligned
+#endif
+
+#endif

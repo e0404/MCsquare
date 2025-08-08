@@ -13,18 +13,58 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #ifndef H_define
 #define H_define
 
+#ifdef CMAKE_BUILD
+  #include "define_cmake.h"
+#else
+  #define VAR_DATA_PRECISION 1	// 1 =  float, 2 = double
+  #define VAR_SCORING_PRECISION 1	// 1 =  float, 2 = double
+  #define VAR_COMPUTE_PRECISION 1	// 1 =  float, 2 = double
+
+  // Cross platform compatibility
+  #if defined(_MSC_VER)
+    #define ALIGNED_(n) __declspec(align(n))
+    #define M_PI 3.14159265359
+    #include <mathimf.h>
+    #include <BaseTsd.h>
+    typedef SSIZE_T ssize_t;
+    #define strtok_r strtok_s
+    #define RMDIR_CMD "rd /s /q  %s"
+  #else
+    #define ALIGNED_(n) __attribute__((aligned(n)))
+    #include <math.h>
+    #define RMDIR_CMD "rm -r  %s"
+  #endif
+
+  #ifndef __INTEL_COMPILER
+    #pragma GCC diagnostic ignored "-Wunused-value"
+    #define __assume_aligned __builtin_assume_aligned
+  #endif
+#endif
+
+#ifdef VERSION
+#define MCsquare_VERSION VERSION
+#endif
+
+#ifndef MCsquare_VERSION
+#define MCsquare_VERSION "trunk"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <float.h>
 #include <omp.h> 
-#include <mkl_vsl.h>
-#include <mkl.h>
 
-#define VAR_DATA_PRECISION 1	// 1 =  float, 2 = double
-#define VAR_SCORING_PRECISION 1	// 1 =  float, 2 = double
-#define VAR_COMPUTE_PRECISION 1	// 1 =  float, 2 = double
+#if USE_MKL_LIB==1
+  #include <mkl_vsl.h>
+  #include <mkl.h>
+  #define VAR_RND_SEED VSLStreamStatePtr
+#else
+  #define VAR_RND_SEED_TYPE uint64_t //We use as alternative a permuted congruential generator with 64 bit state
+  #define VAR_RND_SEED VAR_RND_SEED_TYPE*
+#endif
+
 
 #define INTERP_BIN 1.0 // MeV
 #define PSTAR_BIN 0.5 // MeV
@@ -90,25 +130,5 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #endif
 
 #define vALL 0:VLENGTH
-
-// Cross platform compatibility
-#if defined(_MSC_VER)
-  #define ALIGNED_(n) __declspec(align(n))
-  #define M_PI 3.14159265359
-  #include <mathimf.h>
-  #include <BaseTsd.h>
-  typedef SSIZE_T ssize_t;
-  #define strtok_r strtok_s
-  #define RMDIR_CMD "rd /s /q  %s"
-#else
-  #define ALIGNED_(n) __attribute__((aligned(n)))
-  #include <math.h>
-  #define RMDIR_CMD "rm -r  %s"
-#endif
-
-#ifndef __INTEL_COMPILER
-  #pragma GCC diagnostic ignored "-Wunused-value"
-  #define __assume_aligned __builtin_assume_aligned
-#endif
 
 #endif
