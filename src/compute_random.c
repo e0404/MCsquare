@@ -12,7 +12,6 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/compute_random.h"
 
-
 void Init_RND(DATA_config *config, VAR_RND_SEED* RNDstream, int offset){
 
   #if USE_MKL_LIB==1

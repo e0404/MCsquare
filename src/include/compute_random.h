@@ -16,11 +16,16 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "define.h"
 #include "struct.h"
 
-void Init_RND(DATA_config *config, VAR_RND_SEED RNDstream, int offset);
+void Init_RND(DATA_config *config, VAR_RND_SEED* RNDstream, int offset);
 void rand_uniform(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd);
 VAR_COMPUTE single_rand_uniform(VAR_RND_SEED seedp);
 void rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_mu, VAR_COMPUTE *v_sigma);
 void rand_normal_zero(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_sigma);
 VAR_COMPUTE single_rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE mu, VAR_COMPUTE sigma);
+
+void box_muller_rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE* rnd1, VAR_COMPUTE* rnd2, const VAR_COMPUTE mu1, const  VAR_COMPUTE mu2, const VAR_COMPUTE sigma1, const  VAR_COMPUTE sigma2);
+uint32_t pcg32(uint64_t* seedp);
+void pcg32_init(uint64_t seed, uint64_t* seedp);
+
 
 #endif

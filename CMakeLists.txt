@@ -6,6 +6,15 @@ else()
     cmake_minimum_required(VERSION 3.20.5)
 endif()
 
+cmake_policy(SET CMP0091 NEW)
+if(MSVC AND MSVC_VERSION LESS "1920")
+	message(FATAL_ERROR "MCsquare requires Visual Studio Version 2019 with openmp:experimental option to compile with msvc")
+endif()
+
+project(MCSquare C)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>") # CACHE STRING "Runtime Library Setting")
+
+
 project(MCsquare 
 	LANGUAGES C 
 	VERSION 1.1)

@@ -149,7 +149,10 @@ void Dist_To_Interface(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_result){
     v_DistX[v] = fabs(((floor(hadron->v_x[v]/ct->VoxelLength[0]) + (hadron->v_u[v] > 0)) * ct->VoxelLength[0] - hadron->v_x[v])/hadron->v_u[v]);
     v_DistY[v] = fabs(((floor(hadron->v_y[v]/ct->VoxelLength[1]) + (hadron->v_v[v] > 0)) * ct->VoxelLength[1] - hadron->v_y[v])/hadron->v_v[v]);
     v_DistZ[v] = fabs(((floor(hadron->v_z[v]/ct->VoxelLength[2]) + (hadron->v_w[v] > 0)) * ct->VoxelLength[2] - hadron->v_z[v])/hadron->v_w[v]);
-
+  }
+  // Separated simd loops to avoid MSVC issues with the fmin functions
+  #pragma omp simd
+  for(v = 0; v<VLENGTH; v++){
     // Add safety increment to compensate for rounding errors and to be sure to pass the interface (2e-4 for float, 1.5e-8 for double);
     #if VAR_COMPUTE_PRECISION==1
       v_result[v] = fmin(v_DistX[v], fmin(v_DistY[v], v_DistZ[v])); 
@@ -498,7 +501,11 @@ void Update_direction(Hadron *hadron, VAR_COMPUTE *v_theta, VAR_COMPUTE *v_phi){
         hadron->v_w[v] = -v_cosT[v];
       }
     }
+  }
 
+  // for loop separated to avoid MSVC issues with the sqrt function
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++) {
     // Si la norme dévie trop de 1, on renormalise
     v_norme[v] = sqrt(hadron->v_u[v]*hadron->v_u[v] + hadron->v_v[v]*hadron->v_v[v] + hadron->v_w[v]*hadron->v_w[v]);
     hadron->v_u[v] = hadron->v_u[v] / v_norme[v];

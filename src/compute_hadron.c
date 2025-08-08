@@ -254,9 +254,13 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     if((hadron->v_T[v] - v_dE[v]) <= (config->Ecut_Pro * UMeV)){
       v_dE[v] = hadron->v_T[v];
       hadron->v_type[v] = Unknown;
-    }
-    hadron->v_T[v] = hadron->v_T[v] - v_dE[v];
+    }  
   }
+  // Loop separate due to simd issues with MSCV
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++)
+    hadron->v_T[v] = hadron->v_T[v] - v_dE[v];
+
     //Energy_Scoring(scoring, v_hinge_index[v], hadron->v_M[v], v_dE[v], v_SPR[v]);
   if(config->Independent_scoring_grid == 0) Energy_Scoring_from_index(scoring, v_hinge_index, hadron->v_M, v_dE, v_init_density, v_SPR, config);
   else Energy_Scoring_from_coordinates(scoring, scoring_x, scoring_y, scoring_z, hadron->v_M, v_dE, v_init_density, v_SPR, config);
@@ -284,11 +288,15 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
   // interaction discrète d'ionisation
   Compute_Ionization_Energy(hadron, (config->Te_Min*UMeV), RNG_Stream, v_dE_tmp);
+  
+  //Loops separate due to simd issues in MSVC
   #pragma omp simd
-  for(v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++)
     if(v_interaction_type[v] == 1) v_dE_hard[v] = v_dE_tmp[v];
+  
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++) 
     hadron->v_T[v] = hadron->v_T[v] - v_dE_hard[v];
-  }
 
   if(config->Score_LET == 1 && config->LET_Calculation_Method == 1){
     Total_Stop_Pow(hadron, material, v_material_label, v_stop_pow2);

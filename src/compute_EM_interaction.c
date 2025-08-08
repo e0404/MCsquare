@@ -38,9 +38,14 @@ void Total_Stop_Pow(Hadron *hadron, Materials *material, int *v_material_label, 
     v_index[v] = (int)floor(v_scaled_T2[v]);
     v_data_Energy1[v] = v_index[v] * UMeV * PSTAR_BIN;
     v_data_Energy2[v] = (v_index[v]+1) * UMeV * PSTAR_BIN;
+  }
+  
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++) {
     v_Stop_Pow1[v] = (VAR_COMPUTE)material[v_material_label[v]].Stop_Pow[v_index[v]];
     v_Stop_Pow2[v] = (VAR_COMPUTE)material[v_material_label[v]].Stop_Pow[v_index[v]+1];
   }
+
 
   vec_Linear_Interpolation(v_scaled_T, v_data_Energy1, v_data_Energy2, v_Stop_Pow1, v_Stop_Pow2, v_stop_pow);
 
@@ -136,9 +141,12 @@ void get_interaction_type(Hadron *hadron, Materials *material, int *v_material_l
     total_Nuclear_cross_section(hadron, material, v_material_label, v_density, v_nuclear_section);
 
     #pragma omp simd
-    for(v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++)
       v_nuclear_section[v] = (v_nuclear_section[v] / v_tot_section[v]) + v_ionization_section[v];
-      if(v_rnd[v] <= v_ionization_section[v]) v_result[v] = 1;
+    
+    #pragma omp simd
+    for (v = 0; v < VLENGTH; v++) {
+    if(v_rnd[v] <= v_ionization_section[v]) v_result[v] = 1;
       else if(v_rnd[v] <= v_nuclear_section[v]) v_result[v] = 2;
     }
 
@@ -172,21 +180,29 @@ void cross_section_ionization(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE T
 
   ALIGNED_(64) VAR_COMPUTE v_log_result[VLENGTH];
 
+
+  // simd loops separated due to weird MSVC bug
   int v;
   #pragma omp simd
   for(v = 0; v<VLENGTH; v++){
     v_log_result[v] = hadron->v_Te_max[v]/Te_min;
     v_log_result[v] = log(v_log_result[v]);
+  }
 
+  #pragma omp simd
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] =  	2*M_PI*R_ELEC*R_ELEC*MC2_ELEC * v_N_el[v] * hadron->v_charge[v]*hadron->v_charge[v] 
 			* (	((1.0/Te_min) - (1.0/hadron->v_Te_max[v])) 
 				- (hadron->v_beta2[v]/hadron->v_Te_max[v]) * v_log_result[v] 
 				+ (hadron->v_Te_max[v]-Te_min) / (2*hadron->v_E[v]*hadron->v_E[v])
 			  )
 			/ (hadron->v_beta2[v]);
-
-    if(hadron->v_Te_max[v] <= Te_min) v_result[v] = 0.0;
   }
+
+  #pragma omp simd
+  for(v = 0; v<VLENGTH; v++)
+    if(hadron->v_Te_max[v] <= Te_min) v_result[v] = 0.0;
+  
 
   return;
 }
@@ -229,10 +245,19 @@ void Compute_L(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Mate
 			+ (hadron->v_Te_max[v]*hadron->v_Te_max[v] - Te_min*Te_min) / (4*hadron->v_E[v]*hadron->v_E[v])
 		);
 
-    if(hadron->v_Te_max[v] <= Te_min) v_M[v] = 0;
-
-    v_result[v] = v_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_result[v] - v_M[v];	// Pouvoir d'arrêt restreint en eV / cm
+    // Moved to separate simd loops due to MSVC
+    //if(hadron->v_Te_max[v] <= Te_min) v_M[v] = 0;
+    //v_result[v] = v_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_result[v] - v_M[v];	// Pouvoir d'arrêt restreint en eV / cm
   }
+
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++) 
+    if (hadron->v_Te_max[v] <= Te_min) v_M[v] = 0;
+
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++) 
+      v_result[v] = v_density[v] * hadron->v_charge[v] * hadron->v_charge[v] * v_result[v] - v_M[v];
+
 
   return;
 }
@@ -336,10 +361,15 @@ void Compute_Energy_straggling(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE 
   __assume_aligned(&hadron->v_Te_max, 64);
 
   int v;
+  // simd loops separated due to MSVC
+  #pragma omp simd
+  for (v = 0; v < VLENGTH; v++)
+    Te_min = fmin(Te_min, hadron->v_Te_max[v]);
+
   #pragma omp simd
   for(v = 0; v<VLENGTH; v++){
     v_result[v] = 	2*M_PI*R_ELEC*R_ELEC*MC2_ELEC * v_N_el[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_s[v] 
-			* fmin(Te_min, hadron->v_Te_max[v]) 
+			* Te_min
 			* (1 - 0.5*hadron->v_beta2[v]) / hadron->v_beta2[v];
   }
 

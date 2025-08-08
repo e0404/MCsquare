@@ -393,14 +393,14 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     // Init RNG
     ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// variable that contains random numbers
 
-      #if USE_MKL_LIB==1
-        VSLStreamStatePtr RNDstream;
-      #else
-        unsigned int RNDstream_val;
-        unsigned int *RNDstream = &RNDstream_val;
-      #endif
+    VAR_RND_SEED RNDstream;
 
-      Init_RND(config, RNDstream, tid*1e4+Num_call*1e5);
+    #if USE_MKL_LIB==0 //If we don't use mkl we have to provide a state variable for the random number generator
+      VAR_RND_SEED_TYPE RNDstream_val;
+      RNDstream = &RNDstream_val;
+    #endif
+
+    Init_RND(config, &RNDstream, tid*1e4+Num_call*1e5);
 
     // Init scoring
     DATA_Scoring scoring = Init_Scoring(config, ct, 0);

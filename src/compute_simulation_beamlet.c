@@ -75,14 +75,14 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
       // Init RNG
       ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// vecteur de nbr aleatoires
 
-      #if USE_MKL_LIB==1
-        VSLStreamStatePtr RNDstream;
-      #else
-        unsigned int RNDstream_val;
-        unsigned int *RNDstream = &RNDstream_val;
-      #endif
+      VAR_RND_SEED RNDstream;
 
-      Init_RND(config, RNDstream, tid);
+    #if USE_MKL_LIB==0 //If we don't use mkl we have to provide a state variable for the random number generator
+      VAR_RND_SEED_TYPE RNDstream_val;
+      RNDstream = &RNDstream_val;
+    #endif
+
+    Init_RND(config, &RNDstream, tid);
 
 
       // Init scoring    

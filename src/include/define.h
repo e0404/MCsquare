@@ -111,14 +111,6 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #define WATER_LABEL 17
 
 
-#if USE_MKL_LIB==1
-  #include <mkl_vsl.h>
-  #include <mkl.h>
-  #define VAR_RND_SEED VSLStreamStatePtr
-#else
-  #define VAR_RND_SEED unsigned int*
-#endif
-
 #if VAR_DATA_PRECISION==1
   #define VAR_DATA float
 #else
