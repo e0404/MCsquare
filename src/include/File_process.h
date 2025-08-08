@@ -24,6 +24,8 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
   #include <dirent.h>
 #endif
 
+#include "direct.h"
+
 
 int File_exists(const char *FileName);
 int Directory_exists(const char *DirName);

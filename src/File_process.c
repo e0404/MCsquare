@@ -182,7 +182,7 @@ unsigned int getBoolean(char *str){
 void CreateDir(char *DirName){
 
   #if defined(_MSC_VER)
-    _mkdir(DirName, 0755);
+    mkdir(DirName);
   #else
     mkdir(DirName, 0755);
   #endif

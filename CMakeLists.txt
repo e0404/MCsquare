@@ -102,29 +102,22 @@ target_sources(MCsquare
 		src/include/data_contours.h
 		src/include/define.h
 		src/include/File_process.h
+        src/include/lib/win_dirent.h
 )
 
 set_property(TARGET MCsquare PROPERTY C_STANDARD 99)
 
-find_package(IntelDPCPP REQUIRED)
-
 #try to find MKL. Path has usually
-find_package(MKL)
+find_package(MKL CONFIG)
 if (MKL_FOUND)
 	option(USE_MKL_LIB "Use the Intel MKL Libraries" ON)
-	
-	if(USE_MKL_LIB AND CMAKE_C_COMPILER_ID STREQUAL "Intel")
-		if(MSVC)
-			target_compile_options(MCsquare PUBLIC "/Qmkl")
-		else()
-			target_compile_options(MCsquare PUBLIC "-Qmkl")
-		endif()
-		target_link_libraries(MCsquare PUBLIC "${MKL_LIBRARIES_PARALLEL}") 
-	elseif(USE_MKL_LIB)
-		include_directories("${MKL_INCLUDE}")
-		target_link_libraries(MCsquare PUBLIC "${MKL_LIBRARIES_SEQUENTIAL}") #The thread library relies on intels OpenMP
-	endif()
 endif(MKL_FOUND)
+
+if (MKL_FOUND AND USE_MKL_LIB)
+    target_compile_options(MCsquare PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+    target_include_directories(MCsquare PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_link_libraries(MCsquare PUBLIC $<LINK_ONLY:MKL::MKL>)
+endif(MKL_FOUND AND USE_MKL_LIB)
 
 #Find OpenMP package and determine version... not working well at the moment (Version not read)
 find_package(OpenMP)
@@ -187,6 +180,9 @@ include(CheckIncludeFiles)
 check_include_file("mathimf.h" HAVE_MATHIMF_H)
 check_include_file("math.h" HAVE_MATH_H)
 check_include_file("BaseTsd.h" HAVE_BASETSD_H)
+check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
+check_include_file("direct.h" HAVE_DIRECT_H)
+check_include_file("dirent.h" HAVE_DIRENT_H)
 
 check_include_files("stdio.h;stdlib.h;time.h;string.h;float.h;stdint.h" HAVE_REQUIRED_HEADERS)
 
@@ -197,6 +193,8 @@ endif()
 include(CheckSymbolExists)
 check_symbol_exists(strtok_r "stdio.h;string.h;" HAVE_STRTOK_R)
 check_symbol_exists(strtok_s "stdio.h;string.h;" HAVE_STRTOK_S)
+check_symbol_exists(mkdir "sys/stat.h;" HAVE_MKDIR)
+check_symbol_exists(_mkdir "sys/stat.h;" HAVE__MKDIR)
 
 include(CheckCSourceCompiles)
 check_c_source_compiles("void *aa_test(void *x) { return __assume_aligned(x, 16);}\nint main(void) { return 0; }" HAVE_ASSUME_ALIGNED)
