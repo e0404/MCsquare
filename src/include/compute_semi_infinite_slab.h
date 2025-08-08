@@ -21,6 +21,6 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include "compute_random.h"
 #include "data_beam_model.h"
 
-void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *hadron_list, ControlPoint_parameters **layer_data, field_parameters **field_data, int *Hadron_ID, int *Nbr_hadrons, VAR_COMPUTE *RS_exit_position, DATA_config *config, machine_parameters *machine, VSLStreamStatePtr RNG_Stream);
+void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *hadron_list, ControlPoint_parameters **layer_data, field_parameters **field_data, int *Hadron_ID, int *Nbr_hadrons, VAR_COMPUTE *RS_exit_position, DATA_config *config, machine_parameters *machine, VAR_RND_SEED RNG_Stream);
 
 #endif

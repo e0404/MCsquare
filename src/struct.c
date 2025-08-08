@@ -15,20 +15,32 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 void Init_particles(Hadron *hadron){
 
-  hadron->v_x[vALL] = 0.0;
-  hadron->v_y[vALL] = 0.0;
-  hadron->v_z[vALL] = 0.0;
+  __assume_aligned(&hadron->v_x, 64);
+  __assume_aligned(&hadron->v_y, 64);
+  __assume_aligned(&hadron->v_z, 64);
+  __assume_aligned(&hadron->v_u, 64);
+  __assume_aligned(&hadron->v_v, 64);
+  __assume_aligned(&hadron->v_w, 64);
+  __assume_aligned(&hadron->v_T, 64);
+  __assume_aligned(&hadron->v_M, 64);
+  __assume_aligned(&hadron->v_type, 64);
+  __assume_aligned(&hadron->v_charge, 64);
+  __assume_aligned(&hadron->v_mass, 64);
 
-  hadron->v_u[vALL] = 0.0;
-  hadron->v_v[vALL] = 0.0;
-  hadron->v_w[vALL] = 0.1;
-
-  hadron->v_T[vALL] = 0.0;
-
-  hadron->v_M[vALL] = 1.0;
-  hadron->v_type[vALL] = Unknown;
-  hadron->v_charge[vALL] = 1.0;
-  hadron->v_mass[vALL] = 1.0;
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    hadron->v_x[v] = 0.0;
+    hadron->v_y[v] = 0.0;
+    hadron->v_z[v] = 0.0;
+    hadron->v_u[v] = 0.0;
+    hadron->v_v[v] = 0.0;
+    hadron->v_w[v] = 0.1;
+    hadron->v_T[v] = 0.0;
+    hadron->v_M[v] = 1.0;
+    hadron->v_type[v] = Unknown;
+    hadron->v_charge[v] = 1.0;
+    hadron->v_mass[v] = 1.0;
+  }
 
   return;
 }
@@ -129,17 +141,17 @@ void Update_Hadron(Hadron *hadron){
   __assume_aligned(&hadron->v_beta2, 64);
   __assume_aligned(&hadron->v_Te_max, 64);
 
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    hadron->v_E[v] = hadron->v_T[v] + hadron->v_mass[v] * MC2_PRO;	// Energie totale du proton
+    hadron->v_gamma[v] = hadron->v_E[v] / (hadron->v_mass[v] * MC2_PRO);	// Paramètre relativiste gamma du proton
+    hadron->v_beta2[v] = 1 - (1/(hadron->v_gamma[v]*hadron->v_gamma[v]));	// Betta au carré (v/c)^2
 
-  hadron->v_E[vALL] = hadron->v_T[vALL] + hadron->v_mass[vALL] * MC2_PRO;	// Energie totale du proton
-  hadron->v_gamma[vALL] = hadron->v_E[vALL] / (hadron->v_mass[vALL] * MC2_PRO);	// Paramètre relativiste gamma du proton
-  hadron->v_beta2[vALL] = 1 - (1/(hadron->v_gamma[vALL]*hadron->v_gamma[vALL]));	// Betta au carré (v/c)^2
-
-  // Energie maximum transferable à l'e-
-  //hadron->v_Te_max[vALL] = 	(2*MC2_ELEC * (hadron->v_gamma[vALL]*hadron->v_gamma[vALL] - 1)) / (1 + 2*hadron->v_gamma[vALL]*(MC2_ELEC/(hadron->v_mass[vALL]*MC2_PRO)) 
-  //				+ (MC2_ELEC/(hadron->v_mass[vALL]*MC2_PRO)) * (MC2_ELEC/(hadron->v_mass[vALL]*MC2_PRO)));
-  hadron->v_Te_max[vALL] = 	(2*MC2_ELEC * (hadron->v_mass[vALL]*MC2_PRO)*(hadron->v_mass[vALL]*MC2_PRO) * (hadron->v_gamma[vALL]*hadron->v_gamma[vALL] - 1)) / 
-				((hadron->v_mass[vALL]*MC2_PRO)*(hadron->v_mass[vALL]*MC2_PRO) + 2*MC2_ELEC*hadron->v_gamma[vALL]*(hadron->v_mass[vALL]*MC2_PRO) 
+    // Energie maximum transferable à l'e-
+    hadron->v_Te_max[v] = 	(2*MC2_ELEC * (hadron->v_mass[v]*MC2_PRO)*(hadron->v_mass[v]*MC2_PRO) * (hadron->v_gamma[v]*hadron->v_gamma[v] - 1)) / 
+				((hadron->v_mass[v]*MC2_PRO)*(hadron->v_mass[v]*MC2_PRO) + 2*MC2_ELEC*hadron->v_gamma[v]*(hadron->v_mass[v]*MC2_PRO) 
 				+ MC2_ELEC*MC2_ELEC);
+  }
 
   return;
 }
@@ -149,18 +161,14 @@ void Copy_Hadron_struct(Hadron *destination, Hadron *origin){
   __assume_aligned(&destination->v_x, 64);
   __assume_aligned(&destination->v_y, 64);
   __assume_aligned(&destination->v_z, 64);
-
   __assume_aligned(&destination->v_u, 64);
   __assume_aligned(&destination->v_v, 64);
   __assume_aligned(&destination->v_w, 64);
-
   __assume_aligned(&destination->v_T, 64);
   __assume_aligned(&destination->v_M, 64);
   __assume_aligned(&destination->v_charge, 64);
   __assume_aligned(&destination->v_mass, 64);
-
   __assume_aligned(&destination->v_type, 64);
-
   __assume_aligned(&destination->v_E, 64);
   __assume_aligned(&destination->v_gamma, 64);
   __assume_aligned(&destination->v_beta2, 64);
@@ -169,41 +177,35 @@ void Copy_Hadron_struct(Hadron *destination, Hadron *origin){
   __assume_aligned(&origin->v_x, 64);
   __assume_aligned(&origin->v_y, 64);
   __assume_aligned(&origin->v_z, 64);
-
   __assume_aligned(&origin->v_u, 64);
   __assume_aligned(&origin->v_v, 64);
   __assume_aligned(&origin->v_w, 64);
-
   __assume_aligned(&origin->v_T, 64);
   __assume_aligned(&origin->v_M, 64);
   __assume_aligned(&origin->v_charge, 64);
   __assume_aligned(&origin->v_mass, 64);
-
   __assume_aligned(&origin->v_type, 64);
-
   __assume_aligned(&origin->v_E, 64);
   __assume_aligned(&origin->v_gamma, 64);
   __assume_aligned(&origin->v_beta2, 64);
   __assume_aligned(&origin->v_Te_max, 64);
 
-
-  destination->v_x[:] = origin->v_x[:];
-  destination->v_y[:] = origin->v_y[:];
-  destination->v_z[:] = origin->v_z[:];
-
-  destination->v_u[:] = origin->v_u[:];
-  destination->v_v[:] = origin->v_v[:];
-  destination->v_w[:] = origin->v_w[:];
-
-  destination->v_T[:] = origin->v_T[:];
-  destination->v_M[:] = origin->v_M[:];
-  destination->v_charge[:] = origin->v_charge[:];
-  destination->v_mass[:] = origin->v_mass[:];
-
-  destination->v_type[:] = origin->v_type[:];
-
-  destination->v_E[:] = origin->v_E[:];
-  destination->v_gamma[:] = origin->v_gamma[:];
-  destination->v_beta2[:] = origin->v_beta2[:];
-  destination->v_Te_max[:] = origin->v_Te_max[:];
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    destination->v_x[v] = origin->v_x[v];
+    destination->v_y[v] = origin->v_y[v];
+    destination->v_z[v] = origin->v_z[v];
+    destination->v_u[v] = origin->v_u[v];
+    destination->v_v[v] = origin->v_v[v];
+    destination->v_w[v] = origin->v_w[v];
+    destination->v_T[v] = origin->v_T[v];
+    destination->v_M[v] = origin->v_M[v];
+    destination->v_charge[v] = origin->v_charge[v];
+    destination->v_mass[v] = origin->v_mass[v];
+    destination->v_type[v] = origin->v_type[v];
+    destination->v_E[v] = origin->v_E[v];
+    destination->v_gamma[v] = origin->v_gamma[v];
+    destination->v_beta2[v] = origin->v_beta2[v];
+    destination->v_Te_max[v] = origin->v_Te_max[v];
+  }
 }

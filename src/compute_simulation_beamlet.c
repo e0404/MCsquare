@@ -73,15 +73,17 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
       unsigned long Nbr_simulated_primaries = 0;
 
       // Init RNG
-      VSLStreamStatePtr RNDstream;				// un stream de RNG par thread
       ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// vecteur de nbr aleatoires
-      if(config->RNG_Seed == 0){
-        vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+tid);	// initialisation du stream du RNG avec le seed (time+thread_id)
-      }
-      else{
-        vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+tid);
-      }
-      rand_uniform(RNDstream, v_rnd);				// on genere une première fois un set de nbr car les premiers semblent mal distribués
+
+      #if USE_MKL_LIB==1
+        VSLStreamStatePtr RNDstream;
+      #else
+        unsigned int RNDstream_val;
+        unsigned int *RNDstream = &RNDstream_val;
+      #endif
+
+      Init_RND(config, RNDstream, tid);
+
 
       // Init scoring    
       DATA_Scoring Tot_scoring = Init_Scoring(config, ct, 1);
@@ -118,7 +120,11 @@ void Run_simulation_beamlet(DATA_config *config, Materials *material, DATA_CT **
 	    }
 
 	    else{
-	      count = __sec_reduce_add(hadron.v_type[vALL]);
+              count = 0;
+	      #pragma omp simd reduction(+:count)
+              for(int v = 0; v<VLENGTH; v++){
+	        count += hadron.v_type[v];
+              }
 	      if(count == 0) stop = 1;
 	    }
 	  }

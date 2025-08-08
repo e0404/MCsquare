@@ -17,12 +17,10 @@ void proton_proton_cross_section(Hadron *hadron, VAR_COMPUTE *v_density, VAR_COM
   __assume_aligned(&hadron->v_T, 64);
   __assume_aligned(v_density, 64);
 
-
-  if(hadron->v_T[vALL] > 10*UMeV){
-    v_result[vALL] = v_density[vALL] * (0.315*pow(hadron->v_T[vALL]/UMeV, -1.126) + 3.78e-6 * hadron->v_T[vALL]/UMeV) / 0.1119;
-  }
-  else{
-    v_result[vALL] = 0.0;
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    if(hadron->v_T[v] > 10*UMeV) v_result[v] = v_density[v] * (0.315*pow(hadron->v_T[v]/UMeV, -1.126) + 3.78e-6 * hadron->v_T[v]/UMeV) / 0.1119;
+    else v_result[v] = 0.0;
   }
  
   return;
@@ -40,38 +38,35 @@ void total_Nuclear_cross_section(Hadron *hadron, Materials *material, int *v_mat
   int i;
 
   ALIGNED_(64) int v_index[VLENGTH];
-//  v_index[vALL] = (int)floor(hadron->v_T[vALL]/(UMeV*INTERP_BIN));
   ALIGNED_(64) VAR_COMPUTE v_T[VLENGTH];
-  v_T[vALL] = hadron->v_T[vALL] / (UMeV*INTERP_BIN);
-  v_index[vALL] = (int)floor(v_T[vALL]);
-
   ALIGNED_(64) VAR_COMPUTE v_T1[VLENGTH];
-  v_T1[vALL] = v_index[vALL] * UMeV * INTERP_BIN;
-
   ALIGNED_(64) VAR_COMPUTE v_T2[VLENGTH];
-  v_T2[vALL] = (v_index[vALL]+1) * UMeV * INTERP_BIN;
-
-  if(v_index[vALL] >= 249) v_index[vALL] = 0; // nuclear cross sections tabulated up to 250 MeV
-
   ALIGNED_(64) VAR_COMPUTE v_Cross_section1[VLENGTH];
-  for(i=0; i<VLENGTH; i++){
-    v_Cross_section1[i] = (VAR_COMPUTE)material[v_material_label[i]].Interp_Total_Nuclear_Cross_Section[v_index[i]];
-  }
-
   ALIGNED_(64) VAR_COMPUTE v_Cross_section2[VLENGTH];
-  for(i=0; i<VLENGTH; i++){
-    v_Cross_section2[i] = (VAR_COMPUTE)material[v_material_label[i]].Interp_Total_Nuclear_Cross_Section[v_index[i]+1];
+
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_T[v] = hadron->v_T[v] / (UMeV*INTERP_BIN);
+    v_index[v] = (int)floor(v_T[v]);
+    v_T1[v] = v_index[v] * UMeV * INTERP_BIN;
+    v_T2[v] = (v_index[v]+1) * UMeV * INTERP_BIN;
+    if(v_index[v] >= 249) v_index[v] = 0; // nuclear cross sections tabulated up to 250 MeV
+    v_Cross_section1[v] = (VAR_COMPUTE)material[v_material_label[v]].Interp_Total_Nuclear_Cross_Section[v_index[v]];
+    v_Cross_section2[v] = (VAR_COMPUTE)material[v_material_label[v]].Interp_Total_Nuclear_Cross_Section[v_index[v]+1];
   }
 
   vec_Linear_Interpolation(hadron->v_T, v_T1, v_T2, v_Cross_section1, v_Cross_section2, v_result);
 
-  v_result[vALL] = v_result[vALL] * v_density[vALL];
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_result[v] = v_result[v] * v_density[v];
+  }
 
   return;
 }
 
 
-VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materials *material, int material_label, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, DATA_Scoring *scoring, VSLStreamStatePtr RNG_Stream, DATA_config *config){
+VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materials *material, int material_label, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, DATA_Scoring *scoring, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   VAR_COMPUTE rnd, dE;
   int index;
@@ -201,17 +196,21 @@ VAR_COMPUTE Compute_Nuclear_interaction(int hadron_index, Hadron *hadron, Materi
 }
 
 
-VAR_COMPUTE Compute_Elastic_PP(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, VSLStreamStatePtr RNG_Stream, DATA_config *config){
+VAR_COMPUTE Compute_Elastic_PP(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   VAR_COMPUTE cos_theta_CM = 2.0*single_rand_uniform(RNG_Stream) - 1.0;
   VAR_COMPUTE dE = hadron->v_T[hadron_index] * (1-cos_theta_CM) / 2.0;
 
   ALIGNED_(64) VAR_COMPUTE v_theta[VLENGTH];
-  v_theta[vALL] = 0.0;
-  v_theta[hadron_index] = acos( (cos_theta_CM+1.0)/sqrt((cos_theta_CM+1.0)*(cos_theta_CM+1.0) + (1 - hadron->v_T[hadron_index]/(hadron->v_T[hadron_index]+2*MC2_PRO))*(1.0-cos_theta_CM*cos_theta_CM)) );
-
   ALIGNED_(64) VAR_COMPUTE v_phi[VLENGTH];
-  v_phi[vALL] = 0.0;
+
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_theta[v] = 0.0;
+    v_phi[v] = 0.0;
+  }
+
+  v_theta[hadron_index] = acos( (cos_theta_CM+1.0)/sqrt((cos_theta_CM+1.0)*(cos_theta_CM+1.0) + (1 - hadron->v_T[hadron_index]/(hadron->v_T[hadron_index]+2*MC2_PRO))*(1.0-cos_theta_CM*cos_theta_CM)) );
   v_phi[hadron_index] = 2*M_PI*single_rand_uniform(RNG_Stream);
       	  
   // Secondary proton :
@@ -246,7 +245,7 @@ VAR_COMPUTE Compute_Elastic_PP(int hadron_index, Hadron *hadron, Hadron_buffer *
 }
 
 
-VAR_COMPUTE Compute_Elastic_ICRU(int hadron_index, Hadron *hadron, Materials *material, VSLStreamStatePtr RNG_Stream){
+VAR_COMPUTE Compute_Elastic_ICRU(int hadron_index, Hadron *hadron, Materials *material, VAR_RND_SEED RNG_Stream){
 
   int index, i;
   VAR_COMPUTE cos_theta_CM, rnd;
@@ -276,11 +275,15 @@ VAR_COMPUTE Compute_Elastic_ICRU(int hadron_index, Hadron *hadron, Materials *ma
   VAR_COMPUTE tau = sqrt( (MC2_PRO/(material->A*Uamu)) * (MC2_PRO/(material->A*Uamu)) * (1-beta2_CM) + beta2_CM );
 
   ALIGNED_(64) VAR_COMPUTE v_theta[VLENGTH];
-  v_theta[vALL] = 0.0;
-  v_theta[hadron_index] = acos( (cos_theta_CM+tau)/sqrt( (cos_theta_CM+tau)*(cos_theta_CM+tau) + (1 - cos_theta_CM*cos_theta_CM)/gamma2_CM ) );
-
   ALIGNED_(64) VAR_COMPUTE v_phi[VLENGTH];
-  v_phi[vALL] = 0.0;
+
+  #pragma omp simd
+  for(int v = 0; v<VLENGTH; v++){
+    v_theta[v] = 0.0;
+    v_phi[v] = 0.0;
+  }
+
+  v_theta[hadron_index] = acos( (cos_theta_CM+tau)/sqrt( (cos_theta_CM+tau)*(cos_theta_CM+tau) + (1 - cos_theta_CM*cos_theta_CM)/gamma2_CM ) );
   v_phi[hadron_index] = 2*M_PI*single_rand_uniform(RNG_Stream);
 
   Update_direction(hadron, v_theta, v_phi);
@@ -303,7 +306,7 @@ VAR_COMPUTE Compute_Nuclear_Inelastic_recoils(VAR_COMPUTE Hadron_T, Materials *m
 }
 
 
-VAR_COMPUTE Compute_Nuclear_Inelastic_proton(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VSLStreamStatePtr RNG_Stream, DATA_config *config){
+VAR_COMPUTE Compute_Nuclear_Inelastic_proton(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   if(material->Nuclear_Inelastic[index].Proton_Mult == 0.0 || material->Nuclear_Inelastic[index+1].Proton_Mult == 0.0) return 0.0;
 
@@ -423,7 +426,7 @@ VAR_COMPUTE Compute_Nuclear_Inelastic_proton(int hadron_index, Hadron *hadron, H
 }
 
 
-VAR_COMPUTE Compute_Nuclear_Inelastic_deuteron(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VSLStreamStatePtr RNG_Stream, DATA_config *config){
+VAR_COMPUTE Compute_Nuclear_Inelastic_deuteron(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   if(material->Nuclear_Inelastic[index].Deuteron_Mult == 0.0 || material->Nuclear_Inelastic[index+1].Deuteron_Mult == 0.0) return 0.0;
 
@@ -545,7 +548,7 @@ VAR_COMPUTE Compute_Nuclear_Inelastic_deuteron(int hadron_index, Hadron *hadron,
 }
 
 
-VAR_COMPUTE Compute_Nuclear_Inelastic_alpha(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VSLStreamStatePtr RNG_Stream, DATA_config *config){
+VAR_COMPUTE Compute_Nuclear_Inelastic_alpha(int hadron_index, Hadron *hadron, Hadron_buffer *secondary_hadron, int *Nbr_secondaries, Materials *material, int index, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   if(material->Nuclear_Inelastic[index].Alpha_Mult == 0.0 || material->Nuclear_Inelastic[index+1].Alpha_Mult == 0.0) return 0.0;
 
@@ -664,7 +667,7 @@ VAR_COMPUTE Compute_Nuclear_Inelastic_alpha(int hadron_index, Hadron *hadron, Ha
 }
 
 
-void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, DATA_Scoring *scoring, VSLStreamStatePtr RNG_Stream, DATA_config *config){
+void Compute_PromptGamma(int hadron_index, Hadron *hadron, Materials *material, DATA_Scoring *scoring, VAR_RND_SEED RNG_Stream, DATA_config *config){
 
   VAR_COMPUTE Energy = hadron->v_T[hadron_index]/UMeV;
   int index, interp_index;

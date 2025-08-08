@@ -14,11 +14,13 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #define H_Random
 
 #include "define.h"
+#include "struct.h"
 
-void rand_uniform(VSLStreamStatePtr stream, VAR_COMPUTE *v_rnd);
-VAR_COMPUTE single_rand_uniform(VSLStreamStatePtr stream);
-void rand_normal(VSLStreamStatePtr stream, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_mu, VAR_COMPUTE *v_sigma);
-void rand_normal_zero(VSLStreamStatePtr stream, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_sigma);
-VAR_COMPUTE single_rand_normal(VSLStreamStatePtr stream, VAR_COMPUTE mu, VAR_COMPUTE sigma);
+void Init_RND(DATA_config *config, VAR_RND_SEED RNDstream, int offset);
+void rand_uniform(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd);
+VAR_COMPUTE single_rand_uniform(VAR_RND_SEED seedp);
+void rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_mu, VAR_COMPUTE *v_sigma);
+void rand_normal_zero(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_sigma);
+VAR_COMPUTE single_rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE mu, VAR_COMPUTE sigma);
 
 #endif

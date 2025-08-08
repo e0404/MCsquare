@@ -187,15 +187,16 @@ void Scenarios_selection_random(DATA_config *config, Materials *material, DATA_C
   FILE *file_hdl = NULL;
 
   // Init RNG
-  VSLStreamStatePtr RNDstream;					// un stream de RNG
   ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// vecteur de nbr aleatoires
-  if(config->RNG_Seed == 0){
-    vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL));	// initialisation du stream du RNG avec le seed (time+thread_id)
-  }
-  else{
-    vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed);
-  }
-  rand_uniform(RNDstream, v_rnd);				// on genere une première fois un set de nbr car les premiers semblent mal distribués
+
+  #if USE_MKL_LIB==1
+    VSLStreamStatePtr RNDstream;
+  #else
+    unsigned int RNDstream_val;
+    unsigned int *RNDstream = &RNDstream_val;
+  #endif
+
+  Init_RND(config, RNDstream, 0);
 
 
   config->TotalNumScenarios = config->Num_random_scenarios;

@@ -390,15 +390,16 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     int tid = omp_get_thread_num();
 
     // Init RNG
-    VSLStreamStatePtr RNDstream;				// variable for the random number generator
     ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];			// variable that contains random numbers
-    if(config->RNG_Seed == 0){
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+tid*1e4+Num_call*1e5);	// initialize the RNG for each thread individually with a seed = time+thread_id*10000
-    }
-    else{
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+tid*1e4+Num_call*1e5);
-    }
-    rand_uniform(RNDstream, v_rnd);				// the RNG is called here because random numbers seems not well distributed the first time.
+
+      #if USE_MKL_LIB==1
+        VSLStreamStatePtr RNDstream;
+      #else
+        unsigned int RNDstream_val;
+        unsigned int *RNDstream = &RNDstream_val;
+      #endif
+
+      Init_RND(config, RNDstream, tid*1e4+Num_call*1e5);
 
     // Init scoring
     DATA_Scoring scoring = Init_Scoring(config, ct, 0);
@@ -444,7 +445,11 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
 	  }
 
 	  else{
-	    count = __sec_reduce_add(hadron.v_type[vALL]);
+            count = 0;
+	    #pragma omp simd reduction(+:count)
+            for(int v = 0; v<VLENGTH; v++){
+	      count += hadron.v_type[v];
+            }
 	    if(count == 0) stop = 1;
 	  }
 
