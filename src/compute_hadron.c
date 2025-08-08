@@ -68,8 +68,9 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // Compute CT index and remove particles out of geometry
   get_CT_Offset(hadron, ct, v_index);
   
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_material_label[v] = ct->material[v_index[v]];
     v_init_density[v] = ct->density[v_index[v]];
     v_N_el[v] = material[v_material_label[v]].N_el * v_init_density[v];
@@ -83,7 +84,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     ALIGNED_(64) VAR_COMPUTE v_StpCorr[VLENGTH];
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_water_label[v] = WATER_LABEL;
       v_N_el_water[v] = material[v_water_label[v]].N_el * v_init_density[v];
     }
@@ -92,7 +93,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     Total_Stop_Pow(hadron, material, v_water_label, v_stop_pow);
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_stop_pow[v] = v_init_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_StpCorr[v] * v_stop_pow[v];
     }
 
@@ -100,7 +101,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     Total_Stop_Pow(hadron, material, v_material_label, v_stop_pow);
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_stop_pow[v] = v_init_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_stop_pow[v];
     }
   #endif
@@ -111,7 +112,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     Dist_To_Material_Interface(hadron, ct, config->D_Max, v_index, v_init_density, v_Dist_Interface);
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_step_max[v] = fmin(fmin(v_Dist_Interface[v], config->D_Max), (config->Epsilon_Max * hadron->v_T[v] / v_stop_pow[v]));
     }
 
@@ -120,26 +121,26 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     Dist_To_Interface(hadron, ct, v_Dist_Interface);
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_step_max[v] = fmin(fmin(v_Dist_Interface[v], config->D_Max), (config->Epsilon_Max * hadron->v_T[v] / v_stop_pow[v]));
     }
 
   #else	// No interface or Random Hinge or Fippel Transport
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_step_max[v] = fmin(config->D_Max, (config->Epsilon_Max * hadron->v_T[v] / v_stop_pow[v]));
     }
   #endif
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_dE_max[v] = v_step_max[v] * v_stop_pow[v];
   }
 
   Total_Hard_Cross_Section(hadron, material, v_material_label, v_N_el, v_init_density, (config->Te_Min*UMeV), v_dE_max, config, v_section); 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_section[v] += 1e-10;
     v_section[v] *= 1.017;  // facteur pour palier l'approximation.
   }
@@ -147,20 +148,20 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // calcul du SPR pour la conversion dose to water
   if(config->DoseToWater == 2){
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_water_ID[v] = config->Water_Material_ID;
     }
 
     Total_Stop_Pow(hadron, material, v_water_ID, v_SPR);
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_SPR[v] = v_stop_pow[v] / (v_init_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_SPR[v]);
       if(hadron->v_type[v] == Unknown) v_SPR[v] = 1.0;
     }
   }
   else{
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_SPR[v] = 1.0;
     }
   }
@@ -169,7 +170,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   rand_uniform(RNG_Stream, v_rnd);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_step[v] = -log(v_rnd[v])/v_section[v];
     if(v_step[v] > v_step_max[v]) v_step[v] = v_step_max[v];  // on se limite à une distance step_max
   }
@@ -185,13 +186,13 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
   Compute_Energy_straggling(hadron, v_N_el, (config->Te_Min*UMeV), v_step, v_straggling);		// energy straggling
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_straggling[v] = sqrt(v_straggling[v]);
   }
   rand_normal(RNG_Stream, v_dE, v_mean_dE, v_straggling);					// energie perdue
 			
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_X0[v] = material[v_material_label[v]].X0 / v_init_density[v];  // longueur de radiation
   }
 
@@ -200,7 +201,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   rand_uniform(RNG_Stream, v_phi);			// déviation angle (phi)
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_phi[v] = 2*M_PI*v_phi[v];
   }
 
@@ -209,7 +210,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
   ALIGNED_(64) VAR_COMPUTE scoring_x[VLENGTH], scoring_y[VLENGTH], scoring_z[VLENGTH];
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_tau[v] = v_rnd[v] * v_step[v];
     scoring_x[v] = hadron->v_x[v] + v_tau[v] * hadron->v_u[v];
     scoring_y[v] = hadron->v_y[v] + v_tau[v] * hadron->v_v[v];
@@ -220,7 +221,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     ALIGNED_(64) VAR_COMPUTE v_mask[VLENGTH];
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_mask[v] = 1.0;
     }
     CT_Transport_Random_Hinge(hadron, ct, v_step, v_tau, v_index, v_hinge_index, v_init_density, v_mask);
@@ -229,7 +230,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   #elif InterfaceCrossing==VoxelInterface
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_hinge_index[v] = v_index[v];
     }
     Update_position(hadron, v_step);
@@ -240,7 +241,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
 
   // scoring de la perte d'énergie
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(hadron->v_type[v] == Unknown) v_dE[v] = 0;
 
     #if InterfaceCrossing==RandomHinge
@@ -274,7 +275,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // Interaction HARD
   get_interaction_type(hadron, material, v_material_label, v_N_el, v_init_density, (config->Te_Min*UMeV), v_dE_max, v_section, RNG_Stream, config, v_interaction_type);
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_dE_hard[v] = 0.0;
     if(v_step[v] == v_step_max[v]) v_interaction_type[v] = 0;
     // Si step > step_max : step = step_max et force interaction fictive
@@ -284,7 +285,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // interaction discrète d'ionisation
   Compute_Ionization_Energy(hadron, (config->Te_Min*UMeV), RNG_Stream, v_dE_tmp);
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(v_interaction_type[v] == 1) v_dE_hard[v] = v_dE_tmp[v];
     hadron->v_T[v] = hadron->v_T[v] - v_dE_hard[v];
   }
@@ -292,7 +293,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   if(config->Score_LET == 1 && config->LET_Calculation_Method == 1){
     Total_Stop_Pow(hadron, material, v_material_label, v_stop_pow2);
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_stop_pow[v] = 0.5 * (v_stop_pow[v] + v_init_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_stop_pow2[v]);
     }
   }
@@ -303,7 +304,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
   // }
 
   // Interaction Nucléaire et Scoring de la perte d'énergie
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     #if InterfaceCrossing==RandomHinge
       if(v_mask[v] == 0.0) continue;	// si on croise une interface, on ne continue pas le step.
     #endif
@@ -344,7 +345,7 @@ void hadron_step(Hadron *hadron, DATA_Scoring *scoring, Materials *material, DAT
     
   ALIGNED_(64) VAR_COMPUTE v_density[VLENGTH];
   #pragma omp simd
-  for(int v=0; v<VLENGTH; v++){
+  for(v=0; v<VLENGTH; v++){
     v_density[v] = ct->density[v_index[v]];
   }
   

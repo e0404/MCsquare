@@ -83,8 +83,9 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   Update_Hadron(hadron);
 
   // Compute physical quantities
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(hadron->v_type[v] == Unknown){
       v_material_label[v] = 0;
       v_init_density[v] = 1;
@@ -105,7 +106,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   Total_Stop_Pow(hadron, material, v_material_label, v_stop_pow);
   
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_stop_pow[v] = v_init_density[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_stop_pow[v];
     v_step_max[v] = fmin(fmin(v_Dist_Interface[v], config->D_Max), (config->Epsilon_Max * hadron->v_T[v] / v_stop_pow[v]));
     v_dE_max[v] = v_step_max[v] * v_stop_pow[v];
@@ -114,7 +115,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   Total_Hard_Cross_Section(hadron, material, v_material_label, v_N_el, v_init_density, (config->Te_Min*UMeV), v_dE_max, config, v_section);
  
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_section[v] += 1e-10;
     v_section[v] *= 1.017;
   }
@@ -123,7 +124,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   rand_uniform(RNG_Stream, v_rnd);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_step[v] = -log(v_rnd[v])/v_section[v];
     if(v_step[v] > v_step_max[v]) v_step[v] = v_step_max[v];  // stop at step_max
   }
@@ -133,7 +134,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   Compute_Energy_straggling(hadron, v_N_el, (config->Te_Min*UMeV), v_step, v_straggling);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_straggling[v] = sqrt(v_straggling[v]);
     //v_X0[v] = material[machine->RS_Material].X0 / v_init_density[v];
   }
@@ -144,7 +145,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   rand_uniform(RNG_Stream, v_phi);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_phi[v] = 2*M_PI*v_phi[v];
   
     // Lose energy
@@ -170,7 +171,7 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   Compute_Ionization_Energy(hadron, (config->Te_Min*UMeV), RNG_Stream, v_dE_hard);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(v_step[v] == v_step_max[v]) v_interaction_type[v] = 0; // force ficitious interaction if step >= step_max
     if(hadron->v_type[v] == Unknown) v_dE_hard[v] = 0;  // Ionization
     if(v_interaction_type[v] == 1) hadron->v_T[v] = hadron->v_T[v] - v_dE_hard[v];
@@ -180,8 +181,8 @@ void SemiInfiniteSlab_step(Hadron *hadron, Materials *material, Hadron_buffer *h
   DATA_Scoring tmp;
   int previous_Nbr_hadrons;
 
-  //#pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  #pragma omp simd
+  for(v = 0; v<VLENGTH; v++){
     if(hadron->v_type[v] != Unknown && v_interaction_type[v] == 2){
       previous_Nbr_hadrons = *Nbr_hadrons;
       Compute_Nuclear_interaction(i, hadron, material, v_material_label[v], hadron_list, Nbr_hadrons, &tmp, RNG_Stream, config);

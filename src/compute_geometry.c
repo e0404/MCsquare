@@ -19,8 +19,9 @@ void verif_position(Hadron *hadron, DATA_CT *ct){
   __assume_aligned(&hadron->v_z, 64);  
   __assume_aligned(&hadron->v_type, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(	hadron->v_x[v] < 0 || hadron->v_y[v] < 0 || hadron->v_z[v] < 0 || 
 	hadron->v_x[v] >= ct->Length[0] || hadron->v_y[v] >= ct->Length[1] || hadron->v_z[v] >= ct->Length[2]) hadron->v_type[v] = Unknown;
   }
@@ -41,8 +42,9 @@ void get_CT_Offset(Hadron *hadron, DATA_CT *ct, int *v_index){
   // L'axe x du repère simulation ne correspond pas à l'axe x du repère CT : x_simu = -x_ct + Lx
   // Conversion position -> index CT : index = floor(x/dx)
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_index[v] = 	(int)floor( (-hadron->v_x[v] + ct->Length[0]) / ct->VoxelLength[0] ) 
 			+ ct->GridSize[0] * (int)floor( hadron->v_y[v] / ct->VoxelLength[1] ) 
 			+ ct->GridSize[0] * ct->GridSize[1] * (int)floor( hadron->v_z[v] / ct->VoxelLength[2] );
@@ -81,9 +83,10 @@ void Dist_To_Material_Interface(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE dist_ma
   Copy_Hadron_struct(&tmp, hadron);
 
   int run = 0;
+  int v;
 
   #pragma omp simd reduction(+:run)
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_mass_distance[v] = 0;
     v_index[v] = v_init_index[v];
     v_index2[v] = v_init_index[v];
@@ -99,7 +102,7 @@ void Dist_To_Material_Interface(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE dist_ma
     run = 0;
 
     #pragma omp simd reduction(+:run)
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if((v_mass_distance[v] / v_init_density[v]) < dist_max && ct->material[v_index[v]] == ct->material[v_index2[v]]){
         v_index[v] = v_index2[v];
         v_mass_distance[v] += v_step[v] * ct->density[v_index[v]];
@@ -117,7 +120,7 @@ void Dist_To_Material_Interface(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE dist_ma
   }
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] = v_mass_distance[v] / v_init_density[v];
   }
 
@@ -140,8 +143,9 @@ void Dist_To_Interface(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_result){
   ALIGNED_(64) VAR_COMPUTE v_DistY[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_DistZ[VLENGTH];
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_DistX[v] = fabs(((floor(hadron->v_x[v]/ct->VoxelLength[0]) + (hadron->v_u[v] > 0)) * ct->VoxelLength[0] - hadron->v_x[v])/hadron->v_u[v]);
     v_DistY[v] = fabs(((floor(hadron->v_y[v]/ct->VoxelLength[1]) + (hadron->v_v[v] > 0)) * ct->VoxelLength[1] - hadron->v_y[v])/hadron->v_v[v]);
     v_DistZ[v] = fabs(((floor(hadron->v_z[v]/ct->VoxelLength[2]) + (hadron->v_w[v] > 0)) * ct->VoxelLength[2] - hadron->v_z[v])/hadron->v_w[v]);
@@ -171,8 +175,9 @@ void Update_position(Hadron *hadron, VAR_COMPUTE *v_step){
   __assume_aligned(&hadron->v_w, 64); 
   __assume_aligned(v_step, 64); 
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     hadron->v_x[v] += v_step[v] * hadron->v_u[v];
     hadron->v_y[v] += v_step[v] * hadron->v_v[v];
     hadron->v_z[v] += v_step[v] * hadron->v_w[v];
@@ -199,11 +204,12 @@ void CT_Transport(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VAR_COMPUTE *v_
   ALIGNED_(64) VAR_COMPUTE v_HingeDistance[VLENGTH];
 
   int run = 0;
+  int v;
 
   Dist_To_Interface(hadron, ct, v_step);
 
   #pragma omp simd reduction(+:run)
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_MassDistance[v] = v_s[v] * v_init_density[v];
     v_index[v] = v_init_index[v];
     v_density[v] = ct->density[v_index[v]];
@@ -217,7 +223,7 @@ void CT_Transport(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VAR_COMPUTE *v_
   while(run != 0){
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(v_MassDistance[v] > v_step[v] * v_density[v]) v_MassDistance[v] -= v_step[v] * v_density[v];
       else{
         v_run[v] = 0.0;
@@ -237,7 +243,7 @@ void CT_Transport(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VAR_COMPUTE *v_
     run = 0;
 
     #pragma omp simd reduction(+:run)
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(hadron->v_type[v] == Unknown) v_run[v] = 0.0;
       v_density[v] = ct->density[v_index[v]];
       if(v_index[v] > ct->Nbr_voxels || v_index[v] < 0){
@@ -249,7 +255,7 @@ void CT_Transport(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VAR_COMPUTE *v_
   }
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_step[v] = v_MassDistance[v] / v_density[v];
     if(v_hinge_index[v] == -1) v_hinge_index[v] = v_index[v];
   }
@@ -283,9 +289,10 @@ void CT_Transport_SPR(Hadron *hadron, DATA_CT *ct, Materials *material, VAR_COMP
   Dist_To_Interface(hadron, ct, v_step);
 
   int run = 0;
+  int v;
 
   #pragma omp simd reduction(+:run)
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_index[v] = v_init_index[v];
     v_material_label[v] = ct->material[v_index[v]];
     v_density[v] = v_init_density[v];
@@ -303,7 +310,7 @@ void CT_Transport_SPR(Hadron *hadron, DATA_CT *ct, Materials *material, VAR_COMP
   while(run != 0){
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(v_MassDistance[v] > v_step[v] * v_density[v] * v_stop_pow[v]){ 
         v_MassDistance[v] -= v_step[v] * v_density[v] * v_stop_pow[v];
       }
@@ -325,7 +332,7 @@ void CT_Transport_SPR(Hadron *hadron, DATA_CT *ct, Materials *material, VAR_COMP
     run = 0;
 
     #pragma omp simd reduction(+:run)
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(hadron->v_type[v] == Unknown) v_run[v] = 0.0;
       v_density[v] = ct->density[v_index[v]];
       if(v_material_label[v] != ct->material[v_index[v]]){
@@ -344,7 +351,7 @@ void CT_Transport_SPR(Hadron *hadron, DATA_CT *ct, Materials *material, VAR_COMP
   }
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_step[v] = v_MassDistance[v] / (v_density[v] * v_stop_pow[v]);
     if(v_hinge_index[v] == -1) v_hinge_index[v] = v_index[v];
   }
@@ -376,9 +383,10 @@ void CT_Transport_Random_Hinge(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VA
   Dist_To_Interface(hadron, ct, v_step);
 
   int run = 0;
+  int v;
 
   #pragma omp simd reduction(+:run)
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_MassDistance[v] = v_s[v] * v_init_density[v];
     v_index[v] = v_init_index[v];
     v_density[v] = ct->density[v_index[v]];
@@ -392,8 +400,9 @@ void CT_Transport_Random_Hinge(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VA
 
   while(run != 0){
 
+    int v;
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(v_MassDistance[v] > v_step[v] * v_density[v] && v_run[v] != 0.0){
         v_MassDistance[v] -= v_step[v] * v_density[v];
       }
@@ -415,7 +424,7 @@ void CT_Transport_Random_Hinge(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VA
     run = 0;
 
     #pragma omp simd reduction(+:run)
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(hadron->v_type[v] == Unknown) v_run[v] = 0.0;
       v_density[v] = ct->density[v_index[v]];
       if(v_index[v] > ct->Nbr_voxels || v_index[v] < 0) v_run[v] = 0.0;
@@ -429,7 +438,7 @@ void CT_Transport_Random_Hinge(Hadron *hadron, DATA_CT *ct, VAR_COMPUTE *v_s, VA
   }  
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(v_mask[v] == 0.0) v_MassDistance[v] = 0.0;
     v_step[v] = v_MassDistance[v] / v_density[v];
     if(v_hinge_index[v] == -1 && v_mask[v] != 0.0) v_hinge_index[v] = v_index[v];
@@ -457,8 +466,9 @@ void Update_direction(Hadron *hadron, VAR_COMPUTE *v_theta, VAR_COMPUTE *v_phi){
   ALIGNED_(64) VAR_COMPUTE v_prev_u[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_norme[VLENGTH];
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_cosT[v] = cos(v_theta[v]);
     v_sinT[v] = sin(v_theta[v]);
     v_cosP[v] = cos(v_phi[v]);

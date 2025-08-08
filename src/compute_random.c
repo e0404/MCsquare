@@ -12,30 +12,33 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 
 #include "include/compute_random.h"
 
-void Init_RND(DATA_config *config, VAR_RND_SEED RNDstream, int offset){
+
+void Init_RND(DATA_config *config, VAR_RND_SEED* RNDstream, int offset){
 
   #if USE_MKL_LIB==1
 
     if(config->RNG_Seed == 0){
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, time(NULL)+offset);	// initialisation du stream du RNG avec le seed (time+thread_id)
+      vslNewStream(RNDstream, VSL_BRNG_MCG59, time(NULL)+offset);	// initialize the RNG for each thread individually with a seed = time+thread_id*10000
     }
     else{
-      vslNewStream(&RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+offset);
+      vslNewStream(RNDstream, VSL_BRNG_MCG59, config->RNG_Seed+offset);
     }
 
   #else
 
     if(config->RNG_Seed == 0){
-      *RNDstream = time(NULL)+offset;	// initialisation du stream du RNG avec le seed (time+thread_id)
+      //**RNDstream = (VAR_RND_SEED) time(NULL)+offset;	// initialize the RNG for each thread individually with a seed = time+offset
+      pcg32_init((VAR_RND_SEED_TYPE) (time(NULL) + offset), *RNDstream);
     }
     else{
-      *RNDstream = config->RNG_Seed+offset;
+      //**RNDstream = (VAR_RND_SEED) config->RNG_Seed+offset;
+      pcg32_init((VAR_RND_SEED_TYPE) (config->RNG_Seed + offset), *RNDstream);
     }
 
   #endif
 
   ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];
-  rand_uniform(RNDstream, v_rnd);				// on genere une première fois un set de nbr car les premiers semblent mal distribués
+  rand_uniform(*RNDstream, v_rnd);				// the RNG is called here because random numbers seems not well distributed the first time.
 
 }
 
@@ -80,9 +83,9 @@ VAR_COMPUTE single_rand_uniform(VAR_RND_SEED seedp){
   #else
 
     #if VAR_COMPUTE_PRECISION==1
-      rnd = (1.0-FLT_EPSILON) * ((VAR_COMPUTE)rand_r(seedp) / RAND_MAX) + FLT_EPSILON;
+      rnd = (1.0 - FLT_EPSILON) * ((VAR_COMPUTE) pcg32(seedp) / UINT32_MAX) + FLT_EPSILON;
     #else
-      rnd = (1.0-DBL_EPSILON) * ((VAR_COMPUTE)rand_r(seedp) / RAND_MAX) + DBL_EPSILON;
+      rnd = (1.0 - DBL_EPSILON) * ((VAR_COMPUTE) pcg32(seedp) / UINT32_MAX) + DBL_EPSILON;
     #endif
 
   #endif
@@ -105,17 +108,19 @@ void rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_mu, VAR_
       vdRngGaussian( VSL_RNG_METHOD_GAUSSIAN_BOXMULLER, seedp, VLENGTH, v_rnd, 0.0, 1.0);		// VSL_RNG_METHOD_GAUSSIAN_ICDF
     #endif
 
+    int v;
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_rnd[v] = v_sigma[v] * v_rnd[v] + v_mu[v];
     }
 
   #else
 
-    int i;
-    for(i=0; i<VLENGTH; i++){
-      v_rnd[i] = single_rand_normal(seedp, v_mu[i], v_sigma[i]);
-    }
+  int i;
+  for (i = 0; i < VLENGTH; i += 2) {
+      //v_rnd[i] = single_rand_normal(seedp, 0.0, v_sigma[i]);
+      box_muller_rand_normal(seedp, &v_rnd[i], &v_rnd[i + 1], v_mu[i], v_mu[i+1], v_sigma[i], v_sigma[i + 1]);
+  }
 
   #endif
 
@@ -136,23 +141,24 @@ void rand_normal_zero(VAR_RND_SEED seedp, VAR_COMPUTE *v_rnd, VAR_COMPUTE *v_sig
       vdRngGaussian( VSL_RNG_METHOD_GAUSSIAN_BOXMULLER, seedp, VLENGTH, v_rnd, 0.0, 1.0);		// VSL_RNG_METHOD_GAUSSIAN_ICDF
     #endif
 
+    int v;
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_rnd[v] = v_sigma[v] * v_rnd[v];
     }
 
   #else
 
     int i;
-    for(i=0; i<VLENGTH; i++){
-      v_rnd[i] = single_rand_normal(seedp, 0.0, v_sigma[i]);
+    for(i=0; i<VLENGTH; i+=2){
+        //v_rnd[i] = single_rand_normal(seedp, 0.0, v_sigma[i]);
+        box_muller_rand_normal(seedp, &v_rnd[i],&v_rnd[i+1], 0.0,0.0, v_sigma[i], v_sigma[i+1]);
     }
 
   #endif
 
   return;
 }
-
 
 VAR_COMPUTE single_rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE mu, VAR_COMPUTE sigma){
 
@@ -171,12 +177,52 @@ VAR_COMPUTE single_rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE mu, VAR_COMPUTE s
 
   #else
 
-    VAR_COMPUTE rnd1 = single_rand_uniform(seedp); 
-    VAR_COMPUTE rnd2 = single_rand_uniform(seedp);
-
-    return sigma * sqrt(-2*log(rnd1))*cos(2*M_PI*rnd2) + mu;
-    // 2nd number: sqrt(-2*log(u1))*sin(2*M_PI*u2)
+    VAR_COMPUTE rnd1, rnd2;
+    box_muller_rand_normal(seedp, &rnd1, &rnd2, mu, 0.0, sigma, 1.0);
+    return rnd1;
 
   #endif
 
 }
+
+//Direct call to box muller transform.
+void box_muller_rand_normal(VAR_RND_SEED seedp, VAR_COMPUTE* rnd1, VAR_COMPUTE* rnd2, const VAR_COMPUTE mu1, const  VAR_COMPUTE mu2, const VAR_COMPUTE sigma1, const  VAR_COMPUTE sigma2)
+{
+    VAR_COMPUTE rnd1_uni = single_rand_uniform(seedp);
+    VAR_COMPUTE rnd2_uni = single_rand_uniform(seedp);
+
+    VAR_COMPUTE r = sqrt(-2.0 * log(rnd1_uni));
+    VAR_COMPUTE phi = 2 * M_PI * rnd2_uni;
+
+    *rnd1 = sigma1 * r * cos(phi) + mu1;
+    *rnd2 = sigma2 * r * sin(phi) + mu2;
+}
+
+//PCG-XSH-RR
+uint32_t rotr32(uint32_t x, unsigned r)
+{
+    return x >> r | x << (-r & 31);
+}
+
+uint32_t pcg32(uint64_t* seedp)
+{
+    uint64_t const multiplier = 6364136223846793005u;
+    uint64_t const increment = 1442695040888963407u;
+
+    uint64_t x = *seedp;
+    unsigned count = (unsigned)(x >> 59);
+    *seedp = x * multiplier + increment;
+    x ^= x >> 18;
+
+    return rotr32((uint32_t)(x >> 27), count);
+}
+
+void pcg32_init(uint64_t seed, uint64_t* seedp)
+{
+    uint64_t const increment = 1442695040888963407u;
+    *seedp = seed + increment;
+    (void)pcg32(seedp); //initial run
+}
+
+
+

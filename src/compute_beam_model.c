@@ -605,8 +605,9 @@ void Generate_PBS_particle(Hadron_buffer *hadron, int *Nbr_hadrons, VAR_DATA CT_
   ALIGNED_(64) VAR_COMPUTE v_rnd[VLENGTH];
   rand_uniform(RNG_Stream, v_rnd);
   
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_rnd[v] = v_rnd[v] * plan->cumulative_weight;
   }
 

@@ -27,8 +27,9 @@ void Init_particles(Hadron *hadron){
   __assume_aligned(&hadron->v_charge, 64);
   __assume_aligned(&hadron->v_mass, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     hadron->v_x[v] = 0.0;
     hadron->v_y[v] = 0.0;
     hadron->v_z[v] = 0.0;
@@ -141,8 +142,9 @@ void Update_Hadron(Hadron *hadron){
   __assume_aligned(&hadron->v_beta2, 64);
   __assume_aligned(&hadron->v_Te_max, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     hadron->v_E[v] = hadron->v_T[v] + hadron->v_mass[v] * MC2_PRO;	// Energie totale du proton
     hadron->v_gamma[v] = hadron->v_E[v] / (hadron->v_mass[v] * MC2_PRO);	// Paramètre relativiste gamma du proton
     hadron->v_beta2[v] = 1 - (1/(hadron->v_gamma[v]*hadron->v_gamma[v]));	// Betta au carré (v/c)^2
@@ -190,8 +192,9 @@ void Copy_Hadron_struct(Hadron *destination, Hadron *origin){
   __assume_aligned(&origin->v_beta2, 64);
   __assume_aligned(&origin->v_Te_max, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     destination->v_x[v] = origin->v_x[v];
     destination->v_y[v] = origin->v_y[v];
     destination->v_z[v] = origin->v_z[v];

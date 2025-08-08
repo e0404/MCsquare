@@ -30,8 +30,9 @@ void Total_Stop_Pow(Hadron *hadron, Materials *material, int *v_material_label, 
   ALIGNED_(64) VAR_COMPUTE v_Stop_Pow1[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_Stop_Pow2[VLENGTH];
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_scaled_T[v] = hadron->v_T[v]/hadron->v_mass[v];
     v_scaled_T2[v] = v_scaled_T[v] / (UMeV*PSTAR_BIN);
     v_index[v] = (int)floor(v_scaled_T2[v]);
@@ -60,11 +61,14 @@ void Total_Hard_Cross_Section(Hadron *hadron, Materials *material, int *v_materi
   ALIGNED_(64) VAR_COMPUTE v_cross_section[VLENGTH];
   cross_section_ionization(hadron, v_N_el, Te_min, v_cross_section);
 
+  int v; // simd counter
+
   ALIGNED_(64) VAR_COMPUTE v_tmp_result[VLENGTH];
   if(config->Simulate_Nuclear_Interactions == 1){
     total_Nuclear_cross_section(hadron, material, v_material_label, v_density, v_tmp_result);
+
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_cross_section[v] += v_tmp_result[v];
     }
   }
@@ -74,7 +78,7 @@ void Total_Hard_Cross_Section(Hadron *hadron, Materials *material, int *v_materi
   Copy_Hadron_struct(&tmp, hadron);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     tmp.v_T[v] = hadron->v_T[v] - v_dE_max[v];
     if(tmp.v_T[v] <= 0) tmp.v_T[v] = hadron->v_T[v];
   }
@@ -86,13 +90,13 @@ void Total_Hard_Cross_Section(Hadron *hadron, Materials *material, int *v_materi
   if(config->Simulate_Nuclear_Interactions == 1){
     total_Nuclear_cross_section(&tmp, material, v_material_label, v_density, v_tmp_result);
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_cross_section2[v] += v_tmp_result[v];
     }
   }
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] = fmax(v_cross_section[v], v_cross_section2[v]);
   }
 
@@ -119,8 +123,9 @@ void get_interaction_type(Hadron *hadron, Materials *material, int *v_material_l
   ALIGNED_(64) VAR_COMPUTE v_ionization_section[VLENGTH];
   cross_section_ionization(hadron, v_N_el, Te_min, v_ionization_section);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] = 0;
     v_ionization_section[v] = v_ionization_section[v] / v_tot_section[v];
     if(v_rnd[v] <= v_ionization_section[v]) v_result[v] = 1;
@@ -131,7 +136,7 @@ void get_interaction_type(Hadron *hadron, Materials *material, int *v_material_l
     total_Nuclear_cross_section(hadron, material, v_material_label, v_density, v_nuclear_section);
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_nuclear_section[v] = (v_nuclear_section[v] / v_tot_section[v]) + v_ionization_section[v];
       if(v_rnd[v] <= v_ionization_section[v]) v_result[v] = 1;
       else if(v_rnd[v] <= v_nuclear_section[v]) v_result[v] = 2;
@@ -141,7 +146,7 @@ void get_interaction_type(Hadron *hadron, Materials *material, int *v_material_l
 
   else{
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(v_rnd[v] <= v_ionization_section[v]) v_result[v] = 1;
     }
   }
@@ -167,8 +172,9 @@ void cross_section_ionization(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE T
 
   ALIGNED_(64) VAR_COMPUTE v_log_result[VLENGTH];
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_log_result[v] = hadron->v_Te_max[v]/Te_min;
     v_log_result[v] = log(v_log_result[v]);
 
@@ -211,8 +217,9 @@ void Compute_L(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Mate
   
   Total_Stop_Pow(hadron, material, v_material_label, v_result);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_log_result[v] = hadron->v_Te_max[v]/Te_min;
     v_log_result[v] = log(v_log_result[v]);
 
@@ -260,8 +267,9 @@ void Compute_dE2(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Ma
 
   Compute_L(hadron, v_N_el, v_density, material, Te_min, v_material_label, v_L);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_dE1[v] = v_L[v] * v_s[v];
     v_tau1[v] = hadron->v_T[v] / MC2_PRO;
     v_e1[v] = v_dE1[v] / hadron->v_T[v];
@@ -274,7 +282,7 @@ void Compute_dE2(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Ma
   Copy_Hadron_struct(&tmp, hadron);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     tmp.v_T[v] = hadron->v_T[v] * CONST_DERIV;
   }
   Update_Hadron(&tmp);
@@ -287,7 +295,7 @@ void Compute_dE2(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_density, Ma
   Compute_L(&tmp, v_N_el, v_density, material, Te_min, v_material_label, v_L2);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_C2[v] = v_L2[v] * tmp.v_beta2[v];
     v_deriv_C[v] = (v_C2[v] - v_C[v]) / (tmp.v_T[v] - hadron->v_T[v]);
     v_b[v] = hadron->v_T[v] * v_deriv_C[v] / v_C[v];
@@ -327,8 +335,9 @@ void Compute_Energy_straggling(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE 
   __assume_aligned(&hadron->v_beta2, 64);
   __assume_aligned(&hadron->v_Te_max, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] = 	2*M_PI*R_ELEC*R_ELEC*MC2_ELEC * v_N_el[v] * hadron->v_charge[v]*hadron->v_charge[v] * v_s[v] 
 			* fmin(Te_min, hadron->v_Te_max[v]) 
 			* (1 - 0.5*hadron->v_beta2[v]) / hadron->v_beta2[v];
@@ -354,8 +363,9 @@ void Compute_MS_Fippel(Hadron *hadron, VAR_COMPUTE *v_s, VAR_COMPUTE *v_X0, VAR_
   __assume_aligned(&hadron->v_beta2, 64);
   __assume_aligned(&hadron->v_Te_max, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] = (CONST_MS_Fippel*UMeV * hadron->v_charge[v] / (hadron->v_beta2[v]*hadron->v_gamma[v]*MC2_PRO)) * sqrt(v_s[v]/v_X0[v]);
   }
 
@@ -378,9 +388,10 @@ void Compute_Ionization_Energy(Hadron *hadron, VAR_COMPUTE Te_min, VAR_RND_SEED 
   ALIGNED_(64) VAR_COMPUTE v_mask[VLENGTH];
 
   int run = 0;
+  int v;
 
   #pragma omp simd reduction(+:run)
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_mask[v] = 1.0;
     if(hadron->v_Te_max[v] < Te_min){
       v_result[v] = 0.0;
@@ -393,7 +404,7 @@ void Compute_Ionization_Energy(Hadron *hadron, VAR_COMPUTE Te_min, VAR_RND_SEED 
     rand_uniform(RNG_Stream, v_rnd);
 
     #pragma omp simd
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       v_Te[v] = ( Te_min * hadron->v_Te_max[v]) / ((1-v_rnd[v]) * hadron->v_Te_max[v] + v_rnd[v] * Te_min);
       v_g[v] = 1.0 - hadron->v_beta2[v] * (v_Te[v]/hadron->v_Te_max[v]) + v_Te[v]*v_Te[v]/(2*hadron->v_E[v]*hadron->v_E[v]);
     }
@@ -403,7 +414,7 @@ void Compute_Ionization_Energy(Hadron *hadron, VAR_COMPUTE Te_min, VAR_RND_SEED 
     run = 0;
 
     #pragma omp simd reduction(+:run)
-    for(int v = 0; v<VLENGTH; v++){
+    for(v = 0; v<VLENGTH; v++){
       if(v_rnd[v] <= v_g[v] && v_mask[v] == 1.0){
         v_result[v] = v_Te[v];
         v_mask[v] = 0.0;

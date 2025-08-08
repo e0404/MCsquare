@@ -64,8 +64,9 @@ void Run_simulation(DATA_config *config, Materials *material, DATA_CT *ct, plan_
 	  batch = 1;
 	  Display_simulation_progression(config, "\nThe statistical uncertainty is still very high after 10 batches.\nSum previous batches and continue simulation with 10x more particles per batch.\nbatch 1 completed\n");
 	  
+    int j;
 	  #pragma omp parallel for
-	  for(int j=0; j<Tot_scoring.Nbr_voxels; j++){
+	  for(j=0; j<Tot_scoring.Nbr_voxels; j++){
 	    Tot_scoring.dose_squared[j] = Tot_scoring.dose[j] * Tot_scoring.dose[j];
 	  }
 	  
@@ -377,12 +378,12 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
 
   char progress_message[50];
 
-  VAR_SCORING *ptr_dose_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_energy_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_PG_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_PG_spectrum[config->Num_Threads];
-  VAR_SCORING *ptr_LET_scoring[config->Num_Threads];
-  VAR_SCORING *ptr_LET_denominator[config->Num_Threads];
+  VAR_SCORING **ptr_dose_scoring = (VAR_SCORING **)malloc(config->Num_Threads * sizeof(VAR_SCORING *));
+  VAR_SCORING **ptr_energy_scoring = (VAR_SCORING **)malloc(config->Num_Threads * sizeof(VAR_SCORING *));
+  VAR_SCORING **ptr_PG_scoring = (VAR_SCORING **)malloc(config->Num_Threads * sizeof(VAR_SCORING *));
+  VAR_SCORING **ptr_PG_spectrum = (VAR_SCORING **)malloc(config->Num_Threads * sizeof(VAR_SCORING *));
+  VAR_SCORING **ptr_LET_scoring = (VAR_SCORING **)malloc(config->Num_Threads * sizeof(VAR_SCORING *));
+  VAR_SCORING **ptr_LET_denominator = (VAR_SCORING **)malloc(config->Num_Threads * sizeof(VAR_SCORING *));
 
   // Parallelisation
   #pragma omp parallel shared(config, material, ct, plan, machine, Fields, Num_simulated_primaries, Tot_scoring, ptr_energy_scoring, ptr_PG_scoring, ptr_PG_spectrum, ptr_LET_scoring, ptr_LET_denominator, progress_message)
@@ -446,8 +447,9 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
 
 	  else{
             count = 0;
+            int v;
 	    #pragma omp simd reduction(+:count)
-            for(int v = 0; v<VLENGTH; v++){
+            for(v = 0; v<VLENGTH; v++){
 	      count += hadron.v_type[v];
             }
 	    if(count == 0) stop = 1;
@@ -549,10 +551,18 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
       }
     }
 
-    // Delete dynamic variables
-    Free_Scoring(&scoring);
+  // Delete dynamic variables
+  Free_Scoring(&scoring);
 
   }  // end of Parallelization
+
+  // Free dynamically allocated arrays for thread pointers
+  free(ptr_dose_scoring);
+  free(ptr_energy_scoring);
+  free(ptr_PG_scoring);
+  free(ptr_PG_spectrum);
+  free(ptr_LET_scoring);
+  free(ptr_LET_denominator);
 
   return Num_simulated_primaries;
 

@@ -56,8 +56,9 @@ void vec_sign(VAR_COMPUTE *v_vec, VAR_COMPUTE *v_sign){
   __assume_aligned(v_vec, 64);
   __assume_aligned(v_sign, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_sign[v] = (v_vec[v] > 0.0) - (v_vec[v] < 0.0);
   }
 
@@ -90,8 +91,9 @@ void vec_Linear_Interpolation(VAR_COMPUTE *v_x, VAR_COMPUTE *v_x1, VAR_COMPUTE *
   // Calcul de la pente p = (y2 - y1) / (x2 - x1)
   // Calcul de la valeur interpolée y = p*(x-x1) + y1
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_result[v] = ((v_y2[v] - v_y1[v]) / (v_x2[v] - v_x1[v]))*(v_x[v] - v_x1[v]) + v_y1[v];
   }
 
@@ -243,8 +245,9 @@ inline void my_log(VAR_COMPUTE *v_data, VAR_COMPUTE *v_result){
 	ALIGNED_(64) uint32_t i[VLENGTH]; 
 	} vx;
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     vx.f[v] = (float)v_data[v];
   }
 
@@ -254,7 +257,7 @@ inline void my_log(VAR_COMPUTE *v_data, VAR_COMPUTE *v_result){
 	} mx;
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     mx.i[v] = (vx.i[v] & 0x007FFFFF) | 0x3f000000;
 
     v_result[v] = vx.i[v];

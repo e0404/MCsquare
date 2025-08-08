@@ -18,8 +18,9 @@ void Fippel_Stop_Pow_correction(Hadron *hadron, VAR_COMPUTE *v_density, VAR_COMP
   __assume_aligned(v_density, 64);
   __assume_aligned(v_result, 64);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     if(v_density[v] >= 0.9) v_result[v] = 1.0123 - 3.386e-5 * hadron->v_T[v]/UMeV + 0.291*(1+pow(hadron->v_T[v]/UMeV, -0.3421)) * (pow(v_density[v], -0.7) - 1);
     else if(v_density[v] > 0.0012 && v_density[v] <= 0.26) v_result[v] = ((0.9925 - 0.8815) / (0.26 - 0.0012))*(v_density[v] - 0.0012) + 0.8815;  // lung
     else if(v_density[v] > 0.26 && v_density[v] < 0.9){
@@ -66,8 +67,9 @@ void Compute_dE2_Fippel(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_dens
   Fippel_Stop_Pow_correction(hadron, v_density, v_StpCorr);
   Compute_L(hadron, v_N_el, v_density, material, Te_min, v_material_label, v_L);
 
+  int v;
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_L[v] = v_L[v] * v_StpCorr[v];
     v_dE1[v] = v_L[v] * v_s[v];
     v_tau1[v] = hadron->v_T[v] / MC2_PRO;
@@ -81,7 +83,7 @@ void Compute_dE2_Fippel(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_dens
   Copy_Hadron_struct(&tmp, hadron);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     tmp.v_T[v] = hadron->v_T[v] * CONST_DERIV;
   }
 
@@ -98,7 +100,7 @@ void Compute_dE2_Fippel(Hadron *hadron, VAR_COMPUTE *v_N_el, VAR_COMPUTE *v_dens
   Compute_L(&tmp, v_N_el, v_density, material, Te_min, v_material_label, v_L2);
 
   #pragma omp simd
-  for(int v = 0; v<VLENGTH; v++){
+  for(v = 0; v<VLENGTH; v++){
     v_L2[v] = v_L2[v] * v_StpCorr2[v];
     v_C2[v] = v_L2[v] * tmp.v_beta2[v];
     v_deriv_C[v] = (v_C2[v] - v_C[v]) / (tmp.v_T[v] - hadron->v_T[v]);
