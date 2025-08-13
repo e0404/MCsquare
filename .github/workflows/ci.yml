@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-gcc:
+    name: ubuntu-gcc-nomkl
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Configure (Release)
+        run: |
+          cmake -S . -B build \
+            -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-release
+          path: build/
+          retention-days: 7
+
+  windows-msvc:
+    name: windows-msvc-2022-nomkl
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure (Release, x64)
+        run: |
+          cmake -S . -B build ^
+            -G "Visual Studio 17 2022" ^
+            -A x64
+        shell: cmd
+
+      - name: Build
+        run: cmake --build build --config Release -- /m
+        shell: cmd
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+        shell: bash
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-windows-release
+          path: |
+            build/**/Release/**
+            build/Release/**
+          retention-days: 7
