@@ -38,12 +38,14 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      - name: Package
+        run: cpack -C Release -G TGZ --config ./build/CPackConfig.cmake
+
       - name: Upload build artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-linux-release
-          path: build/
+          name: ${{ github.job }}-package
+          path: *.tar.gz
           retention-days: 7
 
   windows-msvc:
@@ -68,12 +70,12 @@ jobs:
         run: ctest --test-dir build -C Release --output-on-failure
         shell: bash
 
+      - name: Package
+        run: cpack -C Release -G ZIP --config .\build\CPackConfig.cmake
+
       - name: Upload build artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-windows-release
-          path: |
-            build/**/Release/**
-            build/Release/**
+          name: ${{ github.job }}-package
+          path: *.zip
           retention-days: 7
