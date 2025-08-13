@@ -39,6 +39,18 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
     #pragma GCC diagnostic ignored "-Wunused-value"
     #define __assume_aligned __builtin_assume_aligned
   #endif
+
+  #ifndef _MSC_VER
+    #define HAVE_DIRENT_H 1
+  #endif
+
+  #define HAVE_DIRECT_H 1
+
+  #if defined(_MSC_VER)
+    #define MKDIR_COMPAT(folder, perm) _mkdir((folder))
+  #else
+    #define MKDIR_COMPAT(folder, perm) mkdir((folder), (perm))
+  #endif
 #endif
 
 #ifdef VERSION

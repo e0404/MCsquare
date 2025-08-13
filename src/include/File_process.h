@@ -18,13 +18,17 @@ The MCsquare software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if defined(_MSC_VER)
+#ifdef HAVE_DIRENT_H
+  #include <dirent.h>
+#elif WIN32
   #include "lib/win_dirent.h"
 #else
-  #include <dirent.h>
+  #error "No compatible dirent.h found."
 #endif
 
-#include "direct.h"
+#ifdef HAVE_DIRECT_H
+  #include "direct.h"
+#endif
 
 
 int File_exists(const char *FileName);

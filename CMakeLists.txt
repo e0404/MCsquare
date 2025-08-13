@@ -116,7 +116,7 @@ target_sources(MCsquare
 
 set_property(TARGET MCsquare PROPERTY C_STANDARD 99)
 
-#try to find MKL. Path has usually
+set(MKL_LINK "static" CACHE STRING "MKL Link Type")
 find_package(MKL CONFIG)
 if (MKL_FOUND)
 	option(USE_MKL_LIB "Use the Intel MKL Libraries" ON)
@@ -131,19 +131,20 @@ endif(MKL_FOUND AND USE_MKL_LIB)
 #Find OpenMP package and determine version... not working well at the moment (Version not read)
 find_package(OpenMP)
 if (OpenMP_C_FOUND)
-	#We can only use simd pragmas with visual studio 2019 (v142) and the openmp:experimental switch
-	if (MSVC AND MSVC_VERSION LESS "1920" AND NOT (CMAKE_C_COMPILER_ID STREQUAL "Intel"))
-		message("${MSVC_TOOLSET_VERSION}")
-		message("No OpenMP simd pragmas available in OpenMP Version ${OpenMP_VERSION}!")
-	else()
-		if(MSVC AND NOT (CMAKE_C_COMPILER_ID STREQUAL "Intel"))
-			set(OpenMP_C_FLAGS "/openmp:experimental" CACHE STRING "C Compiler Flags for OpenMP Parallelization" FORCE)
-			message(STATUS "Adding MSVC-2019 specific /openmp:experimental flag for enabling OpenMP SIMD pragmas")
-		elseif(MSVC AND (CMAKE_C_COMPILER_ID STREQUAL "Intel"))
-			set(OpenMP_C_FLAGS "/Qopenmp" CACHE STRING "C Compiler Flags for OpenMP Parallelization" FORCE)
-		else()
-		endif()
-	endif()
+    # Enable appropriate OpenMP flags based on compiler
+    if(MSVC)
+        message(STATUS "Configuring OpenMP with simd vectorization for MSVC compiler id ${CMAKE_C_COMPILER_ID} (version ${MSVC_VERSION}) with toolset ${MSVC_TOOLSET_VERSION}")
+
+        if(CMAKE_C_COMPILER_ID MATCHES "Intel")
+            set(OpenMP_C_FLAGS "/Qopenmp" CACHE STRING "C Compiler Flags for OpenMP Parallelization" FORCE)
+        elseif(MSVC_VERSION GREATER_EQUAL 1920)
+            set(OpenMP_C_FLAGS "/openmp:experimental" CACHE STRING "C Compiler Flags for OpenMP Parallelization" FORCE)
+            message(STATUS "Adding MSVC>=2019 specific /openmp:experimental flag for enabling OpenMP SIMD pragmas")
+        else()
+            message("No OpenMP simd pragmas available in OpenMP Version ${OpenMP_VERSION} for compiler ${CMAKE_C_COMPILER_ID}")
+        endif()
+    endif()
+
 	target_compile_options(MCsquare PUBLIC ${OpenMP_C_FLAGS})
 	target_link_libraries(MCsquare PUBLIC OpenMP::OpenMP_C)	
 endif(OpenMP_C_FOUND)
@@ -202,8 +203,6 @@ endif()
 include(CheckSymbolExists)
 check_symbol_exists(strtok_r "stdio.h;string.h;" HAVE_STRTOK_R)
 check_symbol_exists(strtok_s "stdio.h;string.h;" HAVE_STRTOK_S)
-check_symbol_exists(mkdir "sys/stat.h;" HAVE_MKDIR)
-check_symbol_exists(_mkdir "sys/stat.h;" HAVE__MKDIR)
 
 include(CheckCSourceCompiles)
 check_c_source_compiles("void *aa_test(void *x) { return __assume_aligned(x, 16);}\nint main(void) { return 0; }" HAVE_ASSUME_ALIGNED)
@@ -211,6 +210,24 @@ check_c_source_compiles("void *aa_test(void *x) { return __builtin_assume_aligne
 
 check_c_source_compiles("float aa_test() { __attribute__((aligned(64))) float x[16]; return x[0];} \nint main(void) { return 0; }" HAVE_ATTRIBUTE_ALIGNED)
 check_c_source_compiles("float aa_test() { __declspec(align(64)) float x[16]; return x[0];} \nint main(void) { return 0; }" HAVE_DECLSPEC_ALIGNED)
+
+if(HAVE_DIRECT_H)
+  SET(MKDIR_INCLUDES "
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <direct.h>
+  ")
+else()
+    SET(MKDIR_INCLUDES "
+    #include <sys/types.h>
+    #include <sys/stat.h>
+    ")
+endif()
+
+check_c_source_compiles("${MKDIR_INCLUDES} int main() { return mkdir(\"test\", 0755); }" HAVE_MKDIR_TWO_ARGS)
+check_c_source_compiles("${MKDIR_INCLUDES} int main() { return mkdir(\"test\"); }" HAVE_MKDIR_ONE_ARG)
+check_c_source_compiles("${MKDIR_INCLUDES} int main() { return _mkdir(\"test\", 0755); }" HAVE__MKDIR_TWO_ARGS)
+check_c_source_compiles("${MKDIR_INCLUDES} int main() { return _mkdir(\"test\"); }" HAVE__MKDIR_ONE_ARG)
 
 include(CheckTypeSize)
 check_type_size("ssize_t" SIZEOF_SSIZE_T)

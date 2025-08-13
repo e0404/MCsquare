@@ -180,13 +180,7 @@ unsigned int getBoolean(char *str){
 
 
 void CreateDir(char *DirName){
-
-  #if defined(_MSC_VER)
-    mkdir(DirName);
-  #else
-    mkdir(DirName, 0755);
-  #endif
-
+  MKDIR_COMPAT(DirName, 0755);
 }
 
 
