@@ -107,7 +107,8 @@ jobs:
           curl.exe --output %TEMP%\intel-installer.exe --url %WINDOWS_HPCKIT_URL% ^
           %TEMP%\intel-installer.exe -s -x -f intel-installer-dir --log output.log ^
           intel-installer-dir\bootstrapper.exe -s --action install --components=%WINDOWS_CPP_COMPONENTS% --eula=accept -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=1 --log-dir=.
-
+        shell: cmd
+        
       - name: Configure (Release, x64)
         run: |
           cmake -S . -B build ^
