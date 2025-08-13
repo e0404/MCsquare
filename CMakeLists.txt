@@ -251,6 +251,25 @@ install(DIRECTORY Scanners DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY Materials DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY BDL DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+# Enable CTest, but keep it easy to turn off with -DBUILD_TESTING=OFF
+include(CTest)           # defines BUILD_TESTING and calls enable_testing()
+
+if (BUILD_TESTING)
+  # Run: <path-to-myapp> -v
+  add_test(NAME MCsquare.version
+           COMMAND $<TARGET_FILE:MCsquare> -v
+           WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
+
+  # Build a regex that matches your version string
+  # (escape dots so 1.2.3 is treated literally)
+  string(REGEX REPLACE "\\." "\\\\." _VER_RX "${PROJECT_VERSION}")
+
+  # Accept either "myapp 1.2.3" or just "1.2.3"
+  set_tests_properties(MCsquare.version PROPERTIES
+    PASS_REGULAR_EXPRESSION "(${PROJECT_NAME}[[:space:]]+)?${_VER_RX}"
+    TIMEOUT 5)
+endif()
+
 #include(CPack)
 
 
