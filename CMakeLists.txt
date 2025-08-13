@@ -246,10 +246,18 @@ target_sources(MCsquare PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include/define_cmake
 #target_compile_definitions(MCsquare PRIVATE $<$<BOOL:${MCSQUARE_USE_DOUBLE_PRECISION_DATA}>:USE_DOUBLE_PRECISION_DATA> $<$<BOOL:${MCSQUARE_USE_DOUBLE_PRECISION_SCORING}>:USE_DOUBLE_PRECISION_SCORING> $<$<BOOL:${MCSQUARE_USE_DOUBLE_PRECISION_COMPUTE}>:USE_DOUBLE_PRECISION_COMPUTE>)
 target_compile_definitions(MCsquare PRIVATE CMAKE_BUILD)
 
-install(TARGETS MCsquare DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(DIRECTORY Scanners DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(DIRECTORY Materials DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(DIRECTORY BDL DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+install(TARGETS MCsquare RUNTIME DESTINATION ".")
+install(DIRECTORY Scanners DESTINATION ".")
+install(DIRECTORY Materials DESTINATION ".")
+install(DIRECTORY BDL DESTINATION ".")
+if (WIN32)
+  # This generator expression expands to full paths of runtime DLLs.
+  install(FILES $<TARGET_RUNTIME_DLLS:MCsquare> DESTINATION "." COMPONENT Runtime)
+  if (OMP_DLL_DIR)
+    install(FILES ${OMP_DLL_DIR}/libiomp5md.dll DESTINATION "." COMPONENT Runtime)
+  endif()
+endif()
 
 # Enable CTest, but keep it easy to turn off with -DBUILD_TESTING=OFF
 include(CTest)           # defines BUILD_TESTING and calls enable_testing()
@@ -264,16 +272,18 @@ if (BUILD_TESTING)
   # (escape dots so 1.2.3 is treated literally)
   string(REGEX REPLACE "\\." "\\\\." _VER_RX "${PROJECT_VERSION}")
 
-  # Accept either "myapp 1.2.3" or just "1.2.3"
   set_tests_properties(MCsquare.version PROPERTIES
     PASS_REGULAR_EXPRESSION "(${PROJECT_NAME}[[:space:]]+)?${_VER_RX}"
     TIMEOUT 5)
+
+  # If MKL was used set the properties
+  if(MKL_ENV)
+    set_tests_properties(MCsquare.version PROPERTIES ENVIRONMENT "${MKL_ENV}")
+  endif()
 endif()
 
-#include(CPack)
-
-
-
+include(CPack)
+set(CPACK_GENERATOR "ZIP")
 
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)
