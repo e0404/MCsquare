@@ -62,7 +62,7 @@ jobs:
       - name: Install build deps
         run: |
           brew update
-          brew install cmake
+          brew install cmake libomp
 
       - name: Configure (Release)
         run: |
