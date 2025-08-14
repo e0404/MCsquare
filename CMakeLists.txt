@@ -131,12 +131,9 @@ endif(MKL_FOUND AND USE_MKL_LIB)
 
 #Find OpenMP package and determine version... not working well at the moment (Version not read)
 if(APPLE)
-	set(OpenMP_HINTS "")
-    list(APPEND OpenMP_HINTS "/opt/homebrew/opt/libomp/")
-	find_package(OpenMP PATHS OpenMP_HINTS)
-else()
-	find_package(OpenMP)
+	set(OpenMP_DIR "/opt/homebrew/opt/libomp/")
 endif()
+find_package(OpenMP)
 
 if (OpenMP_C_FOUND)
     # Enable appropriate OpenMP flags based on compiler
