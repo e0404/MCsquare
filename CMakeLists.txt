@@ -116,6 +116,7 @@ target_sources(MCsquare
 
 set_property(TARGET MCsquare PROPERTY C_STANDARD 99)
 
+# Find MKL for static linking
 set(MKL_LINK "static" CACHE STRING "MKL Link Type")
 find_package(MKL CONFIG)
 if (MKL_FOUND)
@@ -129,7 +130,12 @@ if (MKL_FOUND AND USE_MKL_LIB)
 endif(MKL_FOUND AND USE_MKL_LIB)
 
 #Find OpenMP package and determine version... not working well at the moment (Version not read)
-find_package(OpenMP)
+set(OpenMP_HINTS "")
+if(APPLE)
+    list(APPEND OpenMP_HINTS "/opt/homebrew/opt/libomp/")
+endif()
+
+find_package(OpenMP REQUIRED HINTS OpenMP_HINTS)
 if (OpenMP_C_FOUND)
     # Enable appropriate OpenMP flags based on compiler
     if(MSVC)
