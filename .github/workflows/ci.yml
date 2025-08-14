@@ -53,7 +53,7 @@ jobs:
           retention-days: 7
 
   macos-clang:
-    name: macos-clang-nomkl
+    name: macos-gcc-nomkl
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -62,15 +62,15 @@ jobs:
       - name: Install build deps
         run: |
           brew update
-          brew install cmake libomp
+          brew install cmake libomp gcc@12
 
       - name: Configure (Release)
         run: |
           cmake -S . -B build \
             -G "Unix Makefiles" \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_C_COMPILER=gcc-12 \
+            -DCMAKE_CXX_COMPILER=g++-12
 
       - name: Build
         run: cmake --build build --parallel
