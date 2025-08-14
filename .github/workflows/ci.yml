@@ -16,7 +16,7 @@ env:
   WINDOWS_INTEL_COMPONENTS: intel.oneapi.win.cpp-dpcpp-common:intel.oneapi.win.mkl.devel
 
 jobs:
-  linux-gcc:
+  linux-gcc-nomkl:
     name: ubuntu-gcc-nomkl
     runs-on: ubuntu-latest
     steps:
@@ -52,9 +52,12 @@ jobs:
           path: "*.tar.gz"
           retention-days: 7
 
-  macos-clang:
-    name: macos-gcc-nomkl
-    runs-on: macos-latest
+  macos-gcc-nomkl:
+    strategy:
+      matrix:
+        osver: [13,latest]
+    name: macos-gcc-nomkl-${{ matrix.osver }}
+    runs-on: macos-${{ matrix.osver }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,7 +92,7 @@ jobs:
           retention-days: 7
 
   windows-msvc-nomkl:
-    name: windows-msvc-2022-nomkl
+    name: windows-msvc-nomkl
     runs-on: windows-latest
     steps:
       - name: Checkout
