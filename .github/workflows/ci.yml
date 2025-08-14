@@ -52,6 +52,42 @@ jobs:
           path: "*.tar.gz"
           retention-days: 7
 
+  macos-clang:
+    name: macos-clang-nomkl
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          brew update
+          brew install cmake
+
+      - name: Configure (Release)
+        run: |
+          cmake -S . -B build \
+            -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: cpack -C Release -G TGZ --config ./build/CPackConfig.cmake
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}-package
+          path: "*.tar.gz"
+          retention-days: 7
+
   windows-msvc-nomkl:
     name: windows-msvc-2022-nomkl
     runs-on: windows-latest
