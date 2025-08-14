@@ -150,7 +150,9 @@ jobs:
 
       - name: Configure (Release, x64)
         run: |
-          call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat" vs2022 && cmake -S . -B build ^
+          call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat" vs2022 
+          call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
+          cmake -S . -B build ^
             -G "Visual Studio 17 2022" ^
             -A x64 ^
             -T "Intel C++ Compiler 2025" ^
