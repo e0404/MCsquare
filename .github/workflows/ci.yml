@@ -124,6 +124,48 @@ jobs:
           path: "*.zip"
           retention-days: 7
 
+  windows-mingw-nomkl:
+    name: windows-mingw-nomkl
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MinGW
+        run: choco install mingw -y
+        shell: powershell
+
+      - name: Add MinGW to PATH
+        run: echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Configure (Release, MinGW)
+        run: |
+          cmake -S . -B build ^
+            -G "MinGW Makefiles" ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_C_COMPILER=gcc ^
+            -DCMAKE_CXX_COMPILER=g++
+        shell: cmd
+
+      - name: Build
+        run: cmake --build build --parallel
+        shell: cmd
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+        shell: bash
+
+      - name: Package
+        run: cpack -C Release -G ZIP --config .\build\CPackConfig.cmake
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}-${{ runner.arch }}
+          path: "*.zip"
+          retention-days: 7
+
   linux-intel-mkl:
     name: linux-intel-mkl
     runs-on: ubuntu-latest
