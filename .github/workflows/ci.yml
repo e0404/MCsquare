@@ -131,27 +131,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Intel Compiler Installation Cache
+      # Cache the oneapi installer download cache
+      - name: Cache oneAPI webimage + download cache
         uses: actions/cache@v4
-        id: cache-install
+        id: oneapi-cache
         with:
           path: |
-            C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
-            C:\Program Files (x86)\Intel\oneAPI\compiler
-          key: install-${{ runner.os }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_INTEL_COMPONENTS }}
+            ${{ github.workspace }}\oneapi_webimage
+            ${{ github.workspace }}\oneapi_download_cache
+          key: oneapi-${{ runner.os }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_INTEL_COMPONENTS }}
 
-      - name: Install Intel Compiler
-        if: steps.cache-install.outputs.cache-hit != 'true'
+      # if missing, download the installer and extract
+      - name: Fetch/extract installer webimage
+        if: steps.oneapi-cache.outputs.cache-hit != 'true'
         run: |
-          curl.exe --output %TEMP%\intel-installer.exe --url %WINDOWS_HPCKIT_URL%
-          %TEMP%\intel-installer.exe -s -x -f intel-installer-dir --log output.log
-          intel-installer-dir\bootstrapper.exe -s --action install --components=%WINDOWS_INTEL_COMPONENTS% --eula=accept -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=1 --log-dir=.
+          curl.exe -L --output %TEMP%\oneapi.exe --url %WINDOWS_HPCKIT_URL%
+          %TEMP%\oneapi.exe -s -x -f "%GITHUB_WORKSPACE%\oneapi_webimage" --log output.log
         shell: cmd
 
-      - name: Configure (Release, x64)
+      # Installer is always run, but fast if the download cache is populated
+      - name: Install Intel oneAPI components (with VS integration)
         run: |
-          call "C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat" vs2022 
-          call "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat" 
+          "%GITHUB_WORKSPACE%\oneapi_webimage\bootstrapper.exe" ^
+            -s --action install --eula=accept ^
+            --components=%WINDOWS_INTEL_COMPONENTS% ^
+            --download-cache "%GITHUB_WORKSPACE%\oneapi_download_cache" ^
+            -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=1 ^
+            --log-dir="%GITHUB_WORKSPACE%\oneapi_logs"
+        shell: cmd
+
+        # Now run standard pipeline
+      - name: Configure (Release, x64)
+        run: |          
           cmake -S . -B build ^
             -G "Visual Studio 17 2022" ^
             -A x64 ^
