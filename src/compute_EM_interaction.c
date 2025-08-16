@@ -20,8 +20,6 @@ void Total_Stop_Pow(Hadron *hadron, Materials *material, int *v_material_label, 
   __assume_aligned(v_material_label, 64);
   __assume_aligned(v_stop_pow, 64);
 
-  int i;
-
   ALIGNED_(64) VAR_COMPUTE v_scaled_T[VLENGTH];
   ALIGNED_(64) int v_index[VLENGTH];
   ALIGNED_(64) VAR_COMPUTE v_scaled_T2[VLENGTH];
