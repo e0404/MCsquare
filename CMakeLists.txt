@@ -259,11 +259,46 @@ target_sources(MCsquare PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include/define_cmake
 #target_compile_definitions(MCsquare PRIVATE $<$<BOOL:${MCSQUARE_USE_DOUBLE_PRECISION_DATA}>:USE_DOUBLE_PRECISION_DATA> $<$<BOOL:${MCSQUARE_USE_DOUBLE_PRECISION_SCORING}>:USE_DOUBLE_PRECISION_SCORING> $<$<BOOL:${MCSQUARE_USE_DOUBLE_PRECISION_COMPUTE}>:USE_DOUBLE_PRECISION_COMPUTE>)
 target_compile_definitions(MCsquare PRIVATE CMAKE_BUILD)
 
+add_custom_command(
+    TARGET MCsquare
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/BDL
+            $<TARGET_FILE_DIR:MCsquare>/BDL
+    COMMENT "Copying BDL to build directory"
+)
+add_custom_command(
+    TARGET MCsquare
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/Scanners
+            $<TARGET_FILE_DIR:MCsquare>/Scanners
+    COMMENT "Copying Scanners to build directory"
+)
+add_custom_command(
+    TARGET MCsquare
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/Materials
+            $<TARGET_FILE_DIR:MCsquare>/Materials
+    COMMENT "Copying Materials to build directory"
+)
+add_custom_command(
+    TARGET MCsquare
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/Sample_input_data
+            $<TARGET_FILE_DIR:MCsquare>/Sample_input_data
+    COMMENT "Copying Sample_input_data to build directory"
+)
+
+
 
 install(TARGETS MCsquare RUNTIME DESTINATION ".")
 install(DIRECTORY Scanners DESTINATION ".")
 install(DIRECTORY Materials DESTINATION ".")
 install(DIRECTORY BDL DESTINATION ".")
+install(DIRECTORY Sample_input_data DESTINATION ".")
 if (WIN32)
   # This generator expression expands to full paths of runtime DLLs.
   install(FILES $<TARGET_RUNTIME_DLLS:MCsquare> DESTINATION "." COMPONENT Runtime)
@@ -278,8 +313,8 @@ include(CTest)           # defines BUILD_TESTING and calls enable_testing()
 if (BUILD_TESTING)
   # Run: <path-to-myapp> -v
   add_test(NAME MCsquare.version
-           COMMAND $<TARGET_FILE:MCsquare> -v
-           WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
+           COMMAND $<TARGET_FILE:MCsquare> -v)
+
 
   # Build a regex that matches your version string
   # (escape dots so 1.2.3 is treated literally)
@@ -287,7 +322,31 @@ if (BUILD_TESTING)
 
   set_tests_properties(MCsquare.version PROPERTIES
     PASS_REGULAR_EXPRESSION "(${PROJECT_NAME}[[:space:]]+)?${_VER_RX}"
-    TIMEOUT 5)
+    TIMEOUT 5
+	WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>
+	)
+
+  add_test(NAME prepare_test_cfg
+    COMMAND "${CMAKE_COMMAND}"
+      -Dsrc=Sample_input_data/config.txt
+      -Ddst=Sample_input_data/config_test.txt
+      -P ${CMAKE_SOURCE_DIR}/cmake/testHistoryConfig.cmake
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>
+  )
+  set_tests_properties(prepare_test_cfg PROPERTIES
+    FIXTURES_SETUP test_cfg
+  )
+
+  add_test(NAME MCsquare.sample_data
+		   COMMAND $<TARGET_FILE:MCsquare> "Sample_input_data/config_test.txt"
+		   WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
+  set_tests_properties(MCsquare.sample_data PROPERTIES
+	TIMEOUT 60
+	FIXTURES_REQUIRED test_cfg
+  )
+
+  add_test(NAME MCsquare.output_created COMMAND ${CMAKE_COMMAND} -E cat Sample_input_data/Outputs/Dose.raw)
+  set_tests_properties(MCsquare.output_created PROPERTIES DEPENDS MCsquare.sample_data WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
 
   # If MKL was used set the properties
   if(MKL_ENV)
