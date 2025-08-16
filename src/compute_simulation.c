@@ -426,53 +426,47 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
     // Compute simulation
     while(stop == 0){
       for(i=0; i<VLENGTH; i++){
-	if(hadron.v_type[i] == Unknown){
+	      if(hadron.v_type[i] == Unknown){
 
-	  if(Nbr_HadronToSimulate > 0){
-	    Nbr_HadronToSimulate -= 1;
-	    Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
-	  }
+	        if(Nbr_HadronToSimulate > 0){
+	          Nbr_HadronToSimulate -= 1;
+	          Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
+	        }
+	        else if(Num_simulated_primaries < Num_primaries){
+	          #pragma omp atomic
+	          Num_simulated_primaries += VLENGTH;
 
-	  else if(Num_simulated_primaries < Num_primaries){
-	    #pragma omp atomic
-	    Num_simulated_primaries += VLENGTH;
-
-	    //Generate_particle(&hadron, i, BeamPOSx, BeamPOSy, BeamPOSz, PEnergy*UMeV);
-	    Generate_PBS_particle(HadronToSimulate, &Nbr_HadronToSimulate, ct->Length, plan, machine, RNDstream, config, material);
-	    if(Nbr_HadronToSimulate > 0){
-	      Nbr_HadronToSimulate -= 1;
-	      Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
-	    }
-	  }
-
-	  else{
+	          //Generate_particle(&hadron, i, BeamPOSx, BeamPOSy, BeamPOSz, PEnergy*UMeV);
+	          Generate_PBS_particle(HadronToSimulate, &Nbr_HadronToSimulate, ct->Length, plan, machine, RNDstream, config, material);
+	          if(Nbr_HadronToSimulate > 0){
+	            Nbr_HadronToSimulate -= 1;
+	            Insert_particle(&hadron, i, &HadronToSimulate[Nbr_HadronToSimulate]);
+	          }
+	        }
+          else{
             count = 0;
             int v;
-	    #pragma omp simd reduction(+:count)
-            for(v = 0; v<VLENGTH; v++){
-	      count += hadron.v_type[v];
-            }
-	    if(count == 0) stop = 1;
-	  }
+            #pragma omp simd reduction(+:count)
+            for(v = 0; v<VLENGTH; v++)
+              count += hadron.v_type[v];
+              
+            if(count == 0) stop = 1;
+          }
 
-	  if(tid == 0 && display_progress == 1 && Num_simulated_primaries > progress_next){
-	    sprintf(progress_message, " %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
-	    Display_simulation_progression(config, progress_message);
-	    if((floor(Num_simulated_primaries/progress_interval)*progress_binning) == 100) display_progress = 0;
-	    progress_next += progress_interval;
-	  }
-
-	}
+          if(tid == 0 && display_progress == 1 && Num_simulated_primaries > progress_next){
+            sprintf(progress_message, " %.1f %% \n", floor(Num_simulated_primaries/progress_interval)*progress_binning);
+            Display_simulation_progression(config, progress_message);
+            if((floor(Num_simulated_primaries/progress_interval)*progress_binning) == 100) display_progress = 0;
+            progress_next += progress_interval;
+          }
+        }
       }
-
       hadron_step(&hadron, &scoring, material, ct, HadronToSimulate, &Nbr_HadronToSimulate, RNDstream, config);
     }
 
     if(tid == 0 && display_progress == 1){
       Display_simulation_progression(config, " 100.0 %% \n");
     }
-
-
 
     // Agreggate results
 
@@ -520,7 +514,7 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
       #pragma omp for
       for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
         for(p=0; p<config->Num_Threads; ++p){
-	 Tot_scoring->energy[k] += ptr_energy_scoring[p][k]; 
+	        Tot_scoring->energy[k] += ptr_energy_scoring[p][k]; 
         }
       }
     }
@@ -529,8 +523,8 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
       #pragma omp for
       for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
         for(p=0; p<config->Num_Threads; ++p){
-	 Tot_scoring->LET[k] += ptr_LET_scoring[p][k];
-	 Tot_scoring->LET_denominator[k] += ptr_LET_denominator[p][k];
+          Tot_scoring->LET[k] += ptr_LET_scoring[p][k];
+          Tot_scoring->LET_denominator[k] += ptr_LET_denominator[p][k];
         }
       }
     }
@@ -539,7 +533,7 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
       #pragma omp for
       for(k=0; k<Tot_scoring->Nbr_voxels; ++k){
         for(p=0; p<config->Num_Threads; ++p){
-	 Tot_scoring->PG_particles[k] += ptr_PG_scoring[p][k];
+	        Tot_scoring->PG_particles[k] += ptr_PG_scoring[p][k];
         }
       }
 
@@ -551,8 +545,8 @@ unsigned long Simulation_loop(DATA_config *config, Materials *material, DATA_CT 
       }
     }
 
-  // Delete dynamic variables
-  Free_Scoring(&scoring);
+    // Delete dynamic variables
+    Free_Scoring(&scoring);
 
   }  // end of Parallelization
 
