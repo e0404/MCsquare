@@ -38,6 +38,34 @@ else()
 	endif()
 endif()
 
+# This is needed to avoid that gcc uses a builtin fmin that wrongly handles NaNs
+if (CMAKE_C_COMPILER_ID MATCHES "GNU")
+	add_compile_options("-fno-builtin-fmin" "-fno-builtin-fmax")
+endif() 
+
+#Options to set PRECISION
+option(MCSQUARE_USE_DOUBLE_PRECISION_DATA "Work with double precision data in MCsquare" OFF)
+option(MCSQUARE_USE_DOUBLE_PRECISION_SCORING "Score double precision values in the computation" OFF)
+option(MCSQUARE_USE_DOUBLE_PRECISION_COMPUTE "Use double precision throught MC computations" OFF)
+
+if(MCSQUARE_USE_DOUBLE_PRECISION_DATA)
+	set(VAR_DATA_PRECISION 2)
+else()
+	set(VAR_DATA_PRECISION 1)
+endif()
+
+if(MCSQUARE_USE_DOUBLE_PRECISION_SCORING)
+	set(VAR_SCORING_PRECISION 2)
+else()
+	set(VAR_SCORING_PRECISION 1)
+endif()
+
+if(MCSQUARE_USE_DOUBLE_PRECISION_COMPUTE)
+	set(VAR_COMPUTE_PRECISION 2)
+else()
+	set(VAR_COMPUTE_PRECISION 1)
+endif()
+
 add_executable(MCsquare "")
 #set_target_properties(MCsquare PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT MCsquare)
@@ -117,7 +145,10 @@ target_sources(MCsquare
 set_property(TARGET MCsquare PROPERTY C_STANDARD 99)
 
 set(MKL_LINK "static" CACHE STRING "MKL Link Type")
-find_package(MKL CONFIG)
+if(NOT MINGW)
+	find_package(MKL CONFIG)
+endif()
+
 if (MKL_FOUND)
 	option(USE_MKL_LIB "Use the Intel MKL Libraries" ON)
 endif(MKL_FOUND)
@@ -161,29 +192,6 @@ endif()
 #if(NOT HAVE_STRTOK_R)
 #	check_symbol_exists("strtok_s" "<string.h>" HAVE_STRTOK_S)
 #endif()
-
-#Options to set PRECISION
-option(MCSQUARE_USE_DOUBLE_PRECISION_DATA "Work with double precision data in MCsquare" OFF)
-option(MCSQUARE_USE_DOUBLE_PRECISION_SCORING "Score double precision values in the computation" OFF)
-option(MCSQUARE_USE_DOUBLE_PRECISION_COMPUTE "Use double precision throught MC computations" OFF)
-
-if(MCSQUARE_USE_DOUBLE_PRECISION_DATA)
-	set(VAR_DATA_PRECISION 2)
-else()
-	set(VAR_DATA_PRECISION 1)
-endif()
-
-if(MCSQUARE_USE_DOUBLE_PRECISION_SCORING)
-	set(VAR_SCORING_PRECISION 2)
-else()
-	set(VAR_SCORING_PRECISION 1)
-endif()
-
-if(MCSQUARE_USE_DOUBLE_COMPUTE_SCORING)
-	set(VAR_COMPUTE_PRECISION 2)
-else()
-	set(VAR_COMPUTE_PRECISION 1)
-endif()
 
 include(CheckIncludeFile)
 include(CheckIncludeFiles)
