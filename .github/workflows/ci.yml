@@ -126,7 +126,9 @@ jobs:
 
   linux-intel-mkl:
     name: linux-intel-mkl
-    runs-on: intel/oneapi-hpckit:latest
+    runs-on: ubuntu-latest
+    container:
+      image: intel/oneapi-hpckit:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
