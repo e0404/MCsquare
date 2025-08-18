@@ -311,47 +311,59 @@ endif()
 include(CTest)           # defines BUILD_TESTING and calls enable_testing()
 
 if (BUILD_TESTING)
-  # Run: <path-to-myapp> -v
-  add_test(NAME MCsquare.version
-           COMMAND $<TARGET_FILE:MCsquare> -v)
+	# Prepare environment variable for test PATH
+	set(_TEST_ENV "")
+	if (OMP_DLL_DIR AND WIN32 AND NOT MINGW)
+		# Prepend OMP_DLL_DIR to PATH for Windows
+		set(_TEST_ENV "PATH=$ENV{PATH};${OMP_DLL_DIR}")
+	endif()
+	# If MKL was used set the properties
+	if(MKL_ENV)
+		set(_TEST_ENV "${_TEST_ENV};${MKL_ENV}")
+	endif()
 
+	# Run: <path-to-myapp> -v
+	add_test(NAME MCsquare.version
+					 COMMAND $<TARGET_FILE:MCsquare> -v)
 
-  # Build a regex that matches your version string
-  # (escape dots so 1.2.3 is treated literally)
-  string(REGEX REPLACE "\\." "\\\\." _VER_RX "${PROJECT_VERSION}")
+	# Build a regex that matches your version string
+	# (escape dots so 1.2.3 is treated literally)
+	string(REGEX REPLACE "\\." "\\\\." _VER_RX "${PROJECT_VERSION}")
 
-  set_tests_properties(MCsquare.version PROPERTIES
-    PASS_REGULAR_EXPRESSION "(${PROJECT_NAME}[[:space:]]+)?${_VER_RX}"
-    TIMEOUT 5
-	WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>
+	set_tests_properties(MCsquare.version PROPERTIES
+		PASS_REGULAR_EXPRESSION "(${PROJECT_NAME}[[:space:]]+)?${_VER_RX}"
+		TIMEOUT 5
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>
+		ENVIRONMENT "${_TEST_ENV}"
 	)
 
-  add_test(NAME prepare_test_cfg
-    COMMAND "${CMAKE_COMMAND}"
-      -Dsrc=Sample_input_data/config.txt
-      -Ddst=Sample_input_data/config_test.txt
-      -P ${CMAKE_SOURCE_DIR}/cmake/testHistoryConfig.cmake
-    WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>
-  )
-  set_tests_properties(prepare_test_cfg PROPERTIES
-    FIXTURES_SETUP test_cfg
-  )
+	add_test(NAME prepare_test_cfg
+		COMMAND "${CMAKE_COMMAND}"
+			-Dsrc=Sample_input_data/config.txt
+			-Ddst=Sample_input_data/config_test.txt
+			-P ${CMAKE_SOURCE_DIR}/cmake/testHistoryConfig.cmake
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>
+	)
+	set_tests_properties(prepare_test_cfg PROPERTIES
+		FIXTURES_SETUP test_cfg
+		ENVIRONMENT "${_TEST_ENV}"
+	)
 
-  add_test(NAME MCsquare.sample_data
-		   COMMAND $<TARGET_FILE:MCsquare> "Sample_input_data/config_test.txt"
-		   WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
-  set_tests_properties(MCsquare.sample_data PROPERTIES
-	TIMEOUT 60
-	FIXTURES_REQUIRED test_cfg
-  )
+	add_test(NAME MCsquare.sample_data
+					 COMMAND $<TARGET_FILE:MCsquare> "Sample_input_data/config_test.txt"
+					 WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
+	set_tests_properties(MCsquare.sample_data PROPERTIES
+		TIMEOUT 60
+		FIXTURES_REQUIRED test_cfg
+		ENVIRONMENT "${_TEST_ENV}"
+	)
 
-  add_test(NAME MCsquare.output_created COMMAND ${CMAKE_COMMAND} -E cat Sample_input_data/Outputs/Dose.raw)
-  set_tests_properties(MCsquare.output_created PROPERTIES DEPENDS MCsquare.sample_data WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare>)
-
-  # If MKL was used set the properties
-  if(MKL_ENV)
-    set_tests_properties(MCsquare.version PROPERTIES ENVIRONMENT "${MKL_ENV}")
-  endif()
+	add_test(NAME MCsquare.output_created COMMAND ${CMAKE_COMMAND} -E cat Sample_input_data/Outputs/Dose.raw)
+	set_tests_properties(MCsquare.output_created PROPERTIES 
+		DEPENDS MCsquare.sample_data 
+		WORKING_DIRECTORY $<TARGET_FILE_DIR:MCsquare> 
+		ENVIRONMENT "${_TEST_ENV}"
+	)
 endif()
 
 include(CPack)
